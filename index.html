@@ -32,11 +32,11 @@
       background:var(--surface-2); border:1px solid var(--line); color:var(--text);
       border-radius:10px; padding:10px 12px; font-size:15px; font-family:'Inter',sans-serif; min-width:0;
     }
-    input[type=number] { text-align: center; } /* Centered Inputs */
+    /* Centered Inputs */
+    input[type=number] { text-align: center; font-weight:600; color:var(--amber); } 
     input:focus, select:focus{ outline:2px solid var(--amber); outline-offset:1px; }
     
     .auto-badge{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--teal); padding:0 18px 10px; }
-    
     .nav-link-row{ padding:0 18px 14px; display:flex; }
     
     main{ padding:0 18px; max-width:920px; margin:0 auto; }
@@ -72,9 +72,9 @@
     .tag-direct{ background:rgba(232,163,61,0.15); color:var(--amber); }
     .tag-indirect{ background:rgba(79,176,174,0.15); color:var(--teal); }
     
-    /* Mobile responsive entry grid */
-    .grid3{ display:grid; grid-template-columns:1fr; gap:12px; }
-    @media (min-width:520px){ .grid3{ grid-template-columns:repeat(3,1fr); } }
+    /* Mobile responsive flexible entry grid */
+    .grid3{ display:flex; flex-direction:column; gap:12px; }
+    @media (min-width:520px){ .grid3{ flex-direction:row; } .grid3 > .field { flex: 1; } }
     
     .actual-readout{ margin-top:14px; background:var(--surface-2); border:1px dashed var(--amber-dim); border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:baseline; }
     .actual-readout .num{ font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:700; color:var(--amber); text-shadow:0 0 14px rgba(232,163,61,0.35); }
@@ -93,28 +93,28 @@
     .status-line{ font-size:12px; color:var(--muted); margin-top:10px; min-height:16px; }
     .status-line.ok{ color:var(--ok); } .status-line.err{ color:var(--danger); }
     
-    /* Table with vertical lines and centered text */
-    table{ width:100%; border-collapse:collapse; font-size:12.5px; border: 1px solid var(--line); background:#161b22; }
-    th,td{ padding:8px 7px; border:1px solid var(--line); white-space:nowrap; }
-    th{ text-align:center; color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; }
-    td{ text-align:left; }
-    td.num, th.num{ text-align:center; font-family:'JetBrains Mono',monospace; }
+    /* ---------------------------------------------------- */
+    /* EXCEL-STYLE DASHBOARD TABLE (Light mode for export)  */
+    /* ---------------------------------------------------- */
+    .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom:14px; }
+    .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; }
+    .excel-table th, .excel-table td { border: 1px solid #000000; padding: 5px 8px; white-space: nowrap; }
+    .excel-table th { background-color: #f2d12e; color: #000; font-weight: 700; text-align: center; }
+    .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
     
-    tr.total-row td{ font-weight:700; border-top:2px solid var(--amber-dim); color:var(--amber); }
-    tr.direct-row td:first-child{ color:var(--amber); }
+    /* Grand Totals */
+    .excel-table .grand-total-row td { background-color: #f2d12e; font-weight: 700; border-top: 2px solid #000; }
     
-    /* Distinct colors for Subsections */
-    .group-row.depth-0 td { color:#5cb87a; background:rgba(92,184,122,0.08); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:0.03em; border-top: 2px solid #5cb87a;}
-    .group-row.depth-1 td { color:#4fb0ae; background:rgba(79,176,174,0.08); font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:0.03em;}
-    .group-row.depth-2 td { color:#a371f7; background:rgba(163,113,247,0.08); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.03em;}
+    /* Distinct Colors for Subsections */
+    .excel-table .depth-0 td { background-color: #e6f2ff; font-weight: 700; font-size: 13.5px; } /* Light Blue */
+    .excel-table .depth-1 td { background-color: #e6ffe6; font-weight: 700; font-size: 13px; }    /* Light Green */
+    .excel-table .depth-2 td { background-color: #f9e6ff; font-weight: 700; font-size: 12.5px; }  /* Light Purple */
     
-    tr.subtotal-row td{ font-weight:600; font-size:11.5px; color:var(--teal); border-top:1px dashed var(--line); background:rgba(79,176,174,0.02); }
+    .excel-table .subtotal-row td { background-color: #f5f5f5; font-weight: 600; font-style: italic; font-size:13px; }
+    .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align:left; font-size: 13px; }
     
-    .table-wrap{ overflow-x:auto; }
-    .remarks-cell{ color:var(--muted); font-weight:400; white-space:normal; max-width:160px; }
-    
-    .dash-actions{ display:flex; gap:10px; margin-top:14px; }
-    .dash-actions button{ flex:1; }
+    .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .dash-actions button{ flex:1; min-width:140px; }
     
     .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface-2); border:1px solid var(--amber-dim); color:var(--text); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.25s ease; z-index:50; }
     .toast.show{ opacity:1; }
@@ -138,14 +138,17 @@
     <div class="field">
       <label for="shiftInput">Shift</label>
       <select id="shiftInput">
-        <option value="A">Shift A </option>
-        <option value="B">Shift B </option>
-        <option value="C">Shift C </option>
+        <option value="A">Shift A</option>
+        <option value="B">Shift B</option>
+        <option value="C">Shift C</option>
       </select>
     </div>
   </div>
   <div class="auto-badge" id="autoBadge"></div>
-  <div class="nav-link-row"><button class="btn-primary" style="width:auto; padding: 8px 16px;" id="crossNavBtn"></button></div>
+  
+  <div class="nav-link-row">
+    <button class="btn-primary" style="width:auto; padding: 8px 16px;" id="crossNavBtn"></button>
+  </div>
 
   <main>
     <div id="pickerView" style="display:none;">
@@ -192,15 +195,29 @@
 
     <div id="dashboardView" style="display:none;">
       <div class="card" id="dashCard">
-        <div class="table-wrap">
-          <table id="dashTable">
+        
+        <div id="exportWrapper" class="excel-wrapper">
+          <table id="dashTable" class="excel-table">
             <thead>
-              <tr><th>Agency</th><th class="num">Plan</th><th class="num">Actual</th><th class="num">In OT</th><th class="num">Reported</th><th>Remarks</th></tr>
+              <tr>
+                <th rowspan="2">MANPOWER</th>
+                <th id="thShiftTop">Shift-X</th>
+                <th colspan="3" id="thDate">Date Time</th>
+                <th rowspan="2">Remarks</th>
+              </tr>
+              <tr>
+                <th>Plan</th>
+                <th id="thReported">Reported in Shift-X</th>
+                <th>In OT</th>
+                <th>Actual on work</th>
+              </tr>
             </thead>
             <tbody id="dashBody"></tbody>
           </table>
         </div>
+
         <div class="status-line" id="dashStatus"><span class="loading-dot"></span>Loading shift data&hellip;</div>
+        
         <div class="dash-actions">
           <button class="btn-ghost" id="saveImageBtn">Save HD Image</button>
           <button class="btn-ghost" id="copyEntryLinkBtn">Copy entry link</button>
@@ -213,7 +230,7 @@
 
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqu8xBOTr_ytsx3B-TO1oTGdUHPsIqK6lymBAUZ2_4TUkLmZntAXeXhdrMGm0I9_4/exec";
+    const SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 
     const urlParams = new URLSearchParams(window.location.search);
     var VIEW_PARAM = urlParams.get('view') || '';
@@ -248,10 +265,10 @@
       var btn = document.getElementById('crossNavBtn');
       var baseUrl = window.location.href.split('?')[0];
       if (MODE === 'dashboard'){
-        btn.textContent = 'Go to data entry \u2192';
+        btn.textContent = 'Go to Data Entry \u2192';
         btn.onclick = function(){ window.location.href = baseUrl; };
       } else {
-        btn.textContent = 'View master dashboard \u2192';
+        btn.textContent = 'View Master Dashboard \u2192';
         btn.onclick = function(){ window.location.href = baseUrl + '?view=dashboard'; };
       }
     }
@@ -291,9 +308,7 @@
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${currentShift()}`);
         shiftData = await res.json();
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     }
 
     function init(){
@@ -358,7 +373,7 @@
       crumbWrap.innerHTML = '';
       var homeCrumb = document.createElement('span');
       homeCrumb.className = 'crumb' + (currentPath.length === 0 ? ' current' : '');
-      homeCrumb.textContent = 'All agencies';
+      homeCrumb.textContent = 'All Agencies';
       homeCrumb.onclick = function(){ currentPath = []; renderPicker(); };
       crumbWrap.appendChild(homeCrumb);
       currentPath.forEach(function(gid, idx){
@@ -418,7 +433,7 @@
       document.getElementById('pageSub').textContent = 'Enter your shift numbers below';
       document.getElementById('areaTitle').textContent = area.fullName;
       document.getElementById('areaTagWrap').innerHTML =
-        '<span class="area-tag ' + (area.type === 'Direct' ? 'tag-direct' : 'tag-indirect') + '">' + area.type.toUpperCase() + '</span>';
+        '<span class="area-tag ' + (area.type === 'Direct' ? 'tag-direct' : 'tag-indirect') + '">' + area.type.toUpperCase() + ' AGENCY</span>';
 
       var promptWrap = document.getElementById('remarkPromptWrap');
       promptWrap.innerHTML = '';
@@ -471,7 +486,16 @@
 
       var freeText = document.getElementById('remarksInput').value.trim();
       var autoText = '';
-      if (area.remarkPrompt){
+      
+      // AUTO REMARKS LOGIC FOR ARS3
+      if (currentLeaf === 'TKIL_MECH_ARS3' || currentLeaf === 'TKIL_ELE_ARS3') {
+          let checkActual = Number(document.getElementById('actualInput').value || 0);
+          let checkOT = Number(document.getElementById('otInput').value || 0);
+          if (checkActual - checkOT > 0) {
+              autoText = 'Including ARS3';
+          }
+      } 
+      else if (area.remarkPrompt){
         var flagEl = document.getElementById('remarkFlag');
         if (area.remarkPrompt.kind === 'boolean'){
           if (flagEl.checked) autoText = area.remarkPrompt.text;
@@ -480,6 +504,7 @@
           if (n > 0) autoText = n + ' ' + area.remarkPrompt.text;
         }
       }
+      
       var finalRemarks = [autoText, freeText].filter(Boolean).join('; ');
 
       var payload = {
@@ -515,6 +540,22 @@
       }
     }
 
+    function updateDashboardHeaders() {
+      const shift = currentShift();
+      document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
+      document.getElementById('thReported').textContent = 'Reported in Shift-' + shift;
+      
+      const now = new Date();
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const dateStr = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+      let hours = now.getHours();
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const mins = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('thDate').textContent = dateStr + ' ' + hours + ':' + mins + ' ' + ampm;
+    }
+
     async function loadDashboard(){
       var status = document.getElementById('dashStatus');
       status.innerHTML = '<span class="loading-dot"></span>Loading shift data\u2026';
@@ -524,8 +565,10 @@
     }
 
     function renderDashboard(){
+      updateDashboardHeaders();
       var body = document.getElementById('dashBody');
       body.innerHTML = '';
+      
       var totals = { plan:0, actual:0, inOT:0, reported:0 };
       var directTotals = { plan:0, actual:0, inOT:0, reported:0 };
 
@@ -534,12 +577,14 @@
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
         var tr = document.createElement('tr');
         if (area.type === 'Direct') tr.className = 'direct-row';
+        
+        // Match Image Columns: Agency | Plan | Reported | In OT | Actual | Remarks
         tr.innerHTML =
           '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
           '<td class="num">' + (rec.plan || 0) + '</td>' +
-          '<td class="num">' + (rec.actual || 0) + '</td>' +
-          '<td class="num">' + (rec.inOT || 0) + '</td>' +
           '<td class="num">' + (rec.reported || 0) + '</td>' +
+          '<td class="num">' + (rec.inOT || 0) + '</td>' +
+          '<td class="num">' + (rec.actual || 0) + '</td>' +
           '<td class="remarks-cell">' + (rec.remarks || '') + '</td>';
         body.appendChild(tr);
         
@@ -554,36 +599,52 @@
 
       function walk(nodes, depth){
         var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
+        var hasARS3 = false;
+
         nodes.forEach(function(node){
           if (node.type === 'leaf'){
             var leafVals = addLeafRow(node.areaId, depth > 0);
             groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
             groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
+            
+            // Check if this leaf is ARS3 and has data
+            if (node.areaId.indexOf('ARS3') !== -1 && leafVals.reported > 0) {
+              hasARS3 = true;
+            }
           } else {
             var tr = document.createElement('tr');
-            tr.className = 'group-row depth-' + depth; // Depth applied for dynamic coloring
+            tr.className = 'group-row depth-' + depth; 
             tr.innerHTML = '<td colspan="6">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             body.appendChild(tr);
             
             var childTotals = walk(node.children, depth + 1);
+            if (childTotals.hasARS3) hasARS3 = true;
             
+            var subRemarks = "";
+            // Add automatic ARS3 remark to subtotal row if conditions met
+            if ((node.id === 'TKIL_MECH' || node.id === 'TKIL_ELE') && childTotals.hasARS3) {
+              subRemarks = "Including ARS3";
+            }
+
             var subTr = document.createElement('tr');
             subTr.className = 'subtotal-row';
             subTr.innerHTML =
               '<td>' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num">' + childTotals.plan + '</td>' +
-              '<td class="num">' + childTotals.actual + '</td>' +
-              '<td class="num">' + childTotals.inOT + '</td>' +
               '<td class="num">' + childTotals.reported + '</td>' +
-              '<td></td>';
+              '<td class="num">' + childTotals.inOT + '</td>' +
+              '<td class="num">' + childTotals.actual + '</td>' +
+              '<td class="remarks-cell">' + subRemarks + '</td>';
             body.appendChild(subTr);
 
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
           }
         });
+        groupTotal.hasARS3 = hasARS3;
         return groupTotal;
       }
+      
       walk(TREE, 0);
 
       var indirectTotals = {
@@ -591,25 +652,25 @@
         inOT: totals.inOT - directTotals.inOT, reported: totals.reported - directTotals.reported
       };
       
-      [['DIRECT:-', directTotals], ['INDIRECT:-', indirectTotals], ['TOTAL:-', totals]].forEach(function(pair){
+      [['TOTAL:-', totals], ['DIRECT:-', directTotals], ['INDIRECT:-', indirectTotals]].forEach(function(pair){
         var tr = document.createElement('tr');
-        tr.className = 'total-row';
+        tr.className = 'grand-total-row';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
-          '<td class="num">' + pair[1].actual + '</td>' +
-          '<td class="num">' + pair[1].inOT + '</td>' +
           '<td class="num">' + pair[1].reported + '</td>' +
+          '<td class="num">' + pair[1].inOT + '</td>' +
+          '<td class="num">' + pair[1].actual + '</td>' +
           '<td></td>';
         body.appendChild(tr);
       });
     }
 
-    // HD Image logic targeted directly at the Table element to ignore scroll cutoffs
+    // Export specifically the white wrapped table box for a perfect Excel-like image
     document.getElementById('saveImageBtn').addEventListener('click', function(){
-      var el = document.getElementById('dashTable'); 
+      var el = document.getElementById('exportWrapper'); 
       showToast('Generating HD image\u2026');
-      html2canvas(el, { backgroundColor: '#161b22', scale: 3, useCORS: true }).then(function(canvas){
+      html2canvas(el, { backgroundColor: '#ffffff', scale: 3, useCORS: true }).then(function(canvas){
         var link = document.createElement('a');
         link.download = 'Manpower_Shift' + currentShift() + '_' + currentDate() + '.png';
         link.href = canvas.toDataURL('image/png');
