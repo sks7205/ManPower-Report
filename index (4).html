@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manpower Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --surface:#161b22; --surface-2:#1d232c; --line:#2a323d;
+      --text:#e8ecf1; --muted:#8b93a1; --amber:#e8a33d; --amber-dim:#7a5a28;
+      --teal:#4fb0ae; --danger:#e0604a; --ok:#5cb87a; --radius:14px;
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;}
+    body{ background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; min-height:100vh; padding-bottom:40px; }
+    .pour{ height:4px; width:100%; background:linear-gradient(90deg,#3a2a10,var(--amber) 35%,#fff2d6 50%,var(--amber) 65%,#3a2a10); background-size:200% 100%; animation:flow 6s linear infinite; }
+    @keyframes flow{ 0%{background-position:0% 0;} 100%{background-position:200% 0;} }
+    
+    header{ padding:20px 18px 14px; display:flex; flex-direction:column; gap:4px; }
+    .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; color:var(--amber); text-transform:uppercase; }
+    h1{ margin:0; font-size:21px; font-weight:800; letter-spacing:-0.01em; }
+    .sub{ color:var(--muted); font-size:13px; }
+    
+    .controls{ display:flex; gap:10px; padding:0 18px 6px; flex-wrap:wrap; align-items:flex-end; }
+    .field{ display:flex; flex-direction:column; gap:4px; }
+    label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
+    
+    input[type=date], select, input[type=number], input[type=text]{
+      background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+      border-radius:10px; padding:10px 12px; font-size:15px; font-family:'Inter',sans-serif; min-width:0;
+    }
+    input[type=number] { text-align: center; } /* Centered Inputs */
+    input:focus, select:focus{ outline:2px solid var(--amber); outline-offset:1px; }
+    
+    .auto-badge{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--teal); padding:0 18px 10px; }
+    
+    .nav-link-row{ padding:0 18px 14px; display:flex; }
+    
+    main{ padding:0 18px; max-width:920px; margin:0 auto; }
+    .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px; }
+    
+    .breadcrumb{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:14px; font-size:13px; color:var(--muted); }
+    .breadcrumb .crumb{ cursor:pointer; color:var(--teal); }
+    .breadcrumb .crumb.current{ color:var(--text); cursor:default; font-weight:600; }
+    
+    .back-btn{
+      display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); color:var(--text);
+      border:1px solid var(--line); border-radius:10px; padding:8px 14px; font-size:13px; margin-bottom:14px; cursor:pointer;
+    }
+    
+    .tile-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    @media (min-width:520px){ .tile-grid{ grid-template-columns:repeat(3,1fr); } }
+    
+    .tile{
+      position:relative; background:var(--surface-2); border:1.5px solid var(--line); border-radius:12px;
+      padding:14px 12px 12px; cursor:pointer; text-align:left; transition:border-color 0.15s ease;
+    }
+    .tile:active{ border-color:var(--amber); }
+    .tile.state-full{ border-color:var(--ok); background:rgba(92,184,122,0.08); }
+    .tile.state-partial{ border-color:var(--amber-dim); }
+    .tile .tname{ font-weight:600; font-size:14.5px; display:block; margin-bottom:4px; }
+    .tile .tmeta{ font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+    .tile .dot{ position:absolute; top:10px; right:10px; width:9px; height:9px; border-radius:50%; background:var(--line); }
+    .tile.state-full .dot{ background:var(--ok); box-shadow:0 0 8px rgba(92,184,122,0.6); }
+    .tile.state-partial .dot{ background:var(--amber); }
+    
+    .area-title{ font-size:19px; font-weight:700; margin:0 0 2px; }
+    .area-tag{ display:inline-block; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.08em; padding:2px 8px; border-radius:20px; margin-bottom:12px; }
+    .tag-direct{ background:rgba(232,163,61,0.15); color:var(--amber); }
+    .tag-indirect{ background:rgba(79,176,174,0.15); color:var(--teal); }
+    
+    /* Mobile responsive entry grid */
+    .grid3{ display:grid; grid-template-columns:1fr; gap:12px; }
+    @media (min-width:520px){ .grid3{ grid-template-columns:repeat(3,1fr); } }
+    
+    .actual-readout{ margin-top:14px; background:var(--surface-2); border:1px dashed var(--amber-dim); border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:baseline; }
+    .actual-readout .num{ font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:700; color:var(--amber); text-shadow:0 0 14px rgba(232,163,61,0.35); }
+    
+    .remark-prompt{ margin-top:14px; display:flex; align-items:center; gap:10px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+    .remark-prompt input[type=checkbox]{ width:18px; height:18px; accent-color:var(--amber); }
+    .remark-prompt input[type=number]{ width:80px; }
+    .remark-prompt .rtext{ font-size:13.5px; }
+    textarea{ width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:10px 12px; font-family:'Inter',sans-serif; font-size:14px; resize:vertical; min-height:44px; margin-top:12px; }
+    
+    button{ font-family:'Inter',sans-serif; font-weight:600; font-size:14px; border:none; border-radius:10px; padding:12px 18px; cursor:pointer; }
+    .btn-primary{ background:var(--amber); color:#241a06; width:100%; font-size:15px; }
+    .btn-primary:disabled{ opacity:0.6; cursor:default; }
+    .btn-ghost{ background:transparent; color:var(--text); border:1px solid var(--line); width:100%; }
+    
+    .status-line{ font-size:12px; color:var(--muted); margin-top:10px; min-height:16px; }
+    .status-line.ok{ color:var(--ok); } .status-line.err{ color:var(--danger); }
+    
+    /* Table with vertical lines and centered text */
+    table{ width:100%; border-collapse:collapse; font-size:12.5px; border: 1px solid var(--line); background:#161b22; }
+    th,td{ padding:8px 7px; border:1px solid var(--line); white-space:nowrap; }
+    th{ text-align:center; color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; }
+    td{ text-align:left; }
+    td.num, th.num{ text-align:center; font-family:'JetBrains Mono',monospace; }
+    
+    tr.total-row td{ font-weight:700; border-top:2px solid var(--amber-dim); color:var(--amber); }
+    tr.direct-row td:first-child{ color:var(--amber); }
+    
+    /* Distinct colors for Subsections */
+    .group-row.depth-0 td { color:#5cb87a; background:rgba(92,184,122,0.08); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:0.03em; border-top: 2px solid #5cb87a;}
+    .group-row.depth-1 td { color:#4fb0ae; background:rgba(79,176,174,0.08); font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:0.03em;}
+    .group-row.depth-2 td { color:#a371f7; background:rgba(163,113,247,0.08); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.03em;}
+    
+    tr.subtotal-row td{ font-weight:600; font-size:11.5px; color:var(--teal); border-top:1px dashed var(--line); background:rgba(79,176,174,0.02); }
+    
+    .table-wrap{ overflow-x:auto; }
+    .remarks-cell{ color:var(--muted); font-weight:400; white-space:normal; max-width:160px; }
+    
+    .dash-actions{ display:flex; gap:10px; margin-top:14px; }
+    .dash-actions button{ flex:1; }
+    
+    .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface-2); border:1px solid var(--amber-dim); color:var(--text); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.25s ease; z-index:50; }
+    .toast.show{ opacity:1; }
+    .loading-dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--amber); margin-right:6px; animation:pulse 1s infinite ease-in-out; }
+    @keyframes pulse{ 50%{ opacity:0.2; } }
+  </style>
+</head>
+<body>
+  <div class="pour"></div>
+  <header>
+    <span class="eyebrow">SEZ-ARS &middot; VAML, Jharsuguda</span>
+    <h1 id="pageTitle">Manpower Tracker</h1>
+    <span class="sub" id="pageSub">Loading&hellip;</span>
+  </header>
+
+  <div class="controls">
+    <div class="field">
+      <label for="dateInput">Date</label>
+      <input type="date" id="dateInput">
+    </div>
+    <div class="field">
+      <label for="shiftInput">Shift</label>
+      <select id="shiftInput">
+        <option value="A">Shift A </option>
+        <option value="B">Shift B </option>
+        <option value="C">Shift C </option>
+      </select>
+    </div>
+  </div>
+  <div class="auto-badge" id="autoBadge"></div>
+  <div class="nav-link-row"><button class="btn-primary" style="width:auto; padding: 8px 16px;" id="crossNavBtn"></button></div>
+
+  <main>
+    <div id="pickerView" style="display:none;">
+      <div class="card">
+        <div id="backBtnWrap"></div>
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <div class="tile-grid" id="tileGrid"></div>
+      </div>
+    </div>
+
+    <div id="entryView" style="display:none;">
+      <div class="card">
+        <div id="areaTagWrap"></div>
+        <p class="area-title" id="areaTitle"></p>
+
+        <div class="grid3">
+          <div class="field">
+            <label for="planInput">Plan</label>
+            <input type="number" id="planInput" min="0" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="actualInput">Actual</label>
+            <input type="number" id="actualInput" min="0" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="otInput">In OT</label>
+            <input type="number" id="otInput" min="0" inputmode="numeric">
+          </div>
+        </div>
+
+        <div class="actual-readout">
+          <span class="sub">Reported in shift (Actual &minus; OT)</span>
+          <span class="num" id="reportedBig">0</span>
+        </div>
+
+        <div id="remarkPromptWrap"></div>
+
+        <textarea id="remarksInput" placeholder="Additional remarks (optional)"></textarea>
+
+        <button class="btn-primary" style="margin-top:14px;" id="saveBtn">Save my numbers</button>
+        <div class="status-line" id="areaStatus"></div>
+      </div>
+    </div>
+
+    <div id="dashboardView" style="display:none;">
+      <div class="card" id="dashCard">
+        <div class="table-wrap">
+          <table id="dashTable">
+            <thead>
+              <tr><th>Agency</th><th class="num">Plan</th><th class="num">Actual</th><th class="num">In OT</th><th class="num">Reported</th><th>Remarks</th></tr>
+            </thead>
+            <tbody id="dashBody"></tbody>
+          </table>
+        </div>
+        <div class="status-line" id="dashStatus"><span class="loading-dot"></span>Loading shift data&hellip;</div>
+        <div class="dash-actions">
+          <button class="btn-ghost" id="saveImageBtn">Save HD Image</button>
+          <button class="btn-ghost" id="copyEntryLinkBtn">Copy entry link</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
+    const SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    var VIEW_PARAM = urlParams.get('view') || '';
+    var AREA_PARAM = urlParams.get('area') || '';
+    var MODE = (VIEW_PARAM === 'dashboard') ? 'dashboard' : 'entry';
+
+    var AREAS = [];
+    var AREAS_BY_ID = {};
+    var TREE = [];
+    var shiftData = {};
+    var currentPath = [];
+    var currentLeaf = null;
+
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function autoDate(){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+    function autoShift(){ var h = new Date().getHours(); if (h >= 6 && h < 14) return 'A'; if (h >= 14 && h < 22) return 'B'; return 'C'; }
+
+    document.getElementById('dateInput').value = autoDate();
+    document.getElementById('shiftInput').value = autoShift();
+    document.getElementById('autoBadge').textContent = 'Auto-detected from current time — change above if needed';
+
+    function showToast(msg){
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(function(){ t.classList.remove('show'); }, 2200);
+    }
+    function currentDate(){ return document.getElementById('dateInput').value; }
+    function currentShift(){ return document.getElementById('shiftInput').value; }
+
+    function setupCrossNav(){
+      var btn = document.getElementById('crossNavBtn');
+      var baseUrl = window.location.href.split('?')[0];
+      if (MODE === 'dashboard'){
+        btn.textContent = 'Go to data entry \u2192';
+        btn.onclick = function(){ window.location.href = baseUrl; };
+      } else {
+        btn.textContent = 'View master dashboard \u2192';
+        btn.onclick = function(){ window.location.href = baseUrl + '?view=dashboard'; };
+      }
+    }
+
+    async function fetchInitData() {
+      try {
+        const res = await fetch(SCRIPT_URL + '?action=getInitData');
+        const data = await res.json();
+        AREAS = data.areas;
+        TREE = data.tree;
+        AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
+        
+        if (MODE === 'dashboard'){
+          document.getElementById('dashboardView').style.display = 'block';
+          document.getElementById('pageTitle').textContent = 'Manpower Dashboard';
+          document.getElementById('pageSub').textContent = 'Combined total across all agencies';
+          loadDashboard();
+        } else {
+          document.getElementById('pickerView').style.display = 'block';
+          document.getElementById('pageTitle').textContent = 'Manpower Entry';
+          document.getElementById('pageSub').textContent = 'Select your agency / section';
+          if (AREA_PARAM && AREAS_BY_ID[AREA_PARAM]){
+            currentPath = AREAS_BY_ID[AREA_PARAM].path.slice();
+            openEntry(AREA_PARAM);
+          } else {
+            await refreshShiftData();
+            renderPicker();
+          }
+        }
+      } catch (err) {
+        showToast("Error connecting to database.");
+        console.error(err);
+      }
+    }
+
+    async function refreshShiftData() {
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${currentShift()}`);
+        shiftData = await res.json();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function init(){
+      setupCrossNav();
+      fetchInitData();
+      document.getElementById('dateInput').addEventListener('change', onDateShiftChange);
+      document.getElementById('shiftInput').addEventListener('change', onDateShiftChange);
+    }
+
+    async function onDateShiftChange(){
+      if (MODE === 'dashboard'){ loadDashboard(); }
+      else if (currentLeaf){ loadEntryData(); }
+      else { 
+        await refreshShiftData();
+        renderPicker(); 
+      }
+    }
+
+    function nodeAtPath(path){
+      var nodes = TREE;
+      var node = null;
+      for (var i = 0; i < path.length; i++){
+        node = nodes.find(function(n){ return n.type === 'group' && n.id === path[i]; });
+        if (!node) return { children: [] };
+        nodes = node.children;
+      }
+      return { children: nodes, node: node };
+    }
+    function collectLeafIds(node){
+      if (node.type === 'leaf') return [node.areaId];
+      var ids = [];
+      (node.children || []).forEach(function(c){ ids = ids.concat(collectLeafIds(c)); });
+      return ids;
+    }
+    function nodeFillState(node){
+      var leaves = collectLeafIds(node);
+      var filled = leaves.filter(function(id){ return !!shiftData[id]; }).length;
+      if (filled === 0) return { state: 'empty', filled: filled, total: leaves.length };
+      if (filled === leaves.length) return { state: 'full', filled: filled, total: leaves.length };
+      return { state: 'partial', filled: filled, total: leaves.length };
+    }
+    function groupName(id){
+      var found = null;
+      function walk(nodes){
+        nodes.forEach(function(n){
+          if (n.type === 'group'){
+            if (n.id === id) found = n.name;
+            walk(n.children);
+          }
+        });
+      }
+      walk(TREE);
+      return found || id;
+    }
+
+    function renderPicker(){
+      document.getElementById('entryView').style.display = 'none';
+      document.getElementById('pickerView').style.display = 'block';
+      currentLeaf = null;
+
+      var crumbWrap = document.getElementById('breadcrumb');
+      crumbWrap.innerHTML = '';
+      var homeCrumb = document.createElement('span');
+      homeCrumb.className = 'crumb' + (currentPath.length === 0 ? ' current' : '');
+      homeCrumb.textContent = 'All agencies';
+      homeCrumb.onclick = function(){ currentPath = []; renderPicker(); };
+      crumbWrap.appendChild(homeCrumb);
+      currentPath.forEach(function(gid, idx){
+        var sep = document.createElement('span');
+        sep.textContent = '›';
+        crumbWrap.appendChild(sep);
+        var c = document.createElement('span');
+        var isLast = idx === currentPath.length - 1;
+        c.className = 'crumb' + (isLast ? ' current' : '');
+        c.textContent = groupName(gid);
+        c.onclick = function(){ currentPath = currentPath.slice(0, idx + 1); renderPicker(); };
+        crumbWrap.appendChild(c);
+      });
+
+      var backWrap = document.getElementById('backBtnWrap');
+      backWrap.innerHTML = '';
+      if (currentPath.length > 0){
+        var backBtn = document.createElement('button');
+        backBtn.className = 'back-btn';
+        backBtn.textContent = '\u2190 Back';
+        backBtn.onclick = function(){ currentPath.pop(); renderPicker(); };
+        backWrap.appendChild(backBtn);
+      }
+
+      var children = nodeAtPath(currentPath).children;
+      var grid = document.getElementById('tileGrid');
+      grid.innerHTML = '';
+      children.forEach(function(node){
+        var tile = document.createElement('div');
+        var fill, label, meta;
+        if (node.type === 'leaf'){
+          var area = AREAS_BY_ID[node.areaId];
+          fill = shiftData[node.areaId] ? { state: 'full' } : { state: 'empty' };
+          label = area.name;
+          meta = shiftData[node.areaId] ? ('Reported ' + shiftData[node.areaId].reported) : 'No entry yet';
+        } else {
+          fill = nodeFillState(node);
+          label = node.name;
+          meta = fill.filled + ' / ' + fill.total + ' filled';
+        }
+        tile.className = 'tile state-' + fill.state;
+        tile.innerHTML = '<span class="dot"></span><span class="tname">' + label + '</span><span class="tmeta">' + meta + '</span>';
+        tile.onclick = function(){
+          if (node.type === 'leaf'){ openEntry(node.areaId); }
+          else { currentPath = currentPath.concat([node.id]); renderPicker(); }
+        };
+        grid.appendChild(tile);
+      });
+    }
+
+    function openEntry(areaId){
+      currentLeaf = areaId;
+      document.getElementById('pickerView').style.display = 'none';
+      document.getElementById('entryView').style.display = 'block';
+      var area = AREAS_BY_ID[areaId];
+      document.getElementById('pageTitle').textContent = area.fullName;
+      document.getElementById('pageSub').textContent = 'Enter your shift numbers below';
+      document.getElementById('areaTitle').textContent = area.fullName;
+      document.getElementById('areaTagWrap').innerHTML =
+        '<span class="area-tag ' + (area.type === 'Direct' ? 'tag-direct' : 'tag-indirect') + '">' + area.type.toUpperCase() + '</span>';
+
+      var promptWrap = document.getElementById('remarkPromptWrap');
+      promptWrap.innerHTML = '';
+      if (area.remarkPrompt){
+        var box = document.createElement('div');
+        box.className = 'remark-prompt';
+        if (area.remarkPrompt.kind === 'boolean'){
+          box.innerHTML = '<input type="checkbox" id="remarkFlag"><span class="rtext">' + area.remarkPrompt.text + '?</span>';
+        } else {
+          box.innerHTML = '<input type="number" id="remarkFlag" min="0" value="0"><span class="rtext">' + area.remarkPrompt.text + '</span>';
+        }
+        promptWrap.appendChild(box);
+      }
+
+      ['planInput','actualInput','otInput'].forEach(function(id){
+        document.getElementById(id).oninput = updateReported;
+      });
+      document.getElementById('saveBtn').onclick = saveArea;
+
+      loadEntryData();
+    }
+
+    function updateReported(){
+      var actual = Number(document.getElementById('actualInput').value || 0);
+      var ot = Number(document.getElementById('otInput').value || 0);
+      var reported = Math.max(0, actual - ot);
+      document.getElementById('reportedBig').textContent = reported;
+    }
+
+    async function loadEntryData(){
+      var status = document.getElementById('areaStatus');
+      status.textContent = 'Loading saved entry\u2026';
+      status.className = 'status-line';
+      await refreshShiftData();
+      var rec = shiftData[currentLeaf];
+      document.getElementById('planInput').value = rec ? rec.plan : '';
+      document.getElementById('actualInput').value = rec ? rec.actual : '';
+      document.getElementById('otInput').value = rec ? rec.inOT : '';
+      document.getElementById('remarksInput').value = rec ? (rec.remarks || '') : '';
+      updateReported();
+      status.textContent = rec ? ('Last saved by ' + rec.updatedBy + ' at ' + rec.timestamp) : 'No entry yet for this date/shift.';
+    }
+
+    async function saveArea(){
+      var area = AREAS_BY_ID[currentLeaf];
+      var btn = document.getElementById('saveBtn');
+      var status = document.getElementById('areaStatus');
+      btn.disabled = true;
+      btn.textContent = 'Saving\u2026';
+
+      var freeText = document.getElementById('remarksInput').value.trim();
+      var autoText = '';
+      if (area.remarkPrompt){
+        var flagEl = document.getElementById('remarkFlag');
+        if (area.remarkPrompt.kind === 'boolean'){
+          if (flagEl.checked) autoText = area.remarkPrompt.text;
+        } else {
+          var n = Number(flagEl.value || 0);
+          if (n > 0) autoText = n + ' ' + area.remarkPrompt.text;
+        }
+      }
+      var finalRemarks = [autoText, freeText].filter(Boolean).join('; ');
+
+      var payload = {
+        date: currentDate(),
+        shift: currentShift(),
+        areaId: area.id,
+        areaName: area.fullName,
+        plan: document.getElementById('planInput').value,
+        actual: document.getElementById('actualInput').value,
+        inOT: document.getElementById('otInput').value,
+        remarks: finalRemarks
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveAreaRow', data: payload })
+        });
+        const data = await res.json();
+        
+        btn.disabled = false;
+        btn.textContent = 'Save my numbers';
+        showToast('Saved ' + area.fullName + ' — Reported: ' + data.reported);
+        
+        await refreshShiftData();
+        renderPicker();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Save my numbers';
+        status.textContent = 'Could not save. Check connection.';
+        status.className = 'status-line err';
+      }
+    }
+
+    async function loadDashboard(){
+      var status = document.getElementById('dashStatus');
+      status.innerHTML = '<span class="loading-dot"></span>Loading shift data\u2026';
+      await refreshShiftData();
+      renderDashboard();
+      status.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    }
+
+    function renderDashboard(){
+      var body = document.getElementById('dashBody');
+      body.innerHTML = '';
+      var totals = { plan:0, actual:0, inOT:0, reported:0 };
+      var directTotals = { plan:0, actual:0, inOT:0, reported:0 };
+
+      function addLeafRow(areaId, indent){
+        var area = AREAS_BY_ID[areaId];
+        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
+        var tr = document.createElement('tr');
+        if (area.type === 'Direct') tr.className = 'direct-row';
+        tr.innerHTML =
+          '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
+          '<td class="num">' + (rec.plan || 0) + '</td>' +
+          '<td class="num">' + (rec.actual || 0) + '</td>' +
+          '<td class="num">' + (rec.inOT || 0) + '</td>' +
+          '<td class="num">' + (rec.reported || 0) + '</td>' +
+          '<td class="remarks-cell">' + (rec.remarks || '') + '</td>';
+        body.appendChild(tr);
+        
+        var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0);
+        totals.plan += p; totals.actual += a; totals.inOT += o; totals.reported += r;
+        
+        if (area.type === 'Direct'){
+          directTotals.plan += p; directTotals.actual += a; directTotals.inOT += o; directTotals.reported += r;
+        }
+        return { plan: p, actual: a, inOT: o, reported: r };
+      }
+
+      function walk(nodes, depth){
+        var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
+        nodes.forEach(function(node){
+          if (node.type === 'leaf'){
+            var leafVals = addLeafRow(node.areaId, depth > 0);
+            groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
+            groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
+          } else {
+            var tr = document.createElement('tr');
+            tr.className = 'group-row depth-' + depth; // Depth applied for dynamic coloring
+            tr.innerHTML = '<td colspan="6">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            body.appendChild(tr);
+            
+            var childTotals = walk(node.children, depth + 1);
+            
+            var subTr = document.createElement('tr');
+            subTr.className = 'subtotal-row';
+            subTr.innerHTML =
+              '<td>' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
+              '<td class="num">' + childTotals.plan + '</td>' +
+              '<td class="num">' + childTotals.actual + '</td>' +
+              '<td class="num">' + childTotals.inOT + '</td>' +
+              '<td class="num">' + childTotals.reported + '</td>' +
+              '<td></td>';
+            body.appendChild(subTr);
+
+            groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
+            groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
+          }
+        });
+        return groupTotal;
+      }
+      walk(TREE, 0);
+
+      var indirectTotals = {
+        plan: totals.plan - directTotals.plan, actual: totals.actual - directTotals.actual,
+        inOT: totals.inOT - directTotals.inOT, reported: totals.reported - directTotals.reported
+      };
+      
+      [['DIRECT:-', directTotals], ['INDIRECT:-', indirectTotals], ['TOTAL:-', totals]].forEach(function(pair){
+        var tr = document.createElement('tr');
+        tr.className = 'total-row';
+        tr.innerHTML =
+          '<td>' + pair[0] + '</td>' +
+          '<td class="num">' + pair[1].plan + '</td>' +
+          '<td class="num">' + pair[1].actual + '</td>' +
+          '<td class="num">' + pair[1].inOT + '</td>' +
+          '<td class="num">' + pair[1].reported + '</td>' +
+          '<td></td>';
+        body.appendChild(tr);
+      });
+    }
+
+    // HD Image logic targeted directly at the Table element to ignore scroll cutoffs
+    document.getElementById('saveImageBtn').addEventListener('click', function(){
+      var el = document.getElementById('dashTable'); 
+      showToast('Generating HD image\u2026');
+      html2canvas(el, { backgroundColor: '#161b22', scale: 3, useCORS: true }).then(function(canvas){
+        var link = document.createElement('a');
+        link.download = 'Manpower_Shift' + currentShift() + '_' + currentDate() + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    });
+
+    document.getElementById('copyEntryLinkBtn').addEventListener('click', function(){
+      var link = window.location.href.split('?')[0];
+      navigator.clipboard.writeText(link).then(function(){ showToast('Entry link copied');
+      }).catch(function(){ window.prompt('Copy this entry link:', link); });
+    });
+
+    init();
+  </script>
+</body>
+</html>
