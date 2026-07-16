@@ -197,7 +197,7 @@
       <div class="card" id="dashCard">
         
         <h2 class="section-title">Custom Shift Report (For Export)</h2>
-        <div id="exportWrapper" class="excel-wrapper">
+        <div id="customExportWrapper" class="excel-wrapper">
           <table id="dashTable" class="excel-table">
             <thead>
               <tr>
@@ -218,12 +218,11 @@
         </div>
         
         <div class="dash-actions">
-          <button class="btn-ghost" id="saveImageBtn">Save HD Image (Custom Report)</button>
-          <button class="btn-ghost" id="copyEntryLinkBtn">Copy entry link</button>
+          <button class="btn-ghost" onclick="downloadFullHDImage('customExportWrapper', 'Custom_Shift_Report')">Save HD Image (Custom Report)</button>
         </div>
 
         <h2 class="section-title">Full Master Data (All Agencies)</h2>
-        <div class="excel-wrapper">
+        <div id="masterExportWrapper" class="excel-wrapper">
           <table id="masterDashTable" class="excel-table">
             <thead>
               <tr>
@@ -241,6 +240,11 @@
             </thead>
             <tbody id="masterDashBody"></tbody>
           </table>
+        </div>
+
+        <div class="dash-actions">
+          <button class="btn-ghost" onclick="downloadFullHDImage('masterExportWrapper', 'Master_Shift_Data')">Save HD Image (Master Data)</button>
+          <button class="btn-ghost" id="copyEntryLinkBtn">Copy Dashboard Link</button>
         </div>
 
         <div class="status-line" id="dashStatus"><span class="loading-dot"></span>Loading shift data&hellip;</div>
@@ -601,16 +605,12 @@
       status.innerHTML = '<span class="loading-dot"></span>Loading shift data\u2026';
       await refreshShiftData();
       
-      // Update both tables explicitly. If one fails, try-catch ensures the other tries to load.
       try { buildCustomTable(); } catch(e) { console.error("Custom Table Error:", e); }
       try { buildMasterTable(); } catch(e) { console.error("Master Table Error:", e); }
       
       status.textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
 
-    // ==========================================
-    // RENDER: TABLE 1 (CUSTOM REPORT)
-    // ==========================================
     function buildCustomTable(){
       updateDashboardHeaders();
       var body = document.getElementById('dashBody');
@@ -701,9 +701,6 @@
       appendRow('INDIRECT:-', iTot, 'grand-total-row');
     }
 
-    // ==========================================
-    // RENDER: TABLE 2 (FULL MASTER TABLE)
-    // ==========================================
     function buildMasterTable(){
       var masterBody = document.getElementById('masterDashBody');
       masterBody.innerHTML = '';
@@ -713,7 +710,7 @@
 
       function addMasterLeafRow(areaId, indent){
         var area = AREAS_BY_ID[areaId];
-        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0 }; // Failsafe
+        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0 };
         
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
         var tr = document.createElement('tr');
@@ -738,7 +735,7 @@
 
       function walkMaster(nodes, depth){
         var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
-        if (!nodes) return groupTotal; // Failsafe
+        if (!nodes) return groupTotal; 
         
         nodes.forEach(function(node){
           if (node.type === 'leaf'){
@@ -792,21 +789,38 @@
       });
     }
 
-    document.getElementById('saveImageBtn').addEventListener('click', function(){
-      var el = document.getElementById('exportWrapper'); 
+    // Capture HD Image specifically preventing scroll cutoff
+    function downloadFullHDImage(wrapperId, filenamePrefix) {
       showToast('Generating HD image\u2026');
-      html2canvas(el, { backgroundColor: '#ffffff', scale: 3, useCORS: true }).then(function(canvas){
+      var wrapper = document.getElementById(wrapperId);
+      
+      // Temporarily remove overflow to snap the entire unclipped container
+      var originalOverflow = wrapper.style.overflow;
+      var originalWidth = wrapper.style.width;
+      wrapper.style.overflow = 'visible';
+      wrapper.style.width = 'max-content';
+
+      html2canvas(wrapper, { backgroundColor: '#ffffff', scale: 3, useCORS: true }).then(function(canvas){
+        
+        // Instantly restore scrollbar layout
+        wrapper.style.overflow = originalOverflow;
+        wrapper.style.width = originalWidth;
+
         var link = document.createElement('a');
-        link.download = 'Manpower_Shift' + currentShift() + '_' + currentDate() + '.png';
+        link.download = filenamePrefix + '_' + currentShift() + '_' + currentDate() + '.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
+      }).catch(function(err){
+        wrapper.style.overflow = originalOverflow;
+        wrapper.style.width = originalWidth;
+        showToast('Error generating image');
       });
-    });
+    }
 
     document.getElementById('copyEntryLinkBtn').addEventListener('click', function(){
       var link = window.location.href.split('?')[0];
-      navigator.clipboard.writeText(link).then(function(){ showToast('Entry link copied');
-      }).catch(function(){ window.prompt('Copy this entry link:', link); });
+      navigator.clipboard.writeText(link).then(function(){ showToast('Dashboard link copied');
+      }).catch(function(){ window.prompt('Copy this link:', link); });
     });
 
     init();
