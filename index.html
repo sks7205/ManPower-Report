@@ -15,7 +15,7 @@
     }
     *{box-sizing:border-box;}
     html,body{margin:0;padding:0;}
-    body{ background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; min-height:100vh; padding-bottom:40px; }
+    body{ background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; min-height:100vh; padding-bottom:60px; }
     .pour{ height:4px; width:100%; background:linear-gradient(90deg,#3a2a10,var(--amber) 35%,#fff2d6 50%,var(--amber) 65%,#3a2a10); background-size:200% 100%; animation:flow 6s linear infinite; }
     @keyframes flow{ 0%{background-position:0% 0;} 100%{background-position:200% 0;} }
     
@@ -94,8 +94,9 @@
     /* ---------------------------------------------------- */
     /* EXCEL-STYLE DASHBOARD TABLES                         */
     /* ---------------------------------------------------- */
-    .section-title { font-size:16px; font-weight:700; color:var(--amber); margin: 0 0 10px 0; padding-top: 10px; }
-    .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom:14px; }
+    .section-title { font-size:17px; font-weight:700; color:var(--amber); margin: 0 0 12px 0; padding-top: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+    
+    .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom:18px; }
     .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; }
     .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
     
@@ -112,7 +113,7 @@
     .excel-table .subtotal-row td { background-color: #f5f5f5; font-weight: 600; font-style: italic; font-size:13px; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align:left; font-size: 13px; }
     
-    .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 24px; }
+    .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 30px; }
     .dash-actions button{ flex:1; min-width:140px; }
     
     .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface-2); border:1px solid var(--amber-dim); color:var(--text); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.25s ease; z-index:50; }
@@ -150,7 +151,6 @@
   </div>
 
   <main>
-    <!-- ENTRY VIEW -->
     <div id="pickerView" style="display:none;">
       <div class="card">
         <div id="backBtnWrap"></div>
@@ -193,12 +193,10 @@
       </div>
     </div>
 
-    <!-- DASHBOARD VIEW -->
     <div id="dashboardView" style="display:none;">
       <div class="card" id="dashCard">
         
-        <!-- Custom Export Report -->
-        <h2 class="section-title">Custom Shift Report (For Share)</h2>
+        <h2 class="section-title">Custom Shift Report (For Export)</h2>
         <div id="exportWrapper" class="excel-wrapper">
           <table id="dashTable" class="excel-table">
             <thead>
@@ -224,7 +222,6 @@
           <button class="btn-ghost" id="copyEntryLinkBtn">Copy entry link</button>
         </div>
 
-        <!-- Full Master Data Table -->
         <h2 class="section-title">Full Master Data (All Agencies)</h2>
         <div class="excel-wrapper">
           <table id="masterDashTable" class="excel-table">
@@ -247,7 +244,6 @@
         </div>
 
         <div class="status-line" id="dashStatus"><span class="loading-dot"></span>Loading shift data&hellip;</div>
-
       </div>
     </div>
   </main>
@@ -604,16 +600,19 @@
       var status = document.getElementById('dashStatus');
       status.innerHTML = '<span class="loading-dot"></span>Loading shift data\u2026';
       await refreshShiftData();
-      renderDashboard();
+      
+      // Update both tables explicitly. If one fails, try-catch ensures the other tries to load.
+      try { buildCustomTable(); } catch(e) { console.error("Custom Table Error:", e); }
+      try { buildMasterTable(); } catch(e) { console.error("Master Table Error:", e); }
+      
       status.textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
 
-    function renderDashboard(){
+    // ==========================================
+    // RENDER: TABLE 1 (CUSTOM REPORT)
+    // ==========================================
+    function buildCustomTable(){
       updateDashboardHeaders();
-      
-      // ==========================================
-      // PART 1: CUSTOM EXCEL EXPORT REPORT
-      // ==========================================
       var body = document.getElementById('dashBody');
       body.innerHTML = '';
       
@@ -650,7 +649,6 @@
         body.appendChild(tr);
       }
 
-      // Populate Custom Rows
       appendRow('VL', getMetrics('VL'));
 
       var tkilMechSum = sumMetrics(['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS']);
@@ -701,10 +699,12 @@
       appendRow('TOTAL:-', gTot, 'grand-total-row');
       appendRow('DIRECT:-', dTot, 'grand-total-row');
       appendRow('INDIRECT:-', iTot, 'grand-total-row');
+    }
 
-      // ==========================================
-      // PART 2: FULL DYNAMIC MASTER TABLE
-      // ==========================================
+    // ==========================================
+    // RENDER: TABLE 2 (FULL MASTER TABLE)
+    // ==========================================
+    function buildMasterTable(){
       var masterBody = document.getElementById('masterDashBody');
       masterBody.innerHTML = '';
       
@@ -713,6 +713,8 @@
 
       function addMasterLeafRow(areaId, indent){
         var area = AREAS_BY_ID[areaId];
+        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0 }; // Failsafe
+        
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
         var tr = document.createElement('tr');
         
@@ -736,6 +738,8 @@
 
       function walkMaster(nodes, depth){
         var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
+        if (!nodes) return groupTotal; // Failsafe
+        
         nodes.forEach(function(node){
           if (node.type === 'leaf'){
             var leafVals = addMasterLeafRow(node.areaId, depth > 0);
