@@ -151,6 +151,7 @@
   </div>
 
   <main>
+    <!-- ENTRY VIEW (Standard Picker) -->
     <div id="pickerView" style="display:none;">
       <div class="card">
         <div id="backBtnWrap"></div>
@@ -159,8 +160,12 @@
       </div>
     </div>
 
+    <!-- ENTRY VIEW (Single Item Form) -->
     <div id="entryView" style="display:none;">
       <div class="card">
+        <!-- New Back Button Added Here -->
+        <button class="back-btn" onclick="renderPicker()">&#8592; Back</button>
+        
         <div id="areaTagWrap"></div>
         <p class="area-title" id="areaTitle"></p>
 
@@ -193,6 +198,7 @@
       </div>
     </div>
 
+    <!-- MULTI-ENTRY VIEW (For TKIL Mech & Ele grouped forms) -->
     <div id="multiEntryView" style="display:none;">
       <div class="card" style="background:transparent; border:none; padding:0; margin-bottom:10px;">
         <div id="multiBackBtnWrap">
@@ -210,9 +216,11 @@
       </div>
     </div>
 
+    <!-- DASHBOARD VIEW -->
     <div id="dashboardView" style="display:none;">
       <div class="card" id="dashCard">
         
+        <!-- TABLE 1: Custom Export Report -->
         <h2 class="section-title">Custom Shift Report (For Export)</h2>
         <div id="customExportWrapper" class="excel-wrapper">
           <table id="dashTable" class="excel-table">
@@ -238,6 +246,7 @@
           <button class="btn-ghost" onclick="downloadFullHDImage('customExportWrapper', 'Custom_Shift_Report')">Save HD Image (Custom Report)</button>
         </div>
 
+        <!-- TABLE 2: Full Master Data Table -->
         <h2 class="section-title">Full Master Data (All Agencies)</h2>
         <div id="masterExportWrapper" class="excel-wrapper">
           <table id="masterDashTable" class="excel-table">
