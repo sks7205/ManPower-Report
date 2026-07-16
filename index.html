@@ -98,14 +98,12 @@
     .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; }
     .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
     
-    /* Exact Yellow Headers from Screenshot */
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
     .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
     
-    /* Grand Totals Styling */
     .excel-table .grand-total-row td { background-color: #fce444; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     
-    /* Subsections Styling */
+    /* Distinct Colors for Structural Subgroups */
     .excel-table .depth-0 td { background-color: #e6f2ff; font-weight: bold; font-size: 13.5px; } 
     .excel-table .depth-1 td { background-color: #e6ffe6; font-weight: bold; font-size: 13px; }    
     .excel-table .depth-2 td { background-color: #f9e6ff; font-weight: bold; font-size: 12.5px; }  
@@ -195,7 +193,6 @@
 
     <div id="dashboardView" style="display:none;">
       <div class="card" id="dashCard">
-        
         <div id="exportWrapper" class="excel-wrapper">
           <table id="dashTable" class="excel-table">
             <thead>
@@ -243,6 +240,7 @@
     var shiftData = {};
     var currentPath = [];
     var currentLeaf = null;
+    var cachedShiftKey = "";
 
     function pad(n){ return String(n).padStart(2,'0'); }
     function autoDate(){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
@@ -251,6 +249,7 @@
     document.getElementById('dateInput').value = autoDate();
     document.getElementById('shiftInput').value = autoShift();
     document.getElementById('autoBadge').textContent = 'Auto-detected from current time — change above if needed';
+    cachedShiftKey = autoDate() + "|" + autoShift();
 
     function showToast(msg){
       var t = document.getElementById('toast');
@@ -260,6 +259,14 @@
     }
     function currentDate(){ return document.getElementById('dateInput').value; }
     function currentShift(){ return document.getElementById('shiftInput').value; }
+
+    function checkAndResetShiftState() {
+      var currentKey = currentDate() + "|" + currentShift();
+      if (cachedShiftKey !== currentKey) {
+        shiftData = {};
+        cachedShiftKey = currentKey;
+      }
+    }
 
     function setupCrossNav(){
       var btn = document.getElementById('crossNavBtn');
@@ -305,6 +312,7 @@
     }
 
     async function refreshShiftData() {
+      checkAndResetShiftState();
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${currentShift()}`);
         shiftData = await res.json();
@@ -337,12 +345,14 @@
       }
       return { children: nodes, node: node };
     }
+    
     function collectLeafIds(node){
       if (node.type === 'leaf') return [node.areaId];
       var ids = [];
       (node.children || []).forEach(function(c){ ids = ids.concat(collectLeafIds(c)); });
       return ids;
     }
+    
     function nodeFillState(node){
       var leaves = collectLeafIds(node);
       var filled = leaves.filter(function(id){ return !!shiftData[id]; }).length;
@@ -350,6 +360,7 @@
       if (filled === leaves.length) return { state: 'full', filled: filled, total: leaves.length };
       return { state: 'partial', filled: filled, total: leaves.length };
     }
+    
     function groupName(id){
       var found = null;
       function walk(nodes){
@@ -487,7 +498,6 @@
       var freeText = document.getElementById('remarksInput').value.trim();
       var autoText = '';
       
-      // AUTO REMARKS LOGIC FOR ARS3 (if reported > 0)
       if (currentLeaf === 'TKIL_MECH_ARS3' || currentLeaf === 'TKIL_ELE_ARS3') {
           let checkActual = Number(document.getElementById('actualInput').value || 0);
           let checkOT = Number(document.getElementById('otInput').value || 0);
@@ -569,102 +579,170 @@
       var body = document.getElementById('dashBody');
       body.innerHTML = '';
       
-      var totals = { plan:0, actual:0, inOT:0, reported:0 };
-      var directTotals = { plan:0, actual:0, inOT:0, reported:0 };
-
-      function addLeafRow(areaId, indent){
-        var area = AREAS_BY_ID[areaId];
-        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
-        var tr = document.createElement('tr');
-        if (area.type === 'Direct') tr.className = 'direct-row';
-        
-        // Match Image Columns: Agency | Plan | Reported | In OT | Actual | Remarks
-        tr.innerHTML =
-          '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
-          '<td class="num">' + (rec.plan || 0) + '</td>' +
-          '<td class="num">' + (rec.reported || 0) + '</td>' +
-          '<td class="num">' + (rec.inOT || 0) + '</td>' +
-          '<td class="num">' + (rec.actual || 0) + '</td>' +
-          '<td class="remarks-cell">' + (rec.remarks || '') + '</td>';
-        body.appendChild(tr);
-        
-        var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0);
-        totals.plan += p; totals.actual += a; totals.inOT += o; totals.reported += r;
-        
-        if (area.type === 'Direct'){
-          directTotals.plan += p; directTotals.actual += a; directTotals.inOT += o; directTotals.reported += r;
-        }
-        return { plan: p, actual: a, inOT: o, reported: r };
+      // Localized extractor helper 
+      function getMetrics(id) {
+        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
+        return {
+          plan: Number(entry.plan || 0),
+          actual: Number(entry.actual || 0),
+          inOT: Number(entry.inOT || 0),
+          reported: Number(entry.reported || 0),
+          remarks: entry.remarks || ''
+        };
       }
 
-      function walk(nodes, depth){
-        var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
-        var hasARS3 = false;
-
-        nodes.forEach(function(node){
-          if (node.type === 'leaf'){
-            var leafVals = addLeafRow(node.areaId, depth > 0);
-            groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
-            groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
-            
-            if (node.areaId.indexOf('ARS3') !== -1 && leafVals.reported > 0) {
-              hasARS3 = true;
-            }
-          } else {
-            var tr = document.createElement('tr');
-            tr.className = 'group-row depth-' + depth; 
-            tr.innerHTML = '<td colspan="6">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
-            body.appendChild(tr);
-            
-            var childTotals = walk(node.children, depth + 1);
-            if (childTotals.hasARS3) hasARS3 = true;
-            
-            var subRemarks = "";
-            if ((node.id === 'TKIL_MECH' || node.id === 'TKIL_ELE') && childTotals.hasARS3) {
-              subRemarks = "Including ARS3";
-            }
-
-            var subTr = document.createElement('tr');
-            subTr.className = 'subtotal-row';
-            subTr.innerHTML =
-              '<td>' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
-              '<td class="num">' + childTotals.plan + '</td>' +
-              '<td class="num">' + childTotals.reported + '</td>' +
-              '<td class="num">' + childTotals.inOT + '</td>' +
-              '<td class="num">' + childTotals.actual + '</td>' +
-              '<td class="remarks-cell">' + subRemarks + '</td>';
-            body.appendChild(subTr);
-
-            groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
-            groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
-          }
+      function sumMetrics(arr) {
+        var res = { plan:0, actual:0, inOT:0, reported:0, remarks:[] };
+        arr.forEach(function(id) {
+          var m = getMetrics(id);
+          res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
+          if (m.remarks) res.remarks.push(m.remarks);
         });
-        groupTotal.hasARS3 = hasARS3;
-        return groupTotal;
+        res.remarks = res.remarks.filter(Boolean).join('; ');
+        return res;
       }
-      
-      walk(TREE, 0);
 
-      var indirectTotals = {
-        plan: totals.plan - directTotals.plan, actual: totals.actual - directTotals.actual,
-        inOT: totals.inOT - directTotals.inOT, reported: totals.reported - directTotals.reported
-      };
-      
-      [['TOTAL:-', totals], ['DIRECT:-', directTotals], ['INDIRECT:-', indirectTotals]].forEach(function(pair){
+      function appendRow(label, data, className) {
         var tr = document.createElement('tr');
-        tr.className = 'grand-total-row';
-        tr.innerHTML =
-          '<td>' + pair[0] + '</td>' +
-          '<td class="num">' + pair[1].plan + '</td>' +
-          '<td class="num">' + pair[1].reported + '</td>' +
-          '<td class="num">' + pair[1].inOT + '</td>' +
-          '<td class="num">' + pair[1].actual + '</td>' +
-          '<td></td>';
+        if (className) tr.className = className;
+        tr.innerHTML = 
+          '<td>' + label + '</td>' +
+          '<td class="num">' + data.plan + '</td>' +
+          '<td class="num">' + data.reported + '</td>' +
+          '<td class="num">' + data.inOT + '</td>' +
+          '<td class="num">' + data.actual + '</td>' +
+          '<td class="remarks-cell">' + (data.remarks || '') + '</td>';
         body.appendChild(tr);
-      });
+      }
+
+      // 1. VL
+      var vlData = getMetrics('VL');
+      appendRow('VL', vlData);
+
+      // 2. TKIL (Mech) - Combined Subtotal Row
+      var tkilMechIds = ['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS'];
+      var tkilMechSum = sumMetrics(tkilMechIds);
+      if (getMetrics('TKIL_MECH_ARS3').reported > 0) {
+        tkilMechSum.remarks = ['Including ARS3', tkilMechSum.remarks].filter(Boolean).join('; ');
+      }
+      appendRow('TKII(mech)', tkilMechSum, 'depth-0');
+
+      // 3. TKIL (Elec) - Combined Subtotal Row
+      var tkilElecIds = ['TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS'];
+      var tkilElecSum = sumMetrics(tkilElecIds);
+      if (getMetrics('TKIL_ELE_ARS3').reported > 0) {
+        tkilElecSum.remarks = ['Including ARS3', tkilElecSum.remarks].filter(Boolean).join('; ');
+      }
+      appendRow('TKII(elec)', tkilElecSum, 'depth-0');
+
+      // 4. SKE OA (Specifically Maps to SKE_OA_ARS2 Leaf)
+      var skeOaData = getMetrics('SKE_OA_ARS2');
+      appendRow('SKE OA', skeOaData);
+
+      // 5. SKE OA(scoop bath)
+      var scoopBathData = getMetrics('SKE_OA_SCOOPBATH');
+      appendRow('SKE OA(scoop bath)', scoopBathData);
+
+      // 6. SKE operator (Specifically Maps to SKE_OP_ARS2 Leaf)
+      var skeOpData = getMetrics('SKE_OP_ARS2');
+      appendRow('SKE operator', skeOpData);
+
+      // 7. SKE OA(ARS3)
+      var skeOaArs3Data = getMetrics('SKE_OA_ARS3');
+      appendRow('SKE OA(ARS3)', skeOaArs3Data);
+
+      // 8. SKE operator(ARS3)
+      var skeOpArs3Data = getMetrics('SKE_OP_ARS3');
+      appendRow('SKE operator(ARS3)', skeOpArs3Data);
+
+      // 9. SKE Rod Repair
+      var rodRepairData = getMetrics('SKE_OA_RODREPAIR');
+      appendRow('SKE Rod Repair', rodRepairData);
+
+      // 10. SKE Butt Clean
+      var buttCleanData = getMetrics('SKE_OA_BUTTCLEAN');
+      appendRow('SKE Butt Clean', buttCleanData);
+
+      // 11. SKE HK(Belt)
+      var beltHkData = getMetrics('SKE_OA_BELTHK');
+      appendRow('SKE HK(Belt)', beltHkData);
+
+      // 12. TARON (Combined structural subtotal rollup)
+      var taronIds = ['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH'];
+      var taronSum = sumMetrics(taronIds);
+      appendRow('TARON', taronSum, 'depth-1');
+
+      // 13. Tenon hk
+      var tenonHkData = getMetrics('TENON_HK');
+      appendRow('Tenon hk', tenonHkData);
+
+      // 14. Tenon dulevo
+      var tenonDulevoData = getMetrics('TENON_DULEVO');
+      appendRow('Tenon dulevo', tenonDulevoData);
+
+      // 15. SSE + SKE (SSE Leaf + SKE_OP_ATV Leaf)
+      var sseMetrics = getMetrics('SSE');
+      var skeAtvMetrics = getMetrics('SKE_OP_ATV');
+      var sseSkeSum = {
+        plan: sseMetrics.plan + skeAtvMetrics.plan,
+        reported: sseMetrics.reported + skeAtvMetrics.reported,
+        inOT: sseMetrics.inOT + skeAtvMetrics.inOT,
+        actual: sseMetrics.actual + skeAtvMetrics.actual,
+        remarks: "SKE - " + skeAtvMetrics.actual
+      };
+      if (sseMetrics.remarks) {
+        sseSkeSum.remarks += "; " + sseMetrics.remarks;
+      }
+      appendRow('SSE + SKE', sseSkeSum, 'depth-2');
+
+      // 16. LLOYD (Formerly Refractory slot)
+      var lloydData = getMetrics('LLOYD');
+      appendRow('LLOYD', lloydData);
+
+      // 17. UIL (Rolls up JCB + Hywa units)
+      var uilIds = ['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA'];
+      var uilSum = sumMetrics(uilIds);
+      appendRow('UIL', uilSum, 'depth-1');
+
+      // 18. GMPL
+      var gmplData = getMetrics('GMPL');
+      appendRow('GMPL', gmplData);
+
+      // 19. Nataraj Eng
+      var natarajData = getMetrics('NATARAJ');
+      appendRow('Nataraj Eng', natarajData);
+
+      // ----------------------------------------------------
+      // GRAND TOTAL CALCULATION ENGINE
+      // ----------------------------------------------------
+      var directIds = ['VL'];
+      var indirectIds = [
+        'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS',
+        'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS',
+        'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2',
+        'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR',
+        'SKE_OA_BUTTCLEAN', 'SKE_OA_BELTHK', 'SKE_OA_LADIES',
+        'TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE',
+        'TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH',
+        'TENON_HK', 'TENON_DULEVO', 'SSE', 'SKE_OP_ATV', 'LLOYD',
+        'UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA', 'GMPL', 'NATARAJ'
+      ];
+
+      var dTot = sumMetrics(directIds);
+      var iTot = sumMetrics(indirectIds);
+      
+      var gTot = {
+        plan: dTot.plan + iTot.plan,
+        reported: dTot.reported + iTot.reported,
+        inOT: dTot.inOT + iTot.inOT,
+        actual: dTot.actual + iTot.actual
+      };
+
+      appendRow('TOTAL:-', gTot, 'grand-total-row');
+      appendRow('DIRECT:-', dTot, 'grand-total-row');
+      appendRow('INDIRECT:-', iTot, 'grand-total-row');
     }
 
-    // Generate HD Image of the table specifically
     document.getElementById('saveImageBtn').addEventListener('click', function(){
       var el = document.getElementById('exportWrapper'); 
       showToast('Generating HD image\u2026');
