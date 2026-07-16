@@ -764,9 +764,6 @@
 
     function buildCustomTable(){
       updateDashboardHeaders();
-      var status = document.getElementById('dashStatusCustom');
-      status.innerHTML = '<span class="loading-dot"></span> Loading shift data\u2026';
-
       var body = document.getElementById('dashBody');
       body.innerHTML = '';
       
@@ -784,33 +781,41 @@
         arr.forEach(function(id) {
           var m = getMetrics(id);
           res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
-          if (m.remarks) res.remarks.push(m.remarks);
+          if (m.remarks) {
+            var parts = m.remarks.split('; ');
+            parts.forEach(function(p){ if(res.remarks.indexOf(p) === -1) res.remarks.push(p); });
+          }
         });
         res.remarks = res.remarks.filter(Boolean).join('; ');
         return res;
       }
 
-      function appendRow(label, data, className) {
+      function appendRow(label, data, className, forceNoRemarks) {
         var tr = document.createElement('tr');
         if (className) tr.className = className;
+        var displayRemarks = forceNoRemarks ? '' : (data.remarks || '');
         tr.innerHTML = 
           '<td>' + label + '</td>' +
           '<td class="num">' + data.plan + '</td>' +
           '<td class="num">' + data.reported + '</td>' +
           '<td class="num">' + data.inOT + '</td>' +
           '<td class="num">' + data.actual + '</td>' +
-          '<td class="remarks-cell">' + (data.remarks || '') + '</td>';
+          '<td class="remarks-cell">' + displayRemarks + '</td>';
         body.appendChild(tr);
       }
 
       appendRow('VL', getMetrics('VL'));
 
       var tkilMechSum = sumMetrics(['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS']);
-      if (getMetrics('TKIL_MECH_ARS3').reported > 0) tkilMechSum.remarks = ['Including ARS3', tkilMechSum.remarks].filter(Boolean).join('; ');
+      if (getMetrics('TKIL_MECH_ARS3').reported > 0 && tkilMechSum.remarks.indexOf('Including ARS3') === -1) {
+        tkilMechSum.remarks = ['Including ARS3', tkilMechSum.remarks].filter(Boolean).join('; ');
+      }
       appendRow('TKII(mech)', tkilMechSum, 'depth-0');
 
       var tkilElecSum = sumMetrics(['TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS']);
-      if (getMetrics('TKIL_ELE_ARS3').reported > 0) tkilElecSum.remarks = ['Including ARS3', tkilElecSum.remarks].filter(Boolean).join('; ');
+      if (getMetrics('TKIL_ELE_ARS3').reported > 0 && tkilElecSum.remarks.indexOf('Including ARS3') === -1) {
+        tkilElecSum.remarks = ['Including ARS3', tkilElecSum.remarks].filter(Boolean).join('; ');
+      }
       appendRow('TKII(elec)', tkilElecSum, 'depth-0');
 
       appendRow('SKE OA', getMetrics('SKE_OA_ARS2'));
@@ -850,11 +855,10 @@
       ]);
       
       var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual };
-      appendRow('TOTAL:-', gTot, 'grand-total-row');
-      appendRow('DIRECT:-', dTot, 'grand-total-row');
-      appendRow('INDIRECT:-', iTot, 'grand-total-row');
-
-      status.textContent = 'Updated ' + new Date().toLocaleTimeString();
+      
+      appendRow('TOTAL:-', gTot, 'grand-total-row', true);
+      appendRow('DIRECT:-', dTot, 'grand-total-row', true);
+      appendRow('INDIRECT:-', iTot, 'grand-total-row', true);
     }
 
     function buildMasterTable(){
