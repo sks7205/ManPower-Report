@@ -92,8 +92,9 @@
     .status-line.ok{ color:var(--ok); } .status-line.err{ color:var(--danger); }
     
     /* ---------------------------------------------------- */
-    /* EXCEL-STYLE DASHBOARD TABLE                          */
+    /* EXCEL-STYLE DASHBOARD TABLES                         */
     /* ---------------------------------------------------- */
+    .section-title { font-size:16px; font-weight:700; color:var(--amber); margin: 0 0 10px 0; padding-top: 10px; }
     .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom:14px; }
     .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; }
     .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
@@ -103,7 +104,7 @@
     
     .excel-table .grand-total-row td { background-color: #fce444; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     
-    /* Distinct Colors for Structural Subgroups */
+    /* Distinct Colors for Subgroups */
     .excel-table .depth-0 td { background-color: #e6f2ff; font-weight: bold; font-size: 13.5px; } 
     .excel-table .depth-1 td { background-color: #e6ffe6; font-weight: bold; font-size: 13px; }    
     .excel-table .depth-2 td { background-color: #f9e6ff; font-weight: bold; font-size: 12.5px; }  
@@ -111,7 +112,7 @@
     .excel-table .subtotal-row td { background-color: #f5f5f5; font-weight: 600; font-style: italic; font-size:13px; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align:left; font-size: 13px; }
     
-    .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 24px; }
     .dash-actions button{ flex:1; min-width:140px; }
     
     .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface-2); border:1px solid var(--amber-dim); color:var(--text); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.25s ease; z-index:50; }
@@ -149,6 +150,7 @@
   </div>
 
   <main>
+    <!-- ENTRY VIEW -->
     <div id="pickerView" style="display:none;">
       <div class="card">
         <div id="backBtnWrap"></div>
@@ -191,8 +193,12 @@
       </div>
     </div>
 
+    <!-- DASHBOARD VIEW -->
     <div id="dashboardView" style="display:none;">
       <div class="card" id="dashCard">
+        
+        <!-- Custom Export Report -->
+        <h2 class="section-title">Custom Shift Report (For Share)</h2>
         <div id="exportWrapper" class="excel-wrapper">
           <table id="dashTable" class="excel-table">
             <thead>
@@ -212,13 +218,36 @@
             <tbody id="dashBody"></tbody>
           </table>
         </div>
-
-        <div class="status-line" id="dashStatus"><span class="loading-dot"></span>Loading shift data&hellip;</div>
         
         <div class="dash-actions">
-          <button class="btn-ghost" id="saveImageBtn">Save HD Image</button>
+          <button class="btn-ghost" id="saveImageBtn">Save HD Image (Custom Report)</button>
           <button class="btn-ghost" id="copyEntryLinkBtn">Copy entry link</button>
         </div>
+
+        <!-- Full Master Data Table -->
+        <h2 class="section-title">Full Master Data (All Agencies)</h2>
+        <div class="excel-wrapper">
+          <table id="masterDashTable" class="excel-table">
+            <thead>
+              <tr>
+                <th rowspan="2">MANPOWER</th>
+                <th id="thShiftTopMaster">Shift-X</th>
+                <th colspan="3" id="thDateMaster">Date Time</th>
+                <th rowspan="2">Remarks</th>
+              </tr>
+              <tr>
+                <th>Plan</th>
+                <th id="thReportedMaster">Reported in Shift-X</th>
+                <th>In OT</th>
+                <th>Actual on work</th>
+              </tr>
+            </thead>
+            <tbody id="masterDashBody"></tbody>
+          </table>
+        </div>
+
+        <div class="status-line" id="dashStatus"><span class="loading-dot"></span>Loading shift data&hellip;</div>
+
       </div>
     </div>
   </main>
@@ -227,7 +256,7 @@
 
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqu8xBOTr_ytsx3B-TO1oTGdUHPsIqK6lymBAUZ2_4TUkLmZntAXeXhdrMGm0I9_4/exec";
+    const SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 
     const urlParams = new URLSearchParams(window.location.search);
     var VIEW_PARAM = urlParams.get('view') || '';
@@ -275,7 +304,7 @@
         btn.textContent = 'Go to Data Entry \u2192';
         btn.onclick = function(){ window.location.href = baseUrl; };
       } else {
-        btn.textContent = 'View Master Dashboard \u2192';
+        btn.textContent = 'View Master Dashboards \u2192';
         btn.onclick = function(){ window.location.href = baseUrl + '?view=dashboard'; };
       }
     }
@@ -291,7 +320,7 @@
         if (MODE === 'dashboard'){
           document.getElementById('dashboardView').style.display = 'block';
           document.getElementById('pageTitle').textContent = 'Manpower Dashboard';
-          document.getElementById('pageSub').textContent = 'Combined total across all agencies';
+          document.getElementById('pageSub').textContent = 'Review shift data across all agencies';
           loadDashboard();
         } else {
           document.getElementById('pickerView').style.display = 'block';
@@ -554,6 +583,8 @@
       const shift = currentShift();
       document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
       document.getElementById('thReported').textContent = 'Reported in Shift-' + shift;
+      document.getElementById('thShiftTopMaster').textContent = 'Shift-' + shift;
+      document.getElementById('thReportedMaster').textContent = 'Reported in Shift-' + shift;
       
       const now = new Date();
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -563,7 +594,10 @@
       hours = hours % 12;
       hours = hours ? hours : 12;
       const mins = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById('thDate').textContent = dateStr + ' ' + hours + ':' + mins + ' ' + ampm;
+      
+      const dtStr = dateStr + ' ' + hours + ':' + mins + ' ' + ampm;
+      document.getElementById('thDate').textContent = dtStr;
+      document.getElementById('thDateMaster').textContent = dtStr;
     }
 
     async function loadDashboard(){
@@ -576,17 +610,18 @@
 
     function renderDashboard(){
       updateDashboardHeaders();
+      
+      // ==========================================
+      // PART 1: CUSTOM EXCEL EXPORT REPORT
+      // ==========================================
       var body = document.getElementById('dashBody');
       body.innerHTML = '';
       
-      // Localized extractor helper 
       function getMetrics(id) {
         var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
         return {
-          plan: Number(entry.plan || 0),
-          actual: Number(entry.actual || 0),
-          inOT: Number(entry.inOT || 0),
-          reported: Number(entry.reported || 0),
+          plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
+          inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
           remarks: entry.remarks || ''
         };
       }
@@ -615,132 +650,142 @@
         body.appendChild(tr);
       }
 
-      // 1. VL
-      var vlData = getMetrics('VL');
-      appendRow('VL', vlData);
+      // Populate Custom Rows
+      appendRow('VL', getMetrics('VL'));
 
-      // 2. TKIL (Mech) - Combined Subtotal Row
-      var tkilMechIds = ['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS'];
-      var tkilMechSum = sumMetrics(tkilMechIds);
-      if (getMetrics('TKIL_MECH_ARS3').reported > 0) {
-        tkilMechSum.remarks = ['Including ARS3', tkilMechSum.remarks].filter(Boolean).join('; ');
-      }
+      var tkilMechSum = sumMetrics(['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS']);
+      if (getMetrics('TKIL_MECH_ARS3').reported > 0) tkilMechSum.remarks = ['Including ARS3', tkilMechSum.remarks].filter(Boolean).join('; ');
       appendRow('TKII(mech)', tkilMechSum, 'depth-0');
 
-      // 3. TKIL (Elec) - Combined Subtotal Row
-      var tkilElecIds = ['TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS'];
-      var tkilElecSum = sumMetrics(tkilElecIds);
-      if (getMetrics('TKIL_ELE_ARS3').reported > 0) {
-        tkilElecSum.remarks = ['Including ARS3', tkilElecSum.remarks].filter(Boolean).join('; ');
-      }
+      var tkilElecSum = sumMetrics(['TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS']);
+      if (getMetrics('TKIL_ELE_ARS3').reported > 0) tkilElecSum.remarks = ['Including ARS3', tkilElecSum.remarks].filter(Boolean).join('; ');
       appendRow('TKII(elec)', tkilElecSum, 'depth-0');
 
-      // 4. SKE OA (Specifically Maps to SKE_OA_ARS2 Leaf)
-      var skeOaData = getMetrics('SKE_OA_ARS2');
-      appendRow('SKE OA', skeOaData);
+      appendRow('SKE OA', getMetrics('SKE_OA_ARS2'));
+      appendRow('SKE OA(scoop bath)', getMetrics('SKE_OA_SCOOPBATH'));
+      appendRow('SKE operator', getMetrics('SKE_OP_ARS2'));
+      appendRow('SKE OA(ARS3)', getMetrics('SKE_OA_ARS3'));
+      appendRow('SKE operator(ARS3)', getMetrics('SKE_OP_ARS3'));
+      appendRow('SKE Rod Repair', getMetrics('SKE_OA_RODREPAIR'));
+      appendRow('SKE Butt Clean', getMetrics('SKE_OA_BUTTCLEAN'));
+      appendRow('SKE HK(Belt)', getMetrics('SKE_OA_BELTHK'));
 
-      // 5. SKE OA(scoop bath)
-      var scoopBathData = getMetrics('SKE_OA_SCOOPBATH');
-      appendRow('SKE OA(scoop bath)', scoopBathData);
+      appendRow('TARON', sumMetrics(['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH']), 'depth-1');
+      appendRow('Tenon hk', getMetrics('TENON_HK'));
+      appendRow('Tenon dulevo', getMetrics('TENON_DULEVO'));
 
-      // 6. SKE operator (Specifically Maps to SKE_OP_ARS2 Leaf)
-      var skeOpData = getMetrics('SKE_OP_ARS2');
-      appendRow('SKE operator', skeOpData);
-
-      // 7. SKE OA(ARS3)
-      var skeOaArs3Data = getMetrics('SKE_OA_ARS3');
-      appendRow('SKE OA(ARS3)', skeOaArs3Data);
-
-      // 8. SKE operator(ARS3)
-      var skeOpArs3Data = getMetrics('SKE_OP_ARS3');
-      appendRow('SKE operator(ARS3)', skeOpArs3Data);
-
-      // 9. SKE Rod Repair
-      var rodRepairData = getMetrics('SKE_OA_RODREPAIR');
-      appendRow('SKE Rod Repair', rodRepairData);
-
-      // 10. SKE Butt Clean
-      var buttCleanData = getMetrics('SKE_OA_BUTTCLEAN');
-      appendRow('SKE Butt Clean', buttCleanData);
-
-      // 11. SKE HK(Belt)
-      var beltHkData = getMetrics('SKE_OA_BELTHK');
-      appendRow('SKE HK(Belt)', beltHkData);
-
-      // 12. TARON (Combined structural subtotal rollup)
-      var taronIds = ['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH'];
-      var taronSum = sumMetrics(taronIds);
-      appendRow('TARON', taronSum, 'depth-1');
-
-      // 13. Tenon hk
-      var tenonHkData = getMetrics('TENON_HK');
-      appendRow('Tenon hk', tenonHkData);
-
-      // 14. Tenon dulevo
-      var tenonDulevoData = getMetrics('TENON_DULEVO');
-      appendRow('Tenon dulevo', tenonDulevoData);
-
-      // 15. SSE + SKE (SSE Leaf + SKE_OP_ATV Leaf)
-      var sseMetrics = getMetrics('SSE');
-      var skeAtvMetrics = getMetrics('SKE_OP_ATV');
+      var sseMetrics = getMetrics('SSE'), skeAtvMetrics = getMetrics('SKE_OP_ATV');
       var sseSkeSum = {
-        plan: sseMetrics.plan + skeAtvMetrics.plan,
-        reported: sseMetrics.reported + skeAtvMetrics.reported,
-        inOT: sseMetrics.inOT + skeAtvMetrics.inOT,
-        actual: sseMetrics.actual + skeAtvMetrics.actual,
+        plan: sseMetrics.plan + skeAtvMetrics.plan, reported: sseMetrics.reported + skeAtvMetrics.reported,
+        inOT: sseMetrics.inOT + skeAtvMetrics.inOT, actual: sseMetrics.actual + skeAtvMetrics.actual,
         remarks: "SKE - " + skeAtvMetrics.actual
       };
-      if (sseMetrics.remarks) {
-        sseSkeSum.remarks += "; " + sseMetrics.remarks;
-      }
+      if (sseMetrics.remarks) sseSkeSum.remarks += "; " + sseMetrics.remarks;
       appendRow('SSE + SKE', sseSkeSum, 'depth-2');
 
-      // 16. LLOYD (Formerly Refractory slot)
-      var lloydData = getMetrics('LLOYD');
-      appendRow('LLOYD', lloydData);
+      appendRow('LLOYD', getMetrics('LLOYD'));
+      appendRow('UIL', sumMetrics(['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA']), 'depth-1');
+      appendRow('GMPL', getMetrics('GMPL'));
+      appendRow('Nataraj Eng', getMetrics('NATARAJ'));
 
-      // 17. UIL (Rolls up JCB + Hywa units)
-      var uilIds = ['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA'];
-      var uilSum = sumMetrics(uilIds);
-      appendRow('UIL', uilSum, 'depth-1');
-
-      // 18. GMPL
-      var gmplData = getMetrics('GMPL');
-      appendRow('GMPL', gmplData);
-
-      // 19. Nataraj Eng
-      var natarajData = getMetrics('NATARAJ');
-      appendRow('Nataraj Eng', natarajData);
-
-      // ----------------------------------------------------
-      // GRAND TOTAL CALCULATION ENGINE
-      // ----------------------------------------------------
-      var directIds = ['VL'];
-      var indirectIds = [
-        'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS',
-        'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS',
-        'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2',
-        'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR',
-        'SKE_OA_BUTTCLEAN', 'SKE_OA_BELTHK', 'SKE_OA_LADIES',
-        'TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE',
-        'TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH',
-        'TENON_HK', 'TENON_DULEVO', 'SSE', 'SKE_OP_ATV', 'LLOYD',
-        'UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA', 'GMPL', 'NATARAJ'
-      ];
-
-      var dTot = sumMetrics(directIds);
-      var iTot = sumMetrics(indirectIds);
+      var dTot = sumMetrics(['VL']);
+      var iTot = sumMetrics([
+        'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS', 'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS',
+        'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2', 'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR',
+        'SKE_OA_BUTTCLEAN', 'SKE_OA_BELTHK', 'SKE_OA_LADIES', 'TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE',
+        'TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH', 'TENON_HK', 'TENON_DULEVO', 
+        'SSE', 'SKE_OP_ATV', 'LLOYD', 'UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA', 'GMPL', 'NATARAJ'
+      ]);
       
-      var gTot = {
-        plan: dTot.plan + iTot.plan,
-        reported: dTot.reported + iTot.reported,
-        inOT: dTot.inOT + iTot.inOT,
-        actual: dTot.actual + iTot.actual
-      };
-
+      var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual };
       appendRow('TOTAL:-', gTot, 'grand-total-row');
       appendRow('DIRECT:-', dTot, 'grand-total-row');
       appendRow('INDIRECT:-', iTot, 'grand-total-row');
+
+      // ==========================================
+      // PART 2: FULL DYNAMIC MASTER TABLE
+      // ==========================================
+      var masterBody = document.getElementById('masterDashBody');
+      masterBody.innerHTML = '';
+      
+      var mTotals = { plan:0, actual:0, inOT:0, reported:0 };
+      var mDirectTotals = { plan:0, actual:0, inOT:0, reported:0 };
+
+      function addMasterLeafRow(areaId, indent){
+        var area = AREAS_BY_ID[areaId];
+        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
+        var tr = document.createElement('tr');
+        
+        tr.innerHTML =
+          '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
+          '<td class="num">' + (rec.plan || 0) + '</td>' +
+          '<td class="num">' + (rec.reported || 0) + '</td>' +
+          '<td class="num">' + (rec.inOT || 0) + '</td>' +
+          '<td class="num">' + (rec.actual || 0) + '</td>' +
+          '<td class="remarks-cell">' + (rec.remarks || '') + '</td>';
+        masterBody.appendChild(tr);
+        
+        var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0);
+        mTotals.plan += p; mTotals.actual += a; mTotals.inOT += o; mTotals.reported += r;
+        
+        if (area.type === 'Direct'){
+          mDirectTotals.plan += p; mDirectTotals.actual += a; mDirectTotals.inOT += o; mDirectTotals.reported += r;
+        }
+        return { plan: p, actual: a, inOT: o, reported: r };
+      }
+
+      function walkMaster(nodes, depth){
+        var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
+        nodes.forEach(function(node){
+          if (node.type === 'leaf'){
+            var leafVals = addMasterLeafRow(node.areaId, depth > 0);
+            groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
+            groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
+          } else {
+            var tr = document.createElement('tr');
+            tr.className = 'depth-' + (depth > 2 ? 2 : depth); 
+            tr.innerHTML = '<td colspan="6">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            masterBody.appendChild(tr);
+            
+            var childTotals = walkMaster(node.children, depth + 1);
+
+            var subTr = document.createElement('tr');
+            subTr.className = 'subtotal-row';
+            subTr.innerHTML =
+              '<td>' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
+              '<td class="num">' + childTotals.plan + '</td>' +
+              '<td class="num">' + childTotals.reported + '</td>' +
+              '<td class="num">' + childTotals.inOT + '</td>' +
+              '<td class="num">' + childTotals.actual + '</td>' +
+              '<td></td>';
+            masterBody.appendChild(subTr);
+
+            groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
+            groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
+          }
+        });
+        return groupTotal;
+      }
+      
+      walkMaster(TREE, 0);
+
+      var mIndirectTotals = {
+        plan: mTotals.plan - mDirectTotals.plan, actual: mTotals.actual - mDirectTotals.actual,
+        inOT: mTotals.inOT - mDirectTotals.inOT, reported: mTotals.reported - mDirectTotals.reported
+      };
+      
+      [['TOTAL MASTER:-', mTotals], ['DIRECT MASTER:-', mDirectTotals], ['INDIRECT MASTER:-', mIndirectTotals]].forEach(function(pair){
+        var tr = document.createElement('tr');
+        tr.className = 'grand-total-row';
+        tr.innerHTML =
+          '<td>' + pair[0] + '</td>' +
+          '<td class="num">' + pair[1].plan + '</td>' +
+          '<td class="num">' + pair[1].reported + '</td>' +
+          '<td class="num">' + pair[1].inOT + '</td>' +
+          '<td class="num">' + pair[1].actual + '</td>' +
+          '<td></td>';
+        masterBody.appendChild(tr);
+      });
     }
 
     document.getElementById('saveImageBtn').addEventListener('click', function(){
