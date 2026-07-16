@@ -32,7 +32,6 @@
       background:var(--surface-2); border:1px solid var(--line); color:var(--text);
       border-radius:10px; padding:10px 12px; font-size:15px; font-family:'Inter',sans-serif; min-width:0;
     }
-    /* Centered Inputs */
     input[type=number] { text-align: center; font-weight:600; color:var(--amber); } 
     input:focus, select:focus{ outline:2px solid var(--amber); outline-offset:1px; }
     
@@ -72,7 +71,6 @@
     .tag-direct{ background:rgba(232,163,61,0.15); color:var(--amber); }
     .tag-indirect{ background:rgba(79,176,174,0.15); color:var(--teal); }
     
-    /* Mobile responsive flexible entry grid */
     .grid3{ display:flex; flex-direction:column; gap:12px; }
     @media (min-width:520px){ .grid3{ flex-direction:row; } .grid3 > .field { flex: 1; } }
     
@@ -94,21 +92,23 @@
     .status-line.ok{ color:var(--ok); } .status-line.err{ color:var(--danger); }
     
     /* ---------------------------------------------------- */
-    /* EXCEL-STYLE DASHBOARD TABLE (Light mode for export)  */
+    /* EXCEL-STYLE DASHBOARD TABLE                          */
     /* ---------------------------------------------------- */
     .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom:14px; }
     .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; }
-    .excel-table th, .excel-table td { border: 1px solid #000000; padding: 5px 8px; white-space: nowrap; }
-    .excel-table th { background-color: #f2d12e; color: #000; font-weight: 700; text-align: center; }
+    .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
+    
+    /* Exact Yellow Headers from Screenshot */
+    .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
     .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
     
-    /* Grand Totals */
-    .excel-table .grand-total-row td { background-color: #f2d12e; font-weight: 700; border-top: 2px solid #000; }
+    /* Grand Totals Styling */
+    .excel-table .grand-total-row td { background-color: #fce444; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     
-    /* Distinct Colors for Subsections */
-    .excel-table .depth-0 td { background-color: #e6f2ff; font-weight: 700; font-size: 13.5px; } /* Light Blue */
-    .excel-table .depth-1 td { background-color: #e6ffe6; font-weight: 700; font-size: 13px; }    /* Light Green */
-    .excel-table .depth-2 td { background-color: #f9e6ff; font-weight: 700; font-size: 12.5px; }  /* Light Purple */
+    /* Subsections Styling */
+    .excel-table .depth-0 td { background-color: #e6f2ff; font-weight: bold; font-size: 13.5px; } 
+    .excel-table .depth-1 td { background-color: #e6ffe6; font-weight: bold; font-size: 13px; }    
+    .excel-table .depth-2 td { background-color: #f9e6ff; font-weight: bold; font-size: 12.5px; }  
     
     .excel-table .subtotal-row td { background-color: #f5f5f5; font-weight: 600; font-style: italic; font-size:13px; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align:left; font-size: 13px; }
@@ -230,7 +230,7 @@
 
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqu8xBOTr_ytsx3B-TO1oTGdUHPsIqK6lymBAUZ2_4TUkLmZntAXeXhdrMGm0I9_4/exec";
+    const SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 
     const urlParams = new URLSearchParams(window.location.search);
     var VIEW_PARAM = urlParams.get('view') || '';
@@ -487,7 +487,7 @@
       var freeText = document.getElementById('remarksInput').value.trim();
       var autoText = '';
       
-      // AUTO REMARKS LOGIC FOR ARS3
+      // AUTO REMARKS LOGIC FOR ARS3 (if reported > 0)
       if (currentLeaf === 'TKIL_MECH_ARS3' || currentLeaf === 'TKIL_ELE_ARS3') {
           let checkActual = Number(document.getElementById('actualInput').value || 0);
           let checkOT = Number(document.getElementById('otInput').value || 0);
@@ -546,7 +546,7 @@
       document.getElementById('thReported').textContent = 'Reported in Shift-' + shift;
       
       const now = new Date();
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const dateStr = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
       let hours = now.getHours();
       const ampm = hours >= 12 ? 'pm' : 'am';
@@ -607,7 +607,6 @@
             groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
             groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
             
-            // Check if this leaf is ARS3 and has data
             if (node.areaId.indexOf('ARS3') !== -1 && leafVals.reported > 0) {
               hasARS3 = true;
             }
@@ -621,7 +620,6 @@
             if (childTotals.hasARS3) hasARS3 = true;
             
             var subRemarks = "";
-            // Add automatic ARS3 remark to subtotal row if conditions met
             if ((node.id === 'TKIL_MECH' || node.id === 'TKIL_ELE') && childTotals.hasARS3) {
               subRemarks = "Including ARS3";
             }
@@ -666,7 +664,7 @@
       });
     }
 
-    // Export specifically the white wrapped table box for a perfect Excel-like image
+    // Generate HD Image of the table specifically
     document.getElementById('saveImageBtn').addEventListener('click', function(){
       var el = document.getElementById('exportWrapper'); 
       showToast('Generating HD image\u2026');
