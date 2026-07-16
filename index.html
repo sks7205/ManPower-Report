@@ -193,6 +193,23 @@
       </div>
     </div>
 
+    <div id="multiEntryView" style="display:none;">
+      <div class="card" style="background:transparent; border:none; padding:0; margin-bottom:10px;">
+        <div id="multiBackBtnWrap">
+          <button class="back-btn" onclick="renderPicker()">&#8592; Back</button>
+        </div>
+        <h2 class="area-title" id="multiEntryTitle" style="color:var(--amber); margin-top:10px;"></h2>
+        <span class="sub" style="margin-bottom:14px; display:block;">Enter numbers for all sections below, then save once.</span>
+      </div>
+      
+      <div id="multiEntryForms"></div>
+      
+      <div class="card" style="margin-top:20px;">
+        <button class="btn-primary" id="multiSaveBtn">Save All Sections</button>
+        <div class="status-line" id="multiAreaStatus"></div>
+      </div>
+    </div>
+
     <div id="dashboardView" style="display:none;">
       <div class="card" id="dashCard">
         
@@ -269,6 +286,7 @@
     var shiftData = {};
     var currentPath = [];
     var currentLeaf = null;
+    var currentMultiNode = null;
     var cachedShiftKey = "";
 
     function pad(n){ return String(n).padStart(2,'0'); }
@@ -315,6 +333,18 @@
         const data = await res.json();
         AREAS = data.areas;
         TREE = data.tree;
+        
+        // INTERCEPT AND CONVERT TKIL TO MULTI-ENTRY FORMS
+        var tkilGroup = TREE.find(n => n.id === 'TKIL');
+        if (tkilGroup) {
+          tkilGroup.children.forEach(c => {
+            if (c.id === 'TKIL_MECH' || c.id === 'TKIL_ELE') {
+              c.type = 'multi';
+              c.areaIds = c.children.map(leaf => leaf.areaId);
+            }
+          });
+        }
+
         AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
         
         if (MODE === 'dashboard'){
@@ -357,6 +387,7 @@
 
     async function onDateShiftChange(){
       if (MODE === 'dashboard'){ loadDashboard(); }
+      else if (currentMultiNode) { openMultiEntry(currentMultiNode); }
       else if (currentLeaf){ loadEntryData(); }
       else { 
         await refreshShiftData();
@@ -368,15 +399,16 @@
       var nodes = TREE;
       var node = null;
       for (var i = 0; i < path.length; i++){
-        node = nodes.find(function(n){ return n.type === 'group' && n.id === path[i]; });
+        node = nodes.find(function(n){ return n.type === 'group' || n.type === 'multi' ? n.id === path[i] : false; });
         if (!node) return { children: [] };
-        nodes = node.children;
+        nodes = node.children || [];
       }
       return { children: nodes, node: node };
     }
     
     function collectLeafIds(node){
       if (node.type === 'leaf') return [node.areaId];
+      if (node.type === 'multi') return node.areaIds;
       var ids = [];
       (node.children || []).forEach(function(c){ ids = ids.concat(collectLeafIds(c)); });
       return ids;
@@ -394,9 +426,9 @@
       var found = null;
       function walk(nodes){
         nodes.forEach(function(n){
-          if (n.type === 'group'){
+          if (n.type === 'group' || n.type === 'multi'){
             if (n.id === id) found = n.name;
-            walk(n.children);
+            walk(n.children || []);
           }
         });
       }
@@ -406,8 +438,10 @@
 
     function renderPicker(){
       document.getElementById('entryView').style.display = 'none';
+      document.getElementById('multiEntryView').style.display = 'none';
       document.getElementById('pickerView').style.display = 'block';
       currentLeaf = null;
+      currentMultiNode = null;
 
       var crumbWrap = document.getElementById('breadcrumb');
       crumbWrap.innerHTML = '';
@@ -458,16 +492,118 @@
         tile.innerHTML = '<span class="dot"></span><span class="tname">' + label + '</span><span class="tmeta">' + meta + '</span>';
         tile.onclick = function(){
           if (node.type === 'leaf'){ openEntry(node.areaId); }
+          else if (node.type === 'multi'){ openMultiEntry(node); }
           else { currentPath = currentPath.concat([node.id]); renderPicker(); }
         };
         grid.appendChild(tile);
       });
     }
 
+    // ==========================================
+    // MULTI-ENTRY FORM (TKIL MECH & ELE)
+    // ==========================================
+    function openMultiEntry(node) {
+      currentMultiNode = node;
+      document.getElementById('pickerView').style.display = 'none';
+      document.getElementById('entryView').style.display = 'none';
+      document.getElementById('multiEntryView').style.display = 'block';
+      
+      document.getElementById('multiEntryTitle').textContent = "TKIL " + node.name;
+      
+      var container = document.getElementById('multiEntryForms');
+      container.innerHTML = '';
+      
+      node.areaIds.forEach(id => {
+        var area = AREAS_BY_ID[id];
+        var rec = shiftData[id] || { plan:'', actual:'', inOT:'', remarks:'', reported:0 };
+        
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginBottom = '10px';
+        card.innerHTML = `
+          <div class="area-title" style="font-size:16px; margin-bottom:10px;">${area.name}</div>
+          <div class="grid3">
+            <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}"></div>
+            <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')"></div>
+            <div class="field"><label>In OT</label><input type="number" id="m_ot_${id}" value="${rec.inOT}" oninput="updateMultiReported('${id}')"></div>
+          </div>
+          <div class="actual-readout" style="padding: 10px; margin-top: 10px;">
+            <span class="sub" style="font-size:11px;">Reported (Actual - OT)</span>
+            <span class="num" id="m_rep_${id}" style="font-size:18px;">${rec.reported}</span>
+          </div>
+          <textarea id="m_rem_${id}" placeholder="Remarks" style="margin-top:10px;">${rec.remarks||''}</textarea>
+        `;
+        container.appendChild(card);
+      });
+      
+      document.getElementById('multiSaveBtn').onclick = saveMultiArea;
+    }
+
+    function updateMultiReported(id) {
+       var actual = Number(document.getElementById('m_actual_' + id).value || 0);
+       var ot = Number(document.getElementById('m_ot_' + id).value || 0);
+       document.getElementById('m_rep_' + id).textContent = Math.max(0, actual - ot);
+    }
+
+    function saveMultiArea() {
+      var btn = document.getElementById('multiSaveBtn');
+      var status = document.getElementById('multiAreaStatus');
+      btn.disabled = true;
+      btn.textContent = 'Saving all sections...';
+      status.textContent = '';
+
+      var promises = currentMultiNode.areaIds.map(id => {
+        var area = AREAS_BY_ID[id];
+        var plan = document.getElementById('m_plan_' + id).value;
+        var actual = document.getElementById('m_actual_' + id).value;
+        var ot = document.getElementById('m_ot_' + id).value;
+        var rem = document.getElementById('m_rem_' + id).value.trim();
+
+        var autoText = '';
+        if (id.includes('ARS3')) {
+          let checkActual = Number(actual || 0);
+          let checkOT = Number(ot || 0);
+          if (checkActual - checkOT > 0) {
+            autoText = 'Including ARS3';
+          }
+        }
+        var finalRem = [autoText, rem].filter(Boolean).join('; ');
+
+        var payload = {
+          date: currentDate(), shift: currentShift(),
+          areaId: id, areaName: area.fullName,
+          plan: plan, actual: actual, inOT: ot, remarks: finalRem
+        };
+
+        return fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveAreaRow', data: payload })
+        });
+      });
+
+      Promise.all(promises).then(responses => {
+        btn.disabled = false;
+        btn.textContent = 'Save All Sections';
+        showToast('Successfully saved ' + currentMultiNode.name);
+        refreshShiftData().then(() => renderPicker());
+      }).catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'Save All Sections';
+        status.textContent = 'Network error saving data.';
+        status.className = 'status-line err';
+      });
+    }
+
+    // ==========================================
+    // STANDARD ENTRY FORM
+    // ==========================================
     function openEntry(areaId){
       currentLeaf = areaId;
       document.getElementById('pickerView').style.display = 'none';
+      document.getElementById('multiEntryView').style.display = 'none';
       document.getElementById('entryView').style.display = 'block';
+      
       var area = AREAS_BY_ID[areaId];
       document.getElementById('pageTitle').textContent = area.fullName;
       document.getElementById('pageSub').textContent = 'Enter your shift numbers below';
@@ -527,14 +663,7 @@
       var freeText = document.getElementById('remarksInput').value.trim();
       var autoText = '';
       
-      if (currentLeaf === 'TKIL_MECH_ARS3' || currentLeaf === 'TKIL_ELE_ARS3') {
-          let checkActual = Number(document.getElementById('actualInput').value || 0);
-          let checkOT = Number(document.getElementById('otInput').value || 0);
-          if (checkActual - checkOT > 0) {
-              autoText = 'Including ARS3';
-          }
-      } 
-      else if (area.remarkPrompt){
+      if (area.remarkPrompt){
         var flagEl = document.getElementById('remarkFlag');
         if (area.remarkPrompt.kind === 'boolean'){
           if (flagEl.checked) autoText = area.remarkPrompt.text;
@@ -579,6 +708,9 @@
       }
     }
 
+    // ==========================================
+    // DASHBOARD VIEWS
+    // ==========================================
     function updateDashboardHeaders() {
       const shift = currentShift();
       document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
@@ -742,6 +874,32 @@
             var leafVals = addMasterLeafRow(node.areaId, depth > 0);
             groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
             groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
+          } else if (node.type === 'multi') {
+            var tr = document.createElement('tr');
+            tr.className = 'depth-' + (depth > 2 ? 2 : depth); 
+            tr.innerHTML = '<td colspan="6">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            masterBody.appendChild(tr);
+            
+            var childTotals = { plan:0, actual:0, inOT:0, reported:0 };
+            node.areaIds.forEach(function(id){
+               var leafVals = addMasterLeafRow(id, depth + 1);
+               childTotals.plan += leafVals.plan; childTotals.actual += leafVals.actual;
+               childTotals.inOT += leafVals.inOT; childTotals.reported += leafVals.reported;
+            });
+
+            var subTr = document.createElement('tr');
+            subTr.className = 'subtotal-row';
+            subTr.innerHTML =
+              '<td>' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
+              '<td class="num">' + childTotals.plan + '</td>' +
+              '<td class="num">' + childTotals.reported + '</td>' +
+              '<td class="num">' + childTotals.inOT + '</td>' +
+              '<td class="num">' + childTotals.actual + '</td>' +
+              '<td></td>';
+            masterBody.appendChild(subTr);
+
+            groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
+            groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
           } else {
             var tr = document.createElement('tr');
             tr.className = 'depth-' + (depth > 2 ? 2 : depth); 
@@ -789,12 +947,11 @@
       });
     }
 
-    // Capture HD Image specifically preventing scroll cutoff
+    // Capture Full HD Image specifically preventing scroll cutoff
     function downloadFullHDImage(wrapperId, filenamePrefix) {
       showToast('Generating HD image\u2026');
       var wrapper = document.getElementById(wrapperId);
       
-      // Temporarily remove overflow to snap the entire unclipped container
       var originalOverflow = wrapper.style.overflow;
       var originalWidth = wrapper.style.width;
       wrapper.style.overflow = 'visible';
@@ -802,7 +959,6 @@
 
       html2canvas(wrapper, { backgroundColor: '#ffffff', scale: 3, useCORS: true }).then(function(canvas){
         
-        // Instantly restore scrollbar layout
         wrapper.style.overflow = originalOverflow;
         wrapper.style.width = originalWidth;
 
