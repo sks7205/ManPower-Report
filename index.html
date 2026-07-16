@@ -35,11 +35,14 @@
     input[type=number] { text-align: center; font-weight:600; color:var(--amber); } 
     input:focus, select:focus{ outline:2px solid var(--amber); outline-offset:1px; }
     
-    .auto-badge{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--teal); padding:0 18px 10px; }
-    .nav-link-row{ padding:0 18px 14px; display:flex; }
+    .auto-badge{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--teal); padding:0 18px 14px; }
     
     main{ padding:0 18px; max-width:920px; margin:0 auto; }
     .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px; }
+    
+    /* Top Navigation Buttons */
+    .top-nav-buttons { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap:wrap; }
+    .top-nav-buttons button { flex: 1; padding: 14px; font-size: 15px; min-width: 140px;}
     
     .breadcrumb{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:14px; font-size:13px; color:var(--muted); }
     .breadcrumb .crumb{ cursor:pointer; color:var(--teal); }
@@ -86,9 +89,10 @@
     button{ font-family:'Inter',sans-serif; font-weight:600; font-size:14px; border:none; border-radius:10px; padding:12px 18px; cursor:pointer; }
     .btn-primary{ background:var(--amber); color:#241a06; width:100%; font-size:15px; }
     .btn-primary:disabled{ opacity:0.6; cursor:default; }
+    .btn-secondary{ background:var(--surface-2); color:var(--teal); border:1px solid var(--teal); width:100%; font-size:15px; }
     .btn-ghost{ background:transparent; color:var(--text); border:1px solid var(--line); width:100%; }
     
-    .status-line{ font-size:12px; color:var(--muted); margin-top:10px; min-height:16px; }
+    .status-line{ font-size:12px; color:var(--muted); margin-top:10px; min-height:16px; display:flex; align-items:center; }
     .status-line.ok{ color:var(--ok); } .status-line.err{ color:var(--danger); }
     
     /* ---------------------------------------------------- */
@@ -105,7 +109,6 @@
     
     .excel-table .grand-total-row td { background-color: #fce444; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     
-    /* Distinct Colors for Subgroups */
     .excel-table .depth-0 td { background-color: #e6f2ff; font-weight: bold; font-size: 13.5px; } 
     .excel-table .depth-1 td { background-color: #e6ffe6; font-weight: bold; font-size: 13px; }    
     .excel-table .depth-2 td { background-color: #f9e6ff; font-weight: bold; font-size: 12.5px; }  
@@ -113,7 +116,7 @@
     .excel-table .subtotal-row td { background-color: #f5f5f5; font-weight: 600; font-style: italic; font-size:13px; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align:left; font-size: 13px; }
     
-    .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 30px; }
+    .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 10px; }
     .dash-actions button{ flex:1; min-width:140px; }
     
     .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface-2); border:1px solid var(--amber-dim); color:var(--text); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.25s ease; z-index:50; }
@@ -145,14 +148,85 @@
     </div>
   </div>
   <div class="auto-badge" id="autoBadge"></div>
-  
-  <div class="nav-link-row">
-    <button class="btn-primary" style="width:auto; padding: 8px 16px;" id="crossNavBtn"></button>
-  </div>
 
   <main>
-    <!-- ENTRY VIEW (Standard Picker) -->
+    
+    <div id="customDashboardView" style="display:none;">
+      
+      <div class="top-nav-buttons">
+        <button class="btn-primary" onclick="showPicker()">&#9998; Data Entry</button>
+        <button class="btn-secondary" onclick="showMasterDashboard()">&#128202; Master Report</button>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0;">Custom Shift Report</h2>
+        <div id="customExportWrapper" class="excel-wrapper">
+          <table id="dashTable" class="excel-table">
+            <thead>
+              <tr>
+                <th rowspan="2">MANPOWER</th>
+                <th id="thShiftTop">Shift-X</th>
+                <th colspan="3" id="thDate">Date Time</th>
+                <th rowspan="2">Remarks</th>
+              </tr>
+              <tr>
+                <th>Plan</th>
+                <th id="thReported">Reported in Shift-X</th>
+                <th>In OT</th>
+                <th>Actual on work</th>
+              </tr>
+            </thead>
+            <tbody id="dashBody"></tbody>
+          </table>
+        </div>
+        
+        <div class="dash-actions">
+          <button class="btn-ghost" onclick="downloadFullHDImage('customExportWrapper', 'Custom_Shift_Report')">Download Image</button>
+          <button class="btn-ghost" id="copyEntryLinkBtn">Copy Link to Dashboard</button>
+        </div>
+        <div class="status-line" id="dashStatusCustom"></div>
+      </div>
+    </div>
+
+    <div id="masterDashboardView" style="display:none;">
+      <div style="margin-bottom: 16px;">
+        <button class="back-btn" onclick="showCustomDashboard()" style="margin:0;">&#8592; Back to Home</button>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0;">Full Master Data (All Agencies)</h2>
+        <div id="masterExportWrapper" class="excel-wrapper">
+          <table id="masterDashTable" class="excel-table">
+            <thead>
+              <tr>
+                <th rowspan="2">MANPOWER</th>
+                <th id="thShiftTopMaster">Shift-X</th>
+                <th colspan="3" id="thDateMaster">Date Time</th>
+                <th rowspan="2">Remarks</th>
+              </tr>
+              <tr>
+                <th>Plan</th>
+                <th id="thReportedMaster">Reported in Shift-X</th>
+                <th>In OT</th>
+                <th>Actual on work</th>
+              </tr>
+            </thead>
+            <tbody id="masterDashBody"></tbody>
+          </table>
+        </div>
+
+        <div class="dash-actions">
+          <button class="btn-ghost" onclick="downloadFullHDImage('masterExportWrapper', 'Master_Shift_Data')">Save Image</button>
+        </div>
+        <div class="status-line" id="dashStatusMaster"></div>
+      </div>
+    </div>
+
+
     <div id="pickerView" style="display:none;">
+      <div style="margin-bottom: 16px;">
+        <button class="back-btn" onclick="showCustomDashboard()" style="margin:0;">&#8592; Back to Home</button>
+      </div>
       <div class="card">
         <div id="backBtnWrap"></div>
         <div class="breadcrumb" id="breadcrumb"></div>
@@ -160,11 +234,9 @@
       </div>
     </div>
 
-    <!-- ENTRY VIEW (Single Item Form) -->
     <div id="entryView" style="display:none;">
       <div class="card">
-        <!-- New Back Button Added Here -->
-        <button class="back-btn" onclick="renderPicker()">&#8592; Back</button>
+        <button class="back-btn" onclick="showPicker()">&#8592; Back</button>
         
         <div id="areaTagWrap"></div>
         <p class="area-title" id="areaTitle"></p>
@@ -198,11 +270,10 @@
       </div>
     </div>
 
-    <!-- MULTI-ENTRY VIEW (For TKIL Mech & Ele grouped forms) -->
     <div id="multiEntryView" style="display:none;">
       <div class="card" style="background:transparent; border:none; padding:0; margin-bottom:10px;">
         <div id="multiBackBtnWrap">
-          <button class="back-btn" onclick="renderPicker()">&#8592; Back</button>
+          <button class="back-btn" onclick="showPicker()">&#8592; Back</button>
         </div>
         <h2 class="area-title" id="multiEntryTitle" style="color:var(--amber); margin-top:10px;"></h2>
         <span class="sub" style="margin-bottom:14px; display:block;">Enter numbers for all sections below, then save once.</span>
@@ -216,66 +287,6 @@
       </div>
     </div>
 
-    <!-- DASHBOARD VIEW -->
-    <div id="dashboardView" style="display:none;">
-      <div class="card" id="dashCard">
-        
-        <!-- TABLE 1: Custom Export Report -->
-        <h2 class="section-title">Custom Shift Report (For Export)</h2>
-        <div id="customExportWrapper" class="excel-wrapper">
-          <table id="dashTable" class="excel-table">
-            <thead>
-              <tr>
-                <th rowspan="2">MANPOWER</th>
-                <th id="thShiftTop">Shift-X</th>
-                <th colspan="3" id="thDate">Date Time</th>
-                <th rowspan="2">Remarks</th>
-              </tr>
-              <tr>
-                <th>Plan</th>
-                <th id="thReported">Reported in Shift-X</th>
-                <th>In OT</th>
-                <th>Actual on work</th>
-              </tr>
-            </thead>
-            <tbody id="dashBody"></tbody>
-          </table>
-        </div>
-        
-        <div class="dash-actions">
-          <button class="btn-ghost" onclick="downloadFullHDImage('customExportWrapper', 'Custom_Shift_Report')">Download Image</button>
-        </div>
-
-        <!-- TABLE 2: Full Master Data Table -->
-        <h2 class="section-title">Full Master Data (All Agencies)</h2>
-        <div id="masterExportWrapper" class="excel-wrapper">
-          <table id="masterDashTable" class="excel-table">
-            <thead>
-              <tr>
-                <th rowspan="2">MANPOWER</th>
-                <th id="thShiftTopMaster">Shift-X</th>
-                <th colspan="3" id="thDateMaster">Date Time</th>
-                <th rowspan="2">Remarks</th>
-              </tr>
-              <tr>
-                <th>Plan</th>
-                <th id="thReportedMaster">Reported in Shift-X</th>
-                <th>In OT</th>
-                <th>Actual on work</th>
-              </tr>
-            </thead>
-            <tbody id="masterDashBody"></tbody>
-          </table>
-        </div>
-
-        <div class="dash-actions">
-          <button class="btn-ghost" onclick="downloadFullHDImage('masterExportWrapper', 'Master_Shift_Data')">Save Image (Master Data)</button>
-          <button class="btn-ghost" id="copyEntryLinkBtn">Copy Dashboard Link</button>
-        </div>
-
-        <div class="status-line" id="dashStatus"><span class="loading-dot"></span>Loading shift data&hellip;</div>
-      </div>
-    </div>
   </main>
 
   <div class="toast" id="toast"></div>
@@ -283,11 +294,6 @@
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqu8xBOTr_ytsx3B-TO1oTGdUHPsIqK6lymBAUZ2_4TUkLmZntAXeXhdrMGm0I9_4/exec";
-
-    const urlParams = new URLSearchParams(window.location.search);
-    var VIEW_PARAM = urlParams.get('view') || '';
-    var AREA_PARAM = urlParams.get('area') || '';
-    var MODE = (VIEW_PARAM === 'dashboard') ? 'dashboard' : 'entry';
 
     var AREAS = [];
     var AREAS_BY_ID = {};
@@ -297,6 +303,7 @@
     var currentLeaf = null;
     var currentMultiNode = null;
     var cachedShiftKey = "";
+    var CURRENT_VIEW = 'custom'; // App State
 
     function pad(n){ return String(n).padStart(2,'0'); }
     function autoDate(){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
@@ -324,18 +331,47 @@
       }
     }
 
-    function setupCrossNav(){
-      var btn = document.getElementById('crossNavBtn');
-      var baseUrl = window.location.href.split('?')[0];
-      if (MODE === 'dashboard'){
-        btn.textContent = 'Go to Data Entry \u2192';
-        btn.onclick = function(){ window.location.href = baseUrl; };
-      } else {
-        btn.textContent = 'View Master Dashboards \u2192';
-        btn.onclick = function(){ window.location.href = baseUrl + '?view=dashboard'; };
-      }
+    // ----------------------------------------------------
+    // SPA NAVIGATION LOGIC
+    // ----------------------------------------------------
+    function hideAllViews() {
+      document.getElementById('customDashboardView').style.display = 'none';
+      document.getElementById('masterDashboardView').style.display = 'none';
+      document.getElementById('pickerView').style.display = 'none';
+      document.getElementById('entryView').style.display = 'none';
+      document.getElementById('multiEntryView').style.display = 'none';
     }
 
+    function showCustomDashboard() {
+      CURRENT_VIEW = 'custom';
+      hideAllViews();
+      document.getElementById('customDashboardView').style.display = 'block';
+      document.getElementById('pageTitle').textContent = 'Home Dashboard';
+      document.getElementById('pageSub').textContent = 'Custom formatted report for sharing';
+      buildCustomTable();
+    }
+
+    function showMasterDashboard() {
+      CURRENT_VIEW = 'master';
+      hideAllViews();
+      document.getElementById('masterDashboardView').style.display = 'block';
+      document.getElementById('pageTitle').textContent = 'Master Dashboard';
+      document.getElementById('pageSub').textContent = 'Full hierarchy of all entered data';
+      buildMasterTable();
+    }
+
+    function showPicker() {
+      CURRENT_VIEW = 'picker';
+      hideAllViews();
+      document.getElementById('pickerView').style.display = 'block';
+      document.getElementById('pageTitle').textContent = 'Data Entry';
+      document.getElementById('pageSub').textContent = 'Select your agency / section below';
+      renderPicker();
+    }
+
+    // ----------------------------------------------------
+    // INITIALIZATION & DATA FETCHING
+    // ----------------------------------------------------
     async function fetchInitData() {
       try {
         const res = await fetch(SCRIPT_URL + '?action=getInitData');
@@ -356,23 +392,9 @@
 
         AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
         
-        if (MODE === 'dashboard'){
-          document.getElementById('dashboardView').style.display = 'block';
-          document.getElementById('pageTitle').textContent = 'Manpower Dashboard';
-          document.getElementById('pageSub').textContent = 'Review shift data across all agencies';
-          loadDashboard();
-        } else {
-          document.getElementById('pickerView').style.display = 'block';
-          document.getElementById('pageTitle').textContent = 'Manpower Entry';
-          document.getElementById('pageSub').textContent = 'Select your agency / section';
-          if (AREA_PARAM && AREAS_BY_ID[AREA_PARAM]){
-            currentPath = AREAS_BY_ID[AREA_PARAM].path.slice();
-            openEntry(AREA_PARAM);
-          } else {
-            await refreshShiftData();
-            renderPicker();
-          }
-        }
+        await refreshShiftData();
+        showCustomDashboard(); // Default to Home View
+
       } catch (err) {
         showToast("Error connecting to database.");
         console.error(err);
@@ -388,22 +410,25 @@
     }
 
     function init(){
-      setupCrossNav();
       fetchInitData();
       document.getElementById('dateInput').addEventListener('change', onDateShiftChange);
       document.getElementById('shiftInput').addEventListener('change', onDateShiftChange);
     }
 
     async function onDateShiftChange(){
-      if (MODE === 'dashboard'){ loadDashboard(); }
-      else if (currentMultiNode) { openMultiEntry(currentMultiNode); }
-      else if (currentLeaf){ loadEntryData(); }
-      else { 
-        await refreshShiftData();
-        renderPicker(); 
-      }
+      await refreshShiftData();
+      
+      // Re-render the current view
+      if (CURRENT_VIEW === 'custom') { buildCustomTable(); }
+      else if (CURRENT_VIEW === 'master') { buildMasterTable(); }
+      else if (CURRENT_VIEW === 'picker') { renderPicker(); }
+      else if (CURRENT_VIEW === 'entry' && currentLeaf) { loadEntryData(); }
+      else if (CURRENT_VIEW === 'multi' && currentMultiNode) { openMultiEntry(currentMultiNode); }
     }
 
+    // ----------------------------------------------------
+    // TREE & PICKER LOGIC
+    // ----------------------------------------------------
     function nodeAtPath(path){
       var nodes = TREE;
       var node = null;
@@ -446,9 +471,6 @@
     }
 
     function renderPicker(){
-      document.getElementById('entryView').style.display = 'none';
-      document.getElementById('multiEntryView').style.display = 'none';
-      document.getElementById('pickerView').style.display = 'block';
       currentLeaf = null;
       currentMultiNode = null;
 
@@ -476,6 +498,7 @@
       if (currentPath.length > 0){
         var backBtn = document.createElement('button');
         backBtn.className = 'back-btn';
+        backBtn.style.margin = '0';
         backBtn.textContent = '\u2190 Back';
         backBtn.onclick = function(){ currentPath.pop(); renderPicker(); };
         backWrap.appendChild(backBtn);
@@ -508,15 +531,17 @@
       });
     }
 
-    // ==========================================
+    // ----------------------------------------------------
     // MULTI-ENTRY FORM (TKIL MECH & ELE)
-    // ==========================================
+    // ----------------------------------------------------
     function openMultiEntry(node) {
+      CURRENT_VIEW = 'multi';
       currentMultiNode = node;
-      document.getElementById('pickerView').style.display = 'none';
-      document.getElementById('entryView').style.display = 'none';
+      hideAllViews();
       document.getElementById('multiEntryView').style.display = 'block';
       
+      document.getElementById('pageTitle').textContent = "TKIL Data Entry";
+      document.getElementById('pageSub').textContent = "Grouped multi-entry form";
       document.getElementById('multiEntryTitle').textContent = "TKIL " + node.name;
       
       var container = document.getElementById('multiEntryForms');
@@ -572,9 +597,7 @@
         if (id.includes('ARS3')) {
           let checkActual = Number(actual || 0);
           let checkOT = Number(ot || 0);
-          if (checkActual - checkOT > 0) {
-            autoText = 'Including ARS3';
-          }
+          if (checkActual - checkOT > 0) { autoText = 'Including ARS3'; }
         }
         var finalRem = [autoText, rem].filter(Boolean).join('; ');
 
@@ -595,22 +618,22 @@
         btn.disabled = false;
         btn.textContent = 'Save All Sections';
         showToast('Successfully saved ' + currentMultiNode.name);
-        refreshShiftData().then(() => renderPicker());
+        refreshShiftData().then(() => showPicker());
       }).catch(err => {
         btn.disabled = false;
         btn.textContent = 'Save All Sections';
-        status.textContent = 'Network error saving data.';
+        status.innerHTML = '<span class="loading-dot"></span> Network error saving data.';
         status.className = 'status-line err';
       });
     }
 
-    // ==========================================
+    // ----------------------------------------------------
     // STANDARD ENTRY FORM
-    // ==========================================
+    // ----------------------------------------------------
     function openEntry(areaId){
+      CURRENT_VIEW = 'entry';
       currentLeaf = areaId;
-      document.getElementById('pickerView').style.display = 'none';
-      document.getElementById('multiEntryView').style.display = 'none';
+      hideAllViews();
       document.getElementById('entryView').style.display = 'block';
       
       var area = AREAS_BY_ID[areaId];
@@ -685,10 +708,8 @@
       var finalRemarks = [autoText, freeText].filter(Boolean).join('; ');
 
       var payload = {
-        date: currentDate(),
-        shift: currentShift(),
-        areaId: area.id,
-        areaName: area.fullName,
+        date: currentDate(), shift: currentShift(),
+        areaId: area.id, areaName: area.fullName,
         plan: document.getElementById('planInput').value,
         actual: document.getElementById('actualInput').value,
         inOT: document.getElementById('otInput').value,
@@ -708,7 +729,7 @@
         showToast('Saved ' + area.fullName + ' — Reported: ' + data.reported);
         
         await refreshShiftData();
-        renderPicker();
+        showPicker();
       } catch (err) {
         btn.disabled = false;
         btn.textContent = 'Save my numbers';
@@ -717,9 +738,9 @@
       }
     }
 
-    // ==========================================
-    // DASHBOARD VIEWS
-    // ==========================================
+    // ----------------------------------------------------
+    // DASHBOARD RENDERING 
+    // ----------------------------------------------------
     function updateDashboardHeaders() {
       const shift = currentShift();
       document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
@@ -741,19 +762,11 @@
       document.getElementById('thDateMaster').textContent = dtStr;
     }
 
-    async function loadDashboard(){
-      var status = document.getElementById('dashStatus');
-      status.innerHTML = '<span class="loading-dot"></span>Loading shift data\u2026';
-      await refreshShiftData();
-      
-      try { buildCustomTable(); } catch(e) { console.error("Custom Table Error:", e); }
-      try { buildMasterTable(); } catch(e) { console.error("Master Table Error:", e); }
-      
-      status.textContent = 'Updated ' + new Date().toLocaleTimeString();
-    }
-
     function buildCustomTable(){
       updateDashboardHeaders();
+      var status = document.getElementById('dashStatusCustom');
+      status.innerHTML = '<span class="loading-dot"></span> Loading shift data\u2026';
+
       var body = document.getElementById('dashBody');
       body.innerHTML = '';
       
@@ -840,9 +853,15 @@
       appendRow('TOTAL:-', gTot, 'grand-total-row');
       appendRow('DIRECT:-', dTot, 'grand-total-row');
       appendRow('INDIRECT:-', iTot, 'grand-total-row');
+
+      status.textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
 
     function buildMasterTable(){
+      updateDashboardHeaders();
+      var status = document.getElementById('dashStatusMaster');
+      status.innerHTML = '<span class="loading-dot"></span> Loading shift data\u2026';
+
       var masterBody = document.getElementById('masterDashBody');
       masterBody.innerHTML = '';
       
@@ -954,11 +973,13 @@
           '<td></td>';
         masterBody.appendChild(tr);
       });
+
+      status.textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
 
     // Capture Full HD Image specifically preventing scroll cutoff
     function downloadFullHDImage(wrapperId, filenamePrefix) {
-      showToast('Saving image\u2026');
+      showToast('Generating HD image\u2026');
       var wrapper = document.getElementById(wrapperId);
       
       var originalOverflow = wrapper.style.overflow;
@@ -967,7 +988,6 @@
       wrapper.style.width = 'max-content';
 
       html2canvas(wrapper, { backgroundColor: '#ffffff', scale: 3, useCORS: true }).then(function(canvas){
-        
         wrapper.style.overflow = originalOverflow;
         wrapper.style.width = originalWidth;
 
