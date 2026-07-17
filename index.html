@@ -634,6 +634,15 @@
       CURRENT_VIEW = 'entry';
       currentLeaf = areaId;
       hideAllViews();
+      
+      // --- ADD THESE LINES TO CLEAR FIELDS INSTANTLY ---
+      document.getElementById('planInput').value = '';
+      document.getElementById('actualInput').value = '';
+      document.getElementById('otInput').value = '';
+      document.getElementById('remarksInput').value = '';
+      document.getElementById('reportedBig').textContent = '0';
+      // -------------------------------------------------
+      
       document.getElementById('entryView').style.display = 'block';
       
       var area = AREAS_BY_ID[areaId];
@@ -690,22 +699,27 @@
       var btn = document.getElementById('saveBtn');
       var status = document.getElementById('areaStatus');
       btn.disabled = true;
-      btn.textContent = 'Saving\u2026';
+      btn.textContent = 'Saving...';
 
       var freeText = document.getElementById('remarksInput').value.trim();
       var autoText = '';
       
-      if (area.remarkPrompt){
+      // --- NEW REMARK LOGIC ---
+      let checkActual = Number(document.getElementById('actualInput').value || 0);
+      let checkOT = Number(document.getElementById('otInput').value || 0);
+      
+      if ((currentLeaf === 'VL_ARS3' || currentLeaf === 'TKIL_MECH_ARS3' || currentLeaf === 'TKIL_ELE_ARS3') 
+          && (checkActual - checkOT > 0)) {
+          autoText = 'Including ARS3';
+      } 
+      else if (area.remarkPrompt){
         var flagEl = document.getElementById('remarkFlag');
-        if (area.remarkPrompt.kind === 'boolean'){
-          if (flagEl.checked) autoText = area.remarkPrompt.text;
-        } else {
-          var n = Number(flagEl.value || 0);
-          if (n > 0) autoText = n + ' ' + area.remarkPrompt.text;
-        }
+        if (area.remarkPrompt.kind === 'boolean' && flagEl.checked) autoText = area.remarkPrompt.text;
+        else if (area.remarkPrompt.kind === 'number' && Number(flagEl.value || 0) > 0) autoText = flagEl.value + ' ' + area.remarkPrompt.text;
       }
       
       var finalRemarks = [autoText, freeText].filter(Boolean).join('; ');
+      // ------------------------
 
       var payload = {
         date: currentDate(), shift: currentShift(),
@@ -726,10 +740,10 @@
         
         btn.disabled = false;
         btn.textContent = 'Save my numbers';
-        showToast('Saved ' + area.fullName + ' — Reported: ' + data.reported);
+        showToast('Saved ' + area.fullName);
         
         await refreshShiftData();
-        showPicker();
+        showCustomDashboard();
       } catch (err) {
         btn.disabled = false;
         btn.textContent = 'Save my numbers';
