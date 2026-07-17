@@ -186,6 +186,11 @@
         </div>
         <div class="status-line" id="dashStatusCustom"></div>
       </div>
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
+        <span class="sub" style="display:block; margin-bottom:12px;">Share a dedicated link with each agency — it opens straight to their form only.</span>
+        <div id="agencyLinksList"></div>
+      </div>
     </div>
 
     <div id="masterDashboardView" style="display:none;">
@@ -277,6 +282,9 @@
         </div>
         <h2 class="area-title" id="multiEntryTitle" style="color:var(--amber); margin-top:10px;"></h2>
         <span class="sub" style="margin-bottom:14px; display:block;">Enter numbers for all sections below, then save once.</span>
+        <div id="bundleNotice" style="display:none; background:#332400; border:1px solid var(--amber); color:var(--amber); padding:10px 14px; border-radius:8px; margin-top:10px; font-size:13px;">
+          For any modification, please contact your Shift In-charge.
+        </div>
       </div>
       
       <div id="multiEntryForms"></div>
@@ -304,6 +312,21 @@
     var currentMultiNode = null;
     var cachedShiftKey = "";
     var CURRENT_VIEW = 'custom'; // App State
+    var LINK_MODE = false; // true when opened via a dedicated ?link=... URL
+
+    // Dedicated single-purpose links: ?link=<key>
+    // Each key opens a custom bundle of areas, regardless of where they sit in the tree.
+    const BUNDLES = {
+      'scoopbath':  { title: 'Scoopbath',           areaIds: ['SKE_OA_SCOOPBATH', 'TARON_10T_SCOOPBATH', 'UIL_JCB_BATHPLANT'] },
+      'rmt':        { title: 'RMT',                 areaIds: ['UIL_JCB_RMT', 'UIL_HYWA'] },
+      'ske':        { title: 'SKE Supervisor',      areaIds: ['SKE_OA_ARS2','SKE_OA_ARS3','SKE_OA_SCOOPBATH','SKE_OA_RODREPAIR','SKE_OA_BUTTCLEAN','SKE_OA_BELTHK','SKE_OA_LADIES','SKE_OP_ARS2','SKE_OP_ARS3','SKE_OP_ATV'] },
+      'nataraj':    { title: 'Nataraj Eng',         areaIds: ['NATARAJ'] },
+      'mech':       { title: 'TKIL Mech',           areaIds: ['TKIL_MECH_ARS2','TKIL_MECH_ARS3','TKIL_MECH_OTHERS'] },
+      'ele':        { title: 'TKIL Ele',            areaIds: ['TKIL_ELE_ARS2','TKIL_ELE_ARS3','TKIL_ELE_OTHERS'] },
+      'ars3':       { title: 'ARS3 — All Sections', areaIds: ['SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
+      'warehouse':  { title: 'Warehouse',           areaIds: ['TARON_10T_WAREHOUSE','TARON_3T_WAREHOUSE','SSE','SKE_OP_ATV'] },
+      'gmpl':       { title: 'GMPL',                areaIds: ['GMPL'] }
+    };
 
     function pad(n){ return String(n).padStart(2,'0'); }
     function autoDate(){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
@@ -349,6 +372,7 @@
       document.getElementById('pageTitle').textContent = 'Home Dashboard';
       document.getElementById('pageSub').textContent = 'Custom formatted report for sharing';
       buildCustomTable();
+      renderAgencyLinks();
     }
 
     function showMasterDashboard() {
@@ -402,7 +426,14 @@
         AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
         
         await refreshShiftData();
-        showCustomDashboard(); // Default to Home View
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var linkKey = urlParams.get('link');
+        if (linkKey && BUNDLES[linkKey]) {
+          openBundleEntry(linkKey);
+        } else {
+          showCustomDashboard(); // Default to Home View
+        }
 
       } catch (err) {
         showToast("Error connecting to database.");
@@ -552,6 +583,10 @@
       document.getElementById('pageTitle').textContent = (node.displayName || node.name) + " Data Entry";
       document.getElementById('pageSub').textContent = "Grouped multi-entry form";
       document.getElementById('multiEntryTitle').textContent = node.displayName || node.name;
+
+      // Dedicated links (?link=...) hide the picker back-button and show the contact notice
+      document.getElementById('multiBackBtnWrap').style.display = LINK_MODE ? 'none' : 'block';
+      document.getElementById('bundleNotice').style.display = LINK_MODE ? 'block' : 'none';
       
       var container = document.getElementById('multiEntryForms');
       container.innerHTML = '';
@@ -559,12 +594,18 @@
       node.areaIds.forEach(id => {
         var area = AREAS_BY_ID[id];
         var rec = shiftData[id] || { plan:'', actual:'', inOT:'', remarks:'', reported:0 };
+        var isFilled = !!shiftData[id];
+        var badge = isFilled
+          ? '<span style="color:#4caf50; font-size:12px; font-weight:600;">&#10003; Filled' + (rec.updatedBy ? ' by ' + rec.updatedBy : '') + (rec.timestamp ? ' at ' + rec.timestamp : '') + '</span>'
+          : '<span style="color:#888; font-size:12px;">Not filled yet</span>';
         
         var card = document.createElement('div');
         card.className = 'card';
         card.style.marginBottom = '10px';
         card.innerHTML = `
-          <div class="area-title" style="font-size:16px; margin-bottom:10px;">${area.name}</div>
+          <div class="area-title" style="font-size:16px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <span>${area.name}</span>${badge}
+          </div>
           <div class="grid3">
             <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}" autocomplete="off"></div>
             <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')" autocomplete="off"></div>
@@ -580,6 +621,18 @@
       });
       
       document.getElementById('multiSaveBtn').onclick = saveMultiArea;
+    }
+
+    function openBundleEntry(key) {
+      var bundle = BUNDLES[key];
+      if (!bundle) {
+        showToast('Unknown link — showing dashboard instead.');
+        showCustomDashboard();
+        return;
+      }
+      LINK_MODE = true;
+      var node = { id: 'bundle_' + key, name: bundle.title, displayName: bundle.title, type: 'multi', areaIds: bundle.areaIds };
+      openMultiEntry(node);
     }
 
     function updateMultiReported(id) {
@@ -627,7 +680,11 @@
       // immediately instead of waiting on every Apps Script round trip.
       Object.assign(shiftData, localUpdates);
       showToast('Saving ' + nodeName + '\u2026');
-      showPicker();
+      if (LINK_MODE) {
+        openMultiEntry(currentMultiNode); // re-render same bundle page with updated "Filled" badges
+      } else {
+        showPicker();
+      }
 
       var savedIds = Object.keys(localUpdates);
       var promises = payloads.map(function(payload){
@@ -1045,6 +1102,29 @@
       navigator.clipboard.writeText(link).then(function(){ showToast('Dashboard link copied');
       }).catch(function(){ window.prompt('Copy this link:', link); });
     });
+
+    function renderAgencyLinks() {
+      var base = window.location.href.split('?')[0];
+      var list = document.getElementById('agencyLinksList');
+      if (!list) return;
+      list.innerHTML = '';
+      Object.keys(BUNDLES).forEach(function(key){
+        var bundle = BUNDLES[key];
+        var link = base + '?link=' + key;
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--surface-2);';
+        row.innerHTML = '<span style="font-size:14px;">' + bundle.title + '</span>' +
+          '<button class="btn-ghost" style="min-width:auto; padding:6px 14px; flex:none;" data-link="' + link + '">Copy Link</button>';
+        list.appendChild(row);
+      });
+      list.querySelectorAll('button[data-link]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var link = btn.getAttribute('data-link');
+          navigator.clipboard.writeText(link).then(function(){ showToast('Link copied');
+          }).catch(function(){ window.prompt('Copy this link:', link); });
+        });
+      });
+    }
 
     init();
   </script>
