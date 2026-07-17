@@ -239,9 +239,20 @@
       </div>
     </div>
 
+    <div id="bundleTileView" style="display:none;">
+      <div class="card">
+        <div class="tile-grid" id="bundleTileGrid"></div>
+      </div>
+      <div style="background:#332400; border:1px solid var(--amber); color:var(--amber); padding:10px 14px; border-radius:8px; margin-top:14px; font-size:13px;">
+        For any modification, please contact your Shift In-charge.
+      </div>
+    </div>
+
     <div id="entryView" style="display:none;">
       <div class="card">
-        <button class="back-btn" onclick="showPicker()">&#8592; Back</button>
+        <div id="entryBackBtnWrap">
+          <button class="back-btn" onclick="showPicker()">&#8592; Back</button>
+        </div>
         
         <div id="areaTagWrap"></div>
         <p class="area-title" id="areaTitle"></p>
@@ -272,6 +283,9 @@
 
         <button class="btn-primary" style="margin-top:14px;" id="saveBtn">Save my numbers</button>
         <div class="status-line" id="areaStatus"></div>
+        <div id="entryBundleNotice" style="display:none; background:#332400; border:1px solid var(--amber); color:var(--amber); padding:10px 14px; border-radius:8px; margin-top:14px; font-size:13px;">
+          For any modification, please contact your Shift In-charge.
+        </div>
       </div>
     </div>
 
@@ -313,6 +327,16 @@
     var cachedShiftKey = "";
     var CURRENT_VIEW = 'custom'; // App State
     var LINK_MODE = false; // true when opened via a dedicated ?link=... URL
+    var currentBundleKey = null; // which bundle's tile view to return to
+
+    // Display label helper: uses the full disambiguated name, but keeps
+    // "Shift Activity" wording for TKIL Mech/Ele ARS2/ARS3 sections.
+    function cardLabel(area) {
+      if (area.name && area.name.indexOf('Shift Activity') !== -1) {
+        return area.fullName + ' (Shift Activity)';
+      }
+      return area.fullName;
+    }
 
     // Dedicated single-purpose links: ?link=<key>
     // Each key opens a custom bundle of areas, regardless of where they sit in the tree.
@@ -361,6 +385,7 @@
       document.getElementById('customDashboardView').style.display = 'none';
       document.getElementById('masterDashboardView').style.display = 'none';
       document.getElementById('pickerView').style.display = 'none';
+      document.getElementById('bundleTileView').style.display = 'none';
       document.getElementById('entryView').style.display = 'none';
       document.getElementById('multiEntryView').style.display = 'none';
     }
@@ -585,8 +610,8 @@
       document.getElementById('multiEntryTitle').textContent = node.displayName || node.name;
 
       // Dedicated links (?link=...) hide the picker back-button and show the contact notice
-      document.getElementById('multiBackBtnWrap').style.display = LINK_MODE ? 'none' : 'block';
-      document.getElementById('bundleNotice').style.display = LINK_MODE ? 'block' : 'none';
+      document.getElementById('multiBackBtnWrap').style.display = 'block';
+      document.getElementById('bundleNotice').style.display = 'none';
       
       var container = document.getElementById('multiEntryForms');
       container.innerHTML = '';
@@ -604,7 +629,7 @@
         card.style.marginBottom = '10px';
         card.innerHTML = `
           <div class="area-title" style="font-size:16px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-            <span>${area.fullName}</span>${badge}
+            <span>${cardLabel(area)}</span>${badge}
           </div>
           <div class="grid3">
             <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}" autocomplete="off"></div>
@@ -631,8 +656,40 @@
         return;
       }
       LINK_MODE = true;
-      var node = { id: 'bundle_' + key, name: bundle.title, displayName: bundle.title, type: 'multi', areaIds: bundle.areaIds };
-      openMultiEntry(node);
+      currentBundleKey = key;
+      if (bundle.areaIds.length === 1) {
+        openEntry(bundle.areaIds[0]);
+      } else {
+        showBundleTiles(key);
+      }
+    }
+
+    function showBundleTiles(key) {
+      currentBundleKey = key;
+      var bundle = BUNDLES[key];
+      CURRENT_VIEW = 'bundleTiles';
+      hideAllViews();
+      document.getElementById('bundleTileView').style.display = 'block';
+      document.getElementById('pageTitle').textContent = bundle.title;
+      document.getElementById('pageSub').textContent = 'Select a section below to enter its numbers';
+      renderBundleTiles();
+    }
+
+    function renderBundleTiles() {
+      var bundle = BUNDLES[currentBundleKey];
+      var grid = document.getElementById('bundleTileGrid');
+      grid.innerHTML = '';
+      bundle.areaIds.forEach(function(id){
+        var area = AREAS_BY_ID[id];
+        var rec = shiftData[id];
+        var filled = !!rec;
+        var tile = document.createElement('div');
+        tile.className = 'tile state-' + (filled ? 'full' : 'empty');
+        var meta = filled ? ('Filled' + (rec.updatedBy ? ' by ' + rec.updatedBy : '')) : 'Not filled yet';
+        tile.innerHTML = '<span class="dot"></span><span class="tname">' + cardLabel(area) + '</span><span class="tmeta">' + meta + '</span>';
+        tile.onclick = function(){ openEntry(id); };
+        grid.appendChild(tile);
+      });
     }
 
     function updateMultiReported(id) {
@@ -717,11 +774,24 @@
       document.getElementById('entryView').style.display = 'block';
       
       var area = AREAS_BY_ID[areaId];
-      document.getElementById('pageTitle').textContent = area.fullName;
+      document.getElementById('pageTitle').textContent = cardLabel(area);
       document.getElementById('pageSub').textContent = 'Enter your shift numbers below';
-      document.getElementById('areaTitle').textContent = area.fullName;
+      document.getElementById('areaTitle').textContent = cardLabel(area);
       document.getElementById('areaTagWrap').innerHTML =
         '<span class="area-tag ' + (area.type === 'Direct' ? 'tag-direct' : 'tag-indirect') + '">' + area.type.toUpperCase() + ' AGENCY</span>';
+
+      // Dynamic back button: internal picker vs. a multi-section link (back to its tiles) vs. a single-section link (no back)
+      var backWrap = document.getElementById('entryBackBtnWrap');
+      if (LINK_MODE) {
+        if (currentBundleKey && BUNDLES[currentBundleKey] && BUNDLES[currentBundleKey].areaIds.length > 1) {
+          backWrap.innerHTML = '<button class="back-btn" onclick="showBundleTiles(\'' + currentBundleKey + '\')">&#8592; Back</button>';
+        } else {
+          backWrap.innerHTML = '';
+        }
+      } else {
+        backWrap.innerHTML = '<button class="back-btn" onclick="showPicker()">&#8592; Back</button>';
+      }
+      document.getElementById('entryBundleNotice').style.display = LINK_MODE ? 'block' : 'none';
 
       var promptWrap = document.getElementById('remarkPromptWrap');
       promptWrap.innerHTML = '';
@@ -742,6 +812,19 @@
       document.getElementById('saveBtn').onclick = saveArea;
 
       loadEntryData();
+
+      // Once filled via a dedicated link, lock the form — further changes go through the Shift In-charge
+      var alreadyFilled = LINK_MODE && !!shiftData[areaId];
+      ['planInput','actualInput','otInput','remarksInput'].forEach(function(id){
+        document.getElementById(id).disabled = alreadyFilled;
+      });
+      var flagEl = document.getElementById('remarkFlag');
+      if (flagEl) flagEl.disabled = alreadyFilled;
+      document.getElementById('saveBtn').style.display = alreadyFilled ? 'none' : 'block';
+      if (alreadyFilled) {
+        document.getElementById('areaStatus').textContent = 'Already submitted for this shift. Contact your Shift In-charge for any changes.';
+        document.getElementById('areaStatus').className = 'status-line err';
+      }
     }
 
     function updateReported(){
@@ -806,7 +889,15 @@
         timestamp: new Date().toLocaleString()
       };
       showToast('Saving ' + area.fullName + '\u2026');
-      showPicker();
+      if (LINK_MODE) {
+        if (currentBundleKey && BUNDLES[currentBundleKey] && BUNDLES[currentBundleKey].areaIds.length > 1) {
+          showBundleTiles(currentBundleKey);
+        } else {
+          openEntry(savedAreaId); // re-render this same section, now locked
+        }
+      } else {
+        showPicker();
+      }
 
       fetch(SCRIPT_URL, {
         method: 'POST',
@@ -819,6 +910,7 @@
         }
         showToast('Saved ' + area.fullName + ' — Reported: ' + data.reported);
         if (CURRENT_VIEW === 'picker') renderPicker();
+        if (CURRENT_VIEW === 'bundleTiles') renderBundleTiles();
       }).catch(function(err){
         showToast('\u26A0 Could not save ' + area.fullName + '. Check connection and retry.');
       });
