@@ -159,7 +159,7 @@
       </div>
 
       <div class="card">
-        <h2 class="section-title" style="margin-top:0;">Custom Shift Report</h2>
+        <h2 class="section-title" style="margin-top:0;">Shift Report</h2>
         <div id="customExportWrapper" class="excel-wrapper">
           <table id="dashTable" class="excel-table">
             <thead>
@@ -372,35 +372,34 @@
     // ----------------------------------------------------
     // INITIALIZATION & DATA FETCHING
     // ----------------------------------------------------
-    async function fetchInitData() {
+   async function fetchInitData() {
       try {
         const res = await fetch(SCRIPT_URL + '?action=getInitData');
         const data = await res.json();
         AREAS = data.areas;
         TREE = data.tree;
         
-        // INTERCEPT AND CONVERT TKIL TO MULTI-ENTRY FORMS
-        var tkilGroup = TREE.find(n => n.id === 'TKIL');
-        if (tkilGroup) {
-          tkilGroup.children.forEach(c => {
-            if (c.id === 'TKIL_MECH' || c.id === 'TKIL_ELE') {
+        // UPDATED: Convert BOTH TKIL and VL to Multi-Entry Forms
+        TREE.forEach(node => {
+          if (node.id === 'TKIL' || node.id === 'VL') {
+            node.children.forEach(c => {
+              // Convert the group (like MECH, ELE, or VL's children) to multi
               c.type = 'multi';
               c.areaIds = c.children.map(leaf => leaf.areaId);
-            }
-          });
-        }
+            });
+          }
+        });
 
         AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
         
         await refreshShiftData();
-        showCustomDashboard(); // Default to Home View
+        showCustomDashboard(); 
 
       } catch (err) {
         showToast("Error connecting to database.");
         console.error(err);
       }
     }
-
     async function refreshShiftData() {
       checkAndResetShiftState();
       try {
