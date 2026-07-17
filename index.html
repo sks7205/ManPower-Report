@@ -293,7 +293,7 @@
 
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqu8xBOTr_ytsx3B-TO1oTGdUHPsIqK6lymBAUZ2_4TUkLmZntAXeXhdrMGm0I9_4/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycHAoi-K6Vmvb_XO15rMCGcDJRYRIvFf0vk4dG8FrIrptgCOi8qvtOS_jFZMRRqWXi/exec";
 
     var AREAS = [];
     var AREAS_BY_ID = {};
@@ -600,13 +600,10 @@
         var ot = document.getElementById('m_ot_' + id).value;
         var rem = document.getElementById('m_rem_' + id).value.trim();
 
-        var autoText = '';
-        if (id.includes('ARS3')) {
-          var checkActual = Number(actual || 0);
-          var checkOT = Number(ot || 0);
-          if (checkActual - checkOT > 0) { autoText = 'Including ARS3'; }
-        }
-        var finalRem = [autoText, rem].filter(Boolean).join('; ');
+        // NOTE: "Including ARS3" is NOT stored here anymore — it's added only
+        // as a display-time tag on the Custom Report row (buildCustomTable),
+        // so the Master Report shows just what the user actually typed.
+        var finalRem = rem;
         var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
         localUpdates[id] = {
