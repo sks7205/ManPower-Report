@@ -244,15 +244,15 @@
         <div class="grid3">
           <div class="field">
             <label for="planInput">Plan</label>
-            <input type="number" id="planInput" min="0" inputmode="numeric">
+            <input type="number" id="planInput" min="0" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field">
             <label for="actualInput">Actual</label>
-            <input type="number" id="actualInput" min="0" inputmode="numeric">
+            <input type="number" id="actualInput" min="0" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field">
             <label for="otInput">In OT</label>
-            <input type="number" id="otInput" min="0" inputmode="numeric">
+            <input type="number" id="otInput" min="0" inputmode="numeric" autocomplete="off">
           </div>
         </div>
 
@@ -263,7 +263,7 @@
 
         <div id="remarkPromptWrap"></div>
 
-        <textarea id="remarksInput" placeholder="Additional remarks (optional)"></textarea>
+        <textarea id="remarksInput" placeholder="Additional remarks (optional)" autocomplete="off"></textarea>
 
         <button class="btn-primary" style="margin-top:14px;" id="saveBtn">Save my numbers</button>
         <div class="status-line" id="areaStatus"></div>
@@ -293,7 +293,7 @@
 
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycHAoi-K6Vmvb_XO15rMCGcDJRYRIvFf0vk4dG8FrIrptgCOi8qvtOS_jFZMRRqWXi/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqu8xBOTr_ytsx3B-TO1oTGdUHPsIqK6lymBAUZ2_4TUkLmZntAXeXhdrMGm0I9_4/exec";
 
     var AREAS = [];
     var AREAS_BY_ID = {};
@@ -566,15 +566,15 @@
         card.innerHTML = `
           <div class="area-title" style="font-size:16px; margin-bottom:10px;">${area.name}</div>
           <div class="grid3">
-            <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}"></div>
-            <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')"></div>
-            <div class="field"><label>In OT</label><input type="number" id="m_ot_${id}" value="${rec.inOT}" oninput="updateMultiReported('${id}')"></div>
+            <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}" autocomplete="off"></div>
+            <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')" autocomplete="off"></div>
+            <div class="field"><label>In OT</label><input type="number" id="m_ot_${id}" value="${rec.inOT}" oninput="updateMultiReported('${id}')" autocomplete="off"></div>
           </div>
           <div class="actual-readout" style="padding: 10px; margin-top: 10px;">
             <span class="sub" style="font-size:11px;">Reported (Actual - OT)</span>
             <span class="num" id="m_rep_${id}" style="font-size:18px;">${rec.reported}</span>
           </div>
-          <textarea id="m_rem_${id}" placeholder="Remarks" style="margin-top:10px;">${rec.remarks||''}</textarea>
+          <textarea id="m_rem_${id}" placeholder="Remarks" style="margin-top:10px;" autocomplete="off">${rec.remarks||''}</textarea>
         `;
         container.appendChild(card);
       });
@@ -589,15 +589,11 @@
     }
 
     function saveMultiArea() {
-      var btn = document.getElementById('multiSaveBtn');
-      var status = document.getElementById('multiAreaStatus');
-      btn.disabled = true;
-      btn.textContent = 'Saving all sections...';
-      status.textContent = '';
-
+      var nodeName = currentMultiNode.displayName || currentMultiNode.name;
       var localUpdates = {};
+      var payloads = [];
 
-      var promises = currentMultiNode.areaIds.map(id => {
+      currentMultiNode.areaIds.forEach(function(id){
         var area = AREAS_BY_ID[id];
         var plan = document.getElementById('m_plan_' + id).value;
         var actual = document.getElementById('m_actual_' + id).value;
@@ -606,46 +602,54 @@
 
         var autoText = '';
         if (id.includes('ARS3')) {
-          let checkActual = Number(actual || 0);
-          let checkOT = Number(ot || 0);
+          var checkActual = Number(actual || 0);
+          var checkOT = Number(ot || 0);
           if (checkActual - checkOT > 0) { autoText = 'Including ARS3'; }
         }
         var finalRem = [autoText, rem].filter(Boolean).join('; ');
+        var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
-        var payload = {
+        localUpdates[id] = {
+          plan: Number(plan || 0),
+          actual: Number(actual || 0),
+          inOT: Number(ot || 0),
+          reported: reportedGuess,
+          remarks: finalRem,
+          updatedBy: 'you',
+          timestamp: new Date().toLocaleString()
+        };
+
+        payloads.push({
           date: currentDate(), shift: currentShift(),
           areaId: id, areaName: area.fullName,
           plan: plan, actual: actual, inOT: ot, remarks: finalRem
-        };
+        });
+      });
 
+      // OPTIMISTIC UI: apply all updates to the local cache and move on
+      // immediately instead of waiting on every Apps Script round trip.
+      Object.assign(shiftData, localUpdates);
+      showToast('Saving ' + nodeName + '\u2026');
+      showPicker();
+
+      var savedIds = Object.keys(localUpdates);
+      var promises = payloads.map(function(payload){
         return fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'saveAreaRow', data: payload })
-        }).then(res => res.json()).then(data => {
-          localUpdates[id] = {
-            plan: Number(plan || 0),
-            actual: Number(actual || 0),
-            inOT: Number(ot || 0),
-            reported: data.reported,
-            remarks: finalRem,
-            updatedBy: 'you',
-            timestamp: new Date().toLocaleString()
-          };
+        }).then(function(res){ return res.json(); }).then(function(data){
+          if (shiftData[payload.areaId]) {
+            shiftData[payload.areaId].reported = data.reported;
+          }
         });
       });
 
-      Promise.all(promises).then(() => {
-        btn.disabled = false;
-        btn.textContent = 'Save All Sections';
-        showToast('Successfully saved ' + currentMultiNode.name);
-        Object.assign(shiftData, localUpdates);
-        showPicker();
-      }).catch(err => {
-        btn.disabled = false;
-        btn.textContent = 'Save All Sections';
-        status.innerHTML = '<span class="loading-dot"></span> Network error saving data.';
-        status.className = 'status-line err';
+      Promise.all(promises).then(function(){
+        showToast('Saved ' + nodeName);
+        if (CURRENT_VIEW === 'picker') renderPicker();
+      }).catch(function(err){
+        showToast('\u26A0 Could not save ' + nodeName + '. Check connection and retry.');
       });
     }
 
@@ -705,12 +709,9 @@
       status.className = 'status-line';
     }
 
-    async function saveArea(){
+    function saveArea(){
       var area = AREAS_BY_ID[currentLeaf];
-      var btn = document.getElementById('saveBtn');
       var status = document.getElementById('areaStatus');
-      btn.disabled = true;
-      btn.textContent = 'Saving\u2026';
 
       var freeText = document.getElementById('remarksInput').value.trim();
       var autoText = '';
@@ -729,6 +730,7 @@
       var plan = document.getElementById('planInput').value;
       var actual = document.getElementById('actualInput').value;
       var ot = document.getElementById('otInput').value;
+      var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
       var payload = {
         date: currentDate(), shift: currentShift(),
@@ -737,36 +739,35 @@
         remarks: finalRemarks
       };
 
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveAreaRow', data: payload })
-        });
-        const data = await res.json();
-        
-        btn.disabled = false;
-        btn.textContent = 'Save my numbers';
+      // OPTIMISTIC UI: update local cache and move on immediately —
+      // don't make the user wait on the Apps Script round trip.
+      var savedAreaId = currentLeaf;
+      shiftData[savedAreaId] = {
+        plan: Number(plan || 0),
+        actual: Number(actual || 0),
+        inOT: Number(ot || 0),
+        reported: reportedGuess,
+        remarks: finalRemarks,
+        updatedBy: 'you',
+        timestamp: new Date().toLocaleString()
+      };
+      showToast('Saving ' + area.fullName + '\u2026');
+      showPicker();
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'saveAreaRow', data: payload })
+      }).then(function(res){ return res.json(); }).then(function(data){
+        // Reconcile with server-confirmed value once it arrives
+        if (shiftData[savedAreaId]) {
+          shiftData[savedAreaId].reported = data.reported;
+        }
         showToast('Saved ' + area.fullName + ' — Reported: ' + data.reported);
-
-        // Update local cache directly instead of re-fetching from server (removes lag)
-        shiftData[currentLeaf] = {
-          plan: Number(plan || 0),
-          actual: Number(actual || 0),
-          inOT: Number(ot || 0),
-          reported: data.reported,
-          remarks: finalRemarks,
-          updatedBy: 'you',
-          timestamp: new Date().toLocaleString()
-        };
-
-        showPicker();
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = 'Save my numbers';
-        status.textContent = 'Could not save. Check connection.';
-        status.className = 'status-line err';
-      }
+        if (CURRENT_VIEW === 'picker') renderPicker();
+      }).catch(function(err){
+        showToast('\u26A0 Could not save ' + area.fullName + '. Check connection and retry.');
+      });
     }
 
     // ----------------------------------------------------
@@ -861,6 +862,7 @@
       appendRow('SKE Rod Repair', getMetrics('SKE_OA_RODREPAIR'));
       appendRow('SKE Butt Clean', getMetrics('SKE_OA_BUTTCLEAN'));
       appendRow('SKE HK(Belt)', getMetrics('SKE_OA_BELTHK'));
+      appendRow('SKE OA(Ladies)', getMetrics('SKE_OA_LADIES'));
 
       appendRow('TARON', sumMetrics(['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH']), 'depth-1');
       appendRow('Tenon hk', getMetrics('TENON_HK'));
