@@ -1031,7 +1031,27 @@
       }).catch(function(){ window.prompt('Copy this link:', link); });
     });
 
-    init();
+    async function init(){
+      const res = await fetch(SCRIPT_URL + '?action=getInitData');
+      const data = await res.json();
+      AREAS = data.areas; TREE = data.tree;
+      
+      // ADDED 'VL' TO THE LIST OF MULTI-ENTRY GROUPS
+      TREE.forEach(node => {
+        if (node.id === 'TKIL' || node.id === 'VL') {
+          node.children.forEach(c => { 
+            c.type = 'multi'; 
+            c.areaIds = c.children ? c.children.map(l => l.areaId) : [c.areaId]; 
+          });
+        }
+      });
+      
+      AREAS.forEach(a => AREAS_BY_ID[a.id] = a);
+      await refreshShiftData();
+      buildCustomTable();
+      buildMasterTable();
+      showCustomDashboard();
+    }
   </script>
 </body>
 </html>
