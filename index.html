@@ -389,8 +389,9 @@
       <div class="card">
         <div class="tile-grid" id="bundleTileGrid"></div>
       </div>
-      <div class="notice-box" style="display:block;">
-        For any modification, please contact your Shift In-charge.
+      <!-- Hidden until quota exhausted -->
+      <div id="bundleTileNotice" class="notice-box">
+        ⚠️ For any modification, please contact your Shift In-charge.
       </div>
     </div>
 
@@ -431,6 +432,7 @@
         <button class="btn-secondary" style="margin-top:20px; display:none;" id="updateBtn">✏️ Update My Entry</button>
         <div class="status-line" id="areaStatus"></div>
         
+        <!-- Hidden until quota exhausted -->
         <div id="entryBundleNotice" class="notice-box">
           ⚠️ For any modification, please contact your Shift In-charge.
         </div>
@@ -445,6 +447,7 @@
         <h2 class="area-title" id="multiEntryTitle" style="color:var(--primary); margin-top:10px; font-size:24px;"></h2>
         <span class="sub" style="margin-bottom:8px; display:block;">Enter numbers for all sections below, then save once.</span>
         
+        <!-- Hidden until quota exhausted -->
         <div id="bundleNotice" class="notice-box">
           ⚠️ For any modification, please contact your Shift In-charge.
         </div>
@@ -474,15 +477,14 @@
     var currentLeaf = null;
     var currentMultiNode = null;
     var cachedShiftKey = "";
-    var CURRENT_VIEW = 'custom'; // App State
-    var LINK_MODE = false; // true when opened via a dedicated ?link=... URL
-    var currentBundleKey = null; // which bundle's tile view to return to
-    var AGENCY_NAME = ''; // name entered by the agency person on a dedicated link
-    var PENDING_BUNDLE_KEY = null; // bundle to open once the name gate is passed
-    var IS_UPDATE_SAVE = false; // true when this save is the one allowed update pass
-    var DASHBOARD_EDIT_MODE = false; // true when 'Edit Report' is clicked on dashboard
+    var CURRENT_VIEW = 'custom'; 
+    var LINK_MODE = false; 
+    var currentBundleKey = null; 
+    var AGENCY_NAME = ''; 
+    var PENDING_BUNDLE_KEY = null; 
+    var IS_UPDATE_SAVE = false; 
+    var DASHBOARD_EDIT_MODE = false; 
 
-    // Main dashboard access requires ?key=<this value> in the URL.
     const ADMIN_KEY = "ars2incharge2026";
 
     function cardLabel(area) {
@@ -748,6 +750,7 @@
       else if (CURRENT_VIEW === 'picker') { renderPicker(); }
       else if (CURRENT_VIEW === 'entry' && currentLeaf) { loadEntryData(); }
       else if (CURRENT_VIEW === 'multi' && currentMultiNode) { openMultiEntry(currentMultiNode); }
+      else if (CURRENT_VIEW === 'bundleTiles') { renderBundleTiles(); }
     }
 
     // ----------------------------------------------------
@@ -873,9 +876,15 @@
       var container = document.getElementById('multiEntryForms');
       container.innerHTML = '';
       
-      // Check if multi form is already filled out in LINK_MODE
+      // Check if update quota is exhausted for any area in this form
       var isMultiFilledAtAll = node.areaIds.some(id => !!shiftData[id]);
-      var isCardLocked = LINK_MODE && isMultiFilledAtAll;
+      var alreadyUpdatedOnce = node.areaIds.some(id => {
+         var r = shiftData[id];
+         return r && r.updatedBy && r.updatedBy.indexOf('(updated)') !== -1;
+      });
+
+      // We only lock inputs if they've used up their update quota
+      var isCardLocked = LINK_MODE && alreadyUpdatedOnce;
 
       document.getElementById('bundleNotice').style.display = isCardLocked ? 'block' : 'none';
 
@@ -911,6 +920,12 @@
       var saveBtn = document.getElementById('multiSaveBtn');
       saveBtn.onclick = saveMultiArea;
       saveBtn.style.display = isCardLocked ? 'none' : 'block';
+      
+      if (!isCardLocked && isMultiFilledAtAll && LINK_MODE) {
+          saveBtn.textContent = '✏️ Update All Sections';
+      } else {
+          saveBtn.textContent = 'Save All Sections';
+      }
     }
 
     function openBundleEntry(key) {
@@ -980,10 +995,19 @@
       var bundle = BUNDLES[currentBundleKey];
       var grid = document.getElementById('bundleTileGrid');
       grid.innerHTML = '';
+      
+      var anyLocked = false;
+      
       bundle.areaIds.forEach(function(id){
         var area = AREAS_BY_ID[id];
         var rec = shiftData[id];
         var filled = !!rec;
+        
+        // If any tile in the bundle has exhausted its quota, flag it to show the warning
+        if (filled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1) {
+            anyLocked = true;
+        }
+        
         var tile = document.createElement('div');
         tile.className = 'tile state-' + (filled ? 'full' : 'empty');
         var meta = filled ? ('Filled' + (rec.updatedBy ? ' by ' + rec.updatedBy : '')) : 'Not filled yet';
@@ -991,6 +1015,12 @@
         tile.onclick = function(){ openEntry(id); };
         grid.appendChild(tile);
       });
+      
+      // Update visibility of the bundle tile notice based on update quota status
+      var noticeEl = document.getElementById('bundleTileNotice');
+      if (noticeEl) {
+          noticeEl.style.display = anyLocked ? 'block' : 'none';
+      }
     }
 
     function updateMultiReported(id) {
@@ -1014,6 +1044,14 @@
 
       var localUpdates = {};
       var payloads = [];
+      
+      var isMultiFilledAtAll = currentMultiNode.areaIds.some(id => !!shiftData[id]);
+      var enteredByName = LINK_MODE ? (AGENCY_NAME || 'Agency') : 'you';
+      
+      // Append (updated) tag if they are re-saving to mark quota exhausted
+      if (LINK_MODE && isMultiFilledAtAll) {
+         enteredByName += ' (updated)';
+      }
 
       currentMultiNode.areaIds.forEach(function(id){
         var area = AREAS_BY_ID[id];
@@ -1028,7 +1066,7 @@
         localUpdates[id] = {
           plan: Number(plan || 0), actual: Number(actual || 0),
           inOT: Number(ot || 0), reported: reportedGuess,
-          remarks: finalRem, updatedBy: 'you', timestamp: new Date().toLocaleString()
+          remarks: finalRem, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
         };
 
         payloads.push({
@@ -1116,6 +1154,9 @@
       var rec = shiftData[areaId];
       var alreadyFilled = LINK_MODE && !!rec;
       var alreadyUpdatedOnce = alreadyFilled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1;
+      
+      // Lock inputs if filled. It requires clicking "Update" to unlock, 
+      // preventing accidental edits even if they have quota left.
       var locked = alreadyFilled; 
 
       function applyLockState(isLocked) {
@@ -1140,13 +1181,13 @@
       } else if (alreadyUpdatedOnce) {
         saveBtn.style.display = 'none';
         updateBtn.style.display = 'none';
-        noticeEl.style.display = LINK_MODE ? 'block' : 'none'; // Only show if locked in agency mode
+        noticeEl.style.display = LINK_MODE ? 'block' : 'none'; // Only show warning when quota is EXHAUSTED
         statusEl.textContent = 'Already submitted and updated once for this shift. Contact your Shift In-charge for further changes.';
         statusEl.className = 'status-line err';
       } else {
         saveBtn.style.display = 'none';
         updateBtn.style.display = 'block';
-        noticeEl.style.display = LINK_MODE ? 'block' : 'none'; // Only show if locked in agency mode
+        noticeEl.style.display = 'none'; // Hidden because they still have quota left!
         statusEl.textContent = 'Already submitted for this shift. You can update it once more if needed.';
         statusEl.className = 'status-line';
       }
@@ -1155,7 +1196,7 @@
         applyLockState(false);
         updateBtn.style.display = 'none';
         saveBtn.style.display = 'block';
-        noticeEl.style.display = 'none'; // Hidden when unlocked for update
+        noticeEl.style.display = 'none'; // Keep hidden during active update edit
         IS_UPDATE_SAVE = true;
         statusEl.textContent = 'Editing — this is your one allowed update.';
         statusEl.className = 'status-line';
@@ -1320,7 +1361,6 @@
         return res;
       }
 
-      // Updated appendRow to support Dashboard Edit mode via editTarget parameter
       function appendRow(label, data, className, forceNoRemarks, editTarget) {
         var tr = document.createElement('tr');
         if (className) tr.className = className;
@@ -1328,7 +1368,6 @@
         
         var labelHtml = label;
         if (DASHBOARD_EDIT_MODE && editTarget) {
-            // Adds an interactive ✏️ button and underline to indicate editability
             labelHtml = '<div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" class="editable-row-label" data-target=\'' + JSON.stringify(editTarget) + '\'>' + 
                         '<span style="color:#2563eb; text-decoration:underline;">' + label + '</span>' + 
                         '<span style="font-size:12px;">✏️</span></div>';
@@ -1383,7 +1422,7 @@
         remarks: "SKE - " + skeAtvMetrics.actual
       };
       if (sseMetrics.remarks) sseSkeSum.remarks += "; " + sseMetrics.remarks;
-      appendRow('SSE + SKE', sseSkeSum, 'depth-2', false, {type: 'group', path: []}); // No specific editor path
+      appendRow('SSE + SKE', sseSkeSum, 'depth-2', false, {type: 'group', path: []}); 
 
       appendRow('LLOYD', getMetrics('LLOYD'), '', false, {type: 'leaf', id: 'LLOYD'});
       appendRow('UIL', sumMetrics(['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA']), 'depth-1', false, {type: 'group', path: ['UIL']});
@@ -1405,7 +1444,6 @@
       appendRow('DIRECT:-', dTot, 'grand-total-row', true);
       appendRow('INDIRECT:-', iTot, 'grand-total-row', true);
       
-      // Attach Edit click listeners if Edit Mode is ON
       if (DASHBOARD_EDIT_MODE) {
           document.querySelectorAll('.editable-row-label').forEach(function(el) {
               el.addEventListener('click', function() {
