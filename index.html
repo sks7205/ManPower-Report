@@ -149,6 +149,14 @@
   </div>
   <div class="auto-badge" id="autoBadge"></div>
 
+  <div id="successModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:var(--surface-2); border:1px solid var(--ok); border-radius:14px; padding:30px 26px; max-width:320px; width:85%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+      <div style="font-size:42px; margin-bottom:8px;">&#9989;</div>
+      <div id="successModalMsg" style="font-size:15px; color:var(--text); font-weight:600; line-height:1.4; white-space:pre-line;"></div>
+      <button id="successModalOkBtn" class="btn-primary" style="margin-top:20px;">OK</button>
+    </div>
+  </div>
+
   <main>
     
     <div id="restrictedView" style="display:none;">
@@ -165,6 +173,7 @@
         <button class="btn-primary" onclick="showPicker()">&#9998; Data Entry</button>
         <button class="btn-secondary" onclick="showMasterDashboard()">&#128202; Master Report</button>
         <button class="btn-secondary" id="refreshBtn">&#8635; Refresh</button>
+        <button class="btn-ghost" id="resetShiftBtn" style="border-color:#c94f4f; color:#c94f4f;">&#128465; Reset All Data</button>
       </div>
 
       <div class="card" style="padding:14px 16px;">
@@ -201,7 +210,7 @@
         
         <div class="dash-actions">
           <button class="btn-ghost" onclick="downloadFullHDImage('customExportWrapper', 'Custom_Shift_Report')">Download Image</button>
-          <button class="btn-ghost" id="copyEntryLinkBtn">Copy Link to Dashboard</button>
+          <button class="btn-ghost" id="copyEntryLinkBtn">Share Dashboard Link</button>
         </div>
         <div class="status-line" id="dashStatusCustom"></div>
       </div>
@@ -258,6 +267,16 @@
       </div>
     </div>
 
+    <div id="nameGateView" style="display:none;">
+      <div class="card" style="text-align:center; padding:28px 20px;">
+        <div style="font-size:32px; margin-bottom:8px;">&#128100;</div>
+        <h2 class="section-title" style="margin-top:0;">Who's filling this in?</h2>
+        <p class="sub" style="display:block; margin-bottom:16px;">Enter your name to continue — this lets others see who filled each section.</p>
+        <input type="text" id="nameGateInput" placeholder="Your name" autocomplete="off" style="width:100%; box-sizing:border-box; padding:12px 14px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-size:15px; margin-bottom:14px;">
+        <button class="btn-primary" id="nameGateContinueBtn">Continue</button>
+      </div>
+    </div>
+
     <div id="bundleTileView" style="display:none;">
       <div class="card">
         <div class="tile-grid" id="bundleTileGrid"></div>
@@ -279,11 +298,11 @@
         <div class="grid3">
           <div class="field">
             <label for="planInput">Plan</label>
-            <input type="number" id="planInput" min="0" inputmode="numeric" autocomplete="off">
+            <input type="number" id="planInput" min="0" inputmode="numeric" autocomplete="off" required>
           </div>
           <div class="field">
             <label for="actualInput">Actual</label>
-            <input type="number" id="actualInput" min="0" inputmode="numeric" autocomplete="off">
+            <input type="number" id="actualInput" min="0" inputmode="numeric" autocomplete="off" required>
           </div>
           <div class="field">
             <label for="otInput">In OT</label>
@@ -301,6 +320,7 @@
         <textarea id="remarksInput" placeholder="Additional remarks (optional)" autocomplete="off"></textarea>
 
         <button class="btn-primary" style="margin-top:14px;" id="saveBtn">Save my numbers</button>
+        <button class="btn-secondary" style="margin-top:14px; display:none;" id="updateBtn">&#9998; Update my entry</button>
         <div class="status-line" id="areaStatus"></div>
         <div id="entryBundleNotice" style="display:none; background:#332400; border:1px solid var(--amber); color:var(--amber); padding:10px 14px; border-radius:8px; margin-top:14px; font-size:13px;">
           For any modification, please contact your Shift In-charge.
@@ -347,6 +367,9 @@
     var CURRENT_VIEW = 'custom'; // App State
     var LINK_MODE = false; // true when opened via a dedicated ?link=... URL
     var currentBundleKey = null; // which bundle's tile view to return to
+    var AGENCY_NAME = ''; // name entered by the agency person on a dedicated link
+    var PENDING_BUNDLE_KEY = null; // bundle to open once the name gate is passed
+    var IS_UPDATE_SAVE = false; // true when this save is the one allowed update pass
 
     // Main dashboard access requires ?key=<this value> in the URL.
     // Only share this full link with people who should see/edit all agencies.
@@ -372,9 +395,10 @@
       'nataraj':    { title: 'Nataraj Eng',         areaIds: ['NATARAJ'] },
       'mech':       { title: 'TKIL Mech',           areaIds: ['TKIL_MECH_ARS2','TKIL_MECH_ARS3','TKIL_MECH_OTHERS'] },
       'ele':        { title: 'TKIL Ele',            areaIds: ['TKIL_ELE_ARS2','TKIL_ELE_ARS3','TKIL_ELE_OTHERS'] },
-      'ars3':       { title: 'ARS3',                areaIds: ['SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
+      'ars3':       { title: 'ARS3 — All Sections', areaIds: ['VL_ARS3','SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
       'warehouse':  { title: 'Warehouse',           areaIds: ['TARON_10T_WAREHOUSE','TARON_3T_WAREHOUSE','SSE','SKE_OP_ATV'] },
-      'gmpl':       { title: 'GMPL',                areaIds: ['GMPL'] }
+      'gmpl':       { title: 'GMPL',                areaIds: ['GMPL'] },
+      'taron_ars2': { title: 'TARON ARS2',          areaIds: ['TARON_3T_ARS2','TARON_10T_ARS2'] }
     };
 
     function pad(n){ return String(n).padStart(2,'0'); }
@@ -399,6 +423,19 @@
       t.classList.add('show');
       setTimeout(function(){ t.classList.remove('show'); }, 2200);
     }
+
+    var successPopupTimer = null;
+    function showSuccessPopup(msg){
+      var overlay = document.getElementById('successModalOverlay');
+      document.getElementById('successModalMsg').textContent = msg;
+      overlay.style.display = 'flex';
+      clearTimeout(successPopupTimer);
+      successPopupTimer = setTimeout(hideSuccessPopup, 2500);
+    }
+    function hideSuccessPopup(){
+      document.getElementById('successModalOverlay').style.display = 'none';
+      clearTimeout(successPopupTimer);
+    }
     function currentDate(){ return document.getElementById('dateInput').value; }
     function currentShift(){ return document.getElementById('shiftInput').value; }
 
@@ -415,6 +452,7 @@
     // ----------------------------------------------------
     function hideAllViews() {
       document.getElementById('restrictedView').style.display = 'none';
+      document.getElementById('nameGateView').style.display = 'none';
       document.getElementById('customDashboardView').style.display = 'none';
       document.getElementById('masterDashboardView').style.display = 'none';
       document.getElementById('pickerView').style.display = 'none';
@@ -490,6 +528,12 @@
         }
 
         AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
+
+        // Butt Clean was missing the "1 supervisor included" option that its
+        // sibling OA sections already have — add it here client-side.
+        if (AREAS_BY_ID['SKE_OA_BUTTCLEAN'] && !AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt) {
+          AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt = { kind: 'boolean', text: '1 supervisor included' };
+        }
         
         await refreshShiftData();
 
@@ -545,6 +589,46 @@
           showToast('Refreshing\u2026');
           syncData(false);
         });
+      }
+      var resetBtn = document.getElementById('resetShiftBtn');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', resetShiftData);
+      }
+      document.getElementById('successModalOkBtn').addEventListener('click', hideSuccessPopup);
+      document.getElementById('successModalOverlay').addEventListener('click', function(e){
+        if (e.target === this) hideSuccessPopup();
+      });
+      document.getElementById('nameGateContinueBtn').addEventListener('click', continueFromNameGate);
+      document.getElementById('nameGateInput').addEventListener('keydown', function(e){
+        if (e.key === 'Enter') continueFromNameGate();
+      });
+    }
+
+    async function resetShiftData(){
+      var dateStr = currentDate(), shiftStr = currentShift();
+      var confirmed = window.confirm(
+        'This will permanently clear ALL entered data for ' + dateStr + ' — Shift ' + shiftStr + '.\n\nThis cannot be undone. Continue?'
+      );
+      if (!confirmed) return;
+
+      showToast('Clearing data\u2026');
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'resetShiftData', data: { date: dateStr, shift: shiftStr } })
+        });
+        const result = await res.json();
+        if (result.success) {
+          shiftData = {};
+          buildCustomTable();
+          renderAgencyLinks();
+          showToast('Cleared all data for ' + dateStr + ' Shift ' + shiftStr);
+        } else {
+          showToast('\u26A0 Reset failed: ' + (result.error || 'unknown error'));
+        }
+      } catch (err) {
+        showToast('\u26A0 Could not reach server. Check connection and retry.');
       }
     }
 
@@ -700,8 +784,8 @@
             <span>${cardLabel(area)}</span>${badge}
           </div>
           <div class="grid3">
-            <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}" autocomplete="off"></div>
-            <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')" autocomplete="off"></div>
+            <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}" autocomplete="off" required></div>
+            <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')" autocomplete="off" required></div>
             <div class="field"><label>In OT</label><input type="number" id="m_ot_${id}" value="${rec.inOT}" oninput="updateMultiReported('${id}')" autocomplete="off"></div>
           </div>
           <div class="actual-readout" style="padding: 10px; margin-top: 10px;">
@@ -725,11 +809,47 @@
       }
       LINK_MODE = true;
       currentBundleKey = key;
+
+      if (!AGENCY_NAME) {
+        var cached = '';
+        try { cached = localStorage.getItem('agencyName') || ''; } catch(e){}
+        if (cached) {
+          AGENCY_NAME = cached;
+        } else {
+          PENDING_BUNDLE_KEY = key;
+          showNameGate();
+          return;
+        }
+      }
+
       if (bundle.areaIds.length === 1) {
         openEntry(bundle.areaIds[0]);
       } else {
         showBundleTiles(key);
       }
+    }
+
+    function showNameGate() {
+      CURRENT_VIEW = 'nameGate';
+      hideAllViews();
+      document.getElementById('nameGateView').style.display = 'block';
+      document.getElementById('pageTitle').textContent = 'Welcome';
+      document.getElementById('pageSub').textContent = '';
+      document.getElementById('nameGateInput').value = '';
+      setTimeout(function(){ document.getElementById('nameGateInput').focus(); }, 50);
+    }
+
+    function continueFromNameGate() {
+      var name = document.getElementById('nameGateInput').value.trim();
+      if (!name) {
+        showToast('Please enter your name to continue');
+        return;
+      }
+      AGENCY_NAME = name;
+      try { localStorage.setItem('agencyName', name); } catch(e){}
+      var key = PENDING_BUNDLE_KEY;
+      PENDING_BUNDLE_KEY = null;
+      if (key) openBundleEntry(key);
     }
 
     function showBundleTiles(key) {
@@ -768,6 +888,18 @@
 
     function saveMultiArea() {
       var nodeName = currentMultiNode.displayName || currentMultiNode.name;
+
+      // Plan and Actual are mandatory for every section — check before saving anything
+      for (var i = 0; i < currentMultiNode.areaIds.length; i++) {
+        var checkId = currentMultiNode.areaIds[i];
+        var planVal = document.getElementById('m_plan_' + checkId).value;
+        var actualVal = document.getElementById('m_actual_' + checkId).value;
+        if (planVal === '' || actualVal === '') {
+          showToast('Plan and Actual are mandatory for ' + cardLabel(AREAS_BY_ID[checkId]));
+          return;
+        }
+      }
+
       var localUpdates = {};
       var payloads = [];
 
@@ -825,7 +957,7 @@
       });
 
       Promise.all(promises).then(function(){
-        showToast('Saved ' + nodeName);
+        showSuccessPopup(nodeName + ' saved successfully!');
         if (CURRENT_VIEW === 'picker') renderPicker();
       }).catch(function(err){
         showToast('\u26A0 Could not save ' + nodeName + '. Check connection and retry.');
@@ -881,18 +1013,49 @@
 
       loadEntryData();
 
-      // Once filled via a dedicated link, lock the form — further changes go through the Shift In-charge
-      var alreadyFilled = LINK_MODE && !!shiftData[areaId];
-      ['planInput','actualInput','otInput','remarksInput'].forEach(function(id){
-        document.getElementById(id).disabled = alreadyFilled;
-      });
-      var flagEl = document.getElementById('remarkFlag');
-      if (flagEl) flagEl.disabled = alreadyFilled;
-      document.getElementById('saveBtn').style.display = alreadyFilled ? 'none' : 'block';
-      if (alreadyFilled) {
-        document.getElementById('areaStatus').textContent = 'Already submitted for this shift. Contact your Shift In-charge for any changes.';
-        document.getElementById('areaStatus').className = 'status-line err';
+      // Once filled via a dedicated link, lock the form. The person gets exactly
+      // one further "Update" pass; after that it's locked for good.
+      var rec = shiftData[areaId];
+      var alreadyFilled = LINK_MODE && !!rec;
+      var alreadyUpdatedOnce = alreadyFilled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1;
+      var locked = alreadyFilled; // starts locked whenever there's existing data
+
+      function applyLockState(isLocked) {
+        ['planInput','actualInput','otInput','remarksInput'].forEach(function(id){
+          document.getElementById(id).disabled = isLocked;
+        });
+        var flagEl = document.getElementById('remarkFlag');
+        if (flagEl) flagEl.disabled = isLocked;
       }
+
+      applyLockState(locked);
+      var saveBtn = document.getElementById('saveBtn');
+      var updateBtn = document.getElementById('updateBtn');
+      var statusEl = document.getElementById('areaStatus');
+
+      if (!alreadyFilled) {
+        saveBtn.style.display = 'block';
+        updateBtn.style.display = 'none';
+      } else if (alreadyUpdatedOnce) {
+        saveBtn.style.display = 'none';
+        updateBtn.style.display = 'none';
+        statusEl.textContent = 'Already submitted and updated once for this shift. Contact your Shift In-charge for further changes.';
+        statusEl.className = 'status-line err';
+      } else {
+        saveBtn.style.display = 'none';
+        updateBtn.style.display = 'block';
+        statusEl.textContent = 'Already submitted for this shift. You can update it once more if needed.';
+        statusEl.className = 'status-line';
+      }
+
+      updateBtn.onclick = function(){
+        applyLockState(false);
+        updateBtn.style.display = 'none';
+        saveBtn.style.display = 'block';
+        IS_UPDATE_SAVE = true;
+        statusEl.textContent = 'Editing — this is your one allowed update.';
+        statusEl.className = 'status-line';
+      };
     }
 
     function updateReported(){
@@ -918,6 +1081,16 @@
       var area = AREAS_BY_ID[currentLeaf];
       var status = document.getElementById('areaStatus');
 
+      var plan = document.getElementById('planInput').value;
+      var actual = document.getElementById('actualInput').value;
+      var ot = document.getElementById('otInput').value;
+
+      // Plan and Actual are mandatory everywhere
+      if (plan === '' || actual === '') {
+        showToast('Plan and Actual are mandatory');
+        return;
+      }
+
       var freeText = document.getElementById('remarksInput').value.trim();
       var autoText = '';
       
@@ -932,16 +1105,18 @@
       }
       
       var finalRemarks = [autoText, freeText].filter(Boolean).join('; ');
-      var plan = document.getElementById('planInput').value;
-      var actual = document.getElementById('actualInput').value;
-      var ot = document.getElementById('otInput').value;
       var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
+      var enteredByName = LINK_MODE ? (AGENCY_NAME || 'Agency') : 'you';
+      if (LINK_MODE && IS_UPDATE_SAVE) {
+        enteredByName = enteredByName + ' (updated)';
+      }
+      IS_UPDATE_SAVE = false;
 
       var payload = {
         date: currentDate(), shift: currentShift(),
         areaId: area.id, areaName: area.fullName,
         plan: plan, actual: actual, inOT: ot,
-        remarks: finalRemarks
+        remarks: finalRemarks, enteredBy: enteredByName
       };
 
       // OPTIMISTIC UI: update local cache and move on immediately —
@@ -953,7 +1128,7 @@
         inOT: Number(ot || 0),
         reported: reportedGuess,
         remarks: finalRemarks,
-        updatedBy: 'you',
+        updatedBy: enteredByName,
         timestamp: new Date().toLocaleString()
       };
       showToast('Saving ' + area.fullName + '\u2026');
@@ -976,7 +1151,7 @@
         if (shiftData[savedAreaId]) {
           shiftData[savedAreaId].reported = data.reported;
         }
-        showToast('Saved ' + area.fullName + ' — Reported: ' + data.reported);
+        showSuccessPopup(area.fullName + ' saved successfully!\nReported: ' + data.reported);
         if (CURRENT_VIEW === 'picker') renderPicker();
         if (CURRENT_VIEW === 'bundleTiles') renderBundleTiles();
       }).catch(function(err){
@@ -1246,33 +1421,86 @@
 
     // Capture Full HD Image specifically preventing scroll cutoff
     function downloadFullHDImage(wrapperId, filenamePrefix) {
-      showToast('Generating HD image\u2026');
       var wrapper = document.getElementById(wrapperId);
-      
+      if (!wrapper) { showToast('Could not find content to export'); return; }
+      if (typeof html2canvas === 'undefined') {
+        showToast('Image tool failed to load — check your connection and try again');
+        return;
+      }
+      showToast('Generating image\u2026');
+
       var originalOverflow = wrapper.style.overflow;
       var originalWidth = wrapper.style.width;
       wrapper.style.overflow = 'visible';
       wrapper.style.width = 'max-content';
 
-      html2canvas(wrapper, { backgroundColor: '#ffffff', scale: 3, useCORS: true }).then(function(canvas){
+      // Cap scale so we don't exceed canvas size limits on lower-end phones
+      var rect = wrapper.getBoundingClientRect();
+      var maxDimension = 4000;
+      var scale = 3;
+      if (rect.width * scale > maxDimension || rect.height * scale > maxDimension) {
+        scale = Math.max(1, Math.floor(maxDimension / Math.max(rect.width, rect.height, 1)));
+      }
+
+      html2canvas(wrapper, { backgroundColor: '#ffffff', scale: scale, useCORS: true }).then(function(canvas){
         wrapper.style.overflow = originalOverflow;
         wrapper.style.width = originalWidth;
 
-        var link = document.createElement('a');
-        link.download = filenamePrefix + '_' + currentShift() + '_' + currentDate() + '.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        var filename = filenamePrefix + '_' + currentShift() + '_' + currentDate() + '.png';
+        var dataUrl = canvas.toDataURL('image/png');
+        var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+
+        if (isIOS) {
+          // iOS Safari ignores the download attribute — open the image in a
+          // new tab instead so the user can long-press → Save Image.
+          var win = window.open();
+          if (win) {
+            win.document.write(
+              '<html><head><title>' + filename + '</title></head>' +
+              '<body style="margin:0; background:#000;">' +
+              '<img src="' + dataUrl + '" style="width:100%; display:block;">' +
+              '<p style="font-family:sans-serif; text-align:center; padding:12px; color:#fff;">Long-press the image and choose "Save Image" to download.</p>' +
+              '</body></html>'
+            );
+            showToast('Image ready — long-press to save');
+          } else {
+            showToast('Please allow pop-ups to save the image');
+          }
+        } else {
+          var link = document.createElement('a');
+          link.download = filename;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast('Image downloaded');
+        }
       }).catch(function(err){
         wrapper.style.overflow = originalOverflow;
         wrapper.style.width = originalWidth;
-        showToast('Error generating image');
+        showToast('Error generating image — please try again');
+        console.error(err);
       });
+    }
+
+    function shareLink(link, title) {
+      if (navigator.share) {
+        navigator.share({ title: title || 'ARS-2 Manpower Tracker', url: link }).catch(function(err){
+          // AbortError just means the user cancelled the share sheet — not an error to report
+          if (err && err.name !== 'AbortError') {
+            navigator.clipboard.writeText(link).then(function(){ showToast('Link copied');
+            }).catch(function(){ window.prompt('Copy this link:', link); });
+          }
+        });
+      } else {
+        navigator.clipboard.writeText(link).then(function(){ showToast('Link copied');
+        }).catch(function(){ window.prompt('Copy this link:', link); });
+      }
     }
 
     document.getElementById('copyEntryLinkBtn').addEventListener('click', function(){
       var link = window.location.href.split('?')[0] + '?key=' + ADMIN_KEY;
-      navigator.clipboard.writeText(link).then(function(){ showToast('Dashboard link copied');
-      }).catch(function(){ window.prompt('Copy this link:', link); });
+      shareLink(link, 'ARS-2 Manpower Dashboard');
     });
 
     function renderAgencyLinks() {
@@ -1288,15 +1516,13 @@
         row.innerHTML = '<span style="font-size:14px;">' + bundle.title + '</span>' +
           '<span style="display:flex; gap:8px; flex:none;">' +
           '<a href="' + link + '" target="_blank" rel="noopener" class="btn-ghost" style="min-width:auto; padding:6px 14px; display:inline-flex; align-items:center; text-decoration:none;">Go</a>' +
-          '<button class="btn-ghost" style="min-width:auto; padding:6px 14px;" data-link="' + link + '">Copy Link</button>' +
+          '<button class="btn-ghost" style="min-width:auto; padding:6px 14px;" data-link="' + link + '" data-title="' + bundle.title + '">Share</button>' +
           '</span>';
         list.appendChild(row);
       });
       list.querySelectorAll('button[data-link]').forEach(function(btn){
         btn.addEventListener('click', function(){
-          var link = btn.getAttribute('data-link');
-          navigator.clipboard.writeText(link).then(function(){ showToast('Link copied');
-          }).catch(function(){ window.prompt('Copy this link:', link); });
+          shareLink(btn.getAttribute('data-link'), btn.getAttribute('data-title'));
         });
       });
     }
