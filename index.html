@@ -3,45 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Manpower Report</title>
+  <title>Manpower Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    /* Modern Adaptive Light/Dark Theme */
+    /* Premium Industrial Dark Theme */
     :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --surface-2: #f1f5f9;
-      --line: #e2e8f0;
-      --text: #0f172a;
-      --muted: #64748b;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --primary-dim: rgba(37, 99, 235, 0.1);
-      --accent: #0ea5e9;
+      --bg: #090e17;
+      --surface: #131b27;
+      --surface-2: #1e293b;
+      --line: #2d3748;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #f59e0b; /* Amber */
+      --primary-hover: #fbbf24;
+      --primary-dim: rgba(245, 158, 11, 0.15);
+      --accent: #14b8a6; /* Teal */
+      --accent-dim: rgba(20, 184, 166, 0.15);
       --danger: #ef4444;
       --ok: #10b981;
-      --warning: #f59e0b;
       --radius: 16px;
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-    
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0f172a;
-        --surface: #1e293b;
-        --surface-2: #334155;
-        --line: #475569;
-        --text: #f8fafc;
-        --muted: #94a3b8;
-        --primary: #3b82f6;
-        --primary-hover: #60a5fa;
-        --primary-dim: rgba(59, 130, 246, 0.15);
-        --accent: #38bdf8;
-        --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-      }
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.2);
+      --shadow-md: 0 8px 16px rgba(0,0,0,0.4);
+      --glow: 0 0 12px var(--primary-dim);
     }
 
     * { box-sizing: border-box; }
@@ -51,159 +36,183 @@
       color: var(--text); 
       font-family: 'Inter', system-ui, sans-serif; 
       min-height: 100vh; 
-      padding-bottom: 60px; 
-      transition: background-color 0.3s ease, color 0.3s ease;
+      padding-bottom: 80px; 
     }
     
-    /* Redesigned Header */
+    /* Animated Top Glow */
+    .top-glow {
+      height: 4px; 
+      width: 100%; 
+      background: linear-gradient(90deg, var(--bg) 0%, var(--primary) 25%, #fff 50%, var(--primary) 75%, var(--bg) 100%);
+      background-size: 200% 100%; 
+      animation: flow 4s linear infinite;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    @keyframes flow { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    /* Centered Header & Controls */
     header { 
-      background: var(--surface); 
-      border-bottom: 1px solid var(--line); 
-      padding: 24px 20px 20px; 
+      padding: 32px 20px 20px; 
       display: flex; 
       flex-direction: column; 
       align-items: center;
       text-align: center;
-      gap: 6px; 
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      box-shadow: var(--shadow-sm);
+      gap: 8px; 
     }
     .eyebrow { 
       font-family: 'JetBrains Mono', monospace; 
-      font-size: 12px; 
-      letter-spacing: 0.12em; 
+      font-size: 11px; 
+      letter-spacing: 0.15em; 
       color: var(--primary); 
       text-transform: uppercase; 
-      font-weight: 700;
+      font-weight: 800;
     }
-    h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
-    .sub { color: var(--muted); font-size: 13.5px; line-height: 1.4; }
+    h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); }
+    .sub { color: var(--muted); font-size: 14px; line-height: 1.5; }
     
-    .controls { 
-      display: flex; gap: 12px; padding: 16px 18px 8px; flex-wrap: wrap; align-items: flex-end; 
-      max-width: 920px; margin: 0 auto;
+    .controls-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+      background: linear-gradient(180deg, rgba(19, 27, 39, 0) 0%, rgba(19, 27, 39, 0.5) 100%);
     }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .controls { 
+      display: flex; 
+      gap: 16px; 
+      justify-content: center;
+      flex-wrap: wrap; 
+      margin-bottom: 12px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
     
     input[type=date], select, input[type=number], input[type=text], textarea {
       background: var(--surface-2); border: 1px solid var(--line); color: var(--text);
-      border-radius: 12px; padding: 12px 14px; font-size: 15px; font-family: 'Inter', sans-serif; 
+      border-radius: 12px; padding: 12px 16px; font-size: 15px; font-family: 'Inter', sans-serif; 
       min-width: 0; transition: all 0.2s ease;
     }
-    input[type=number] { text-align: center; font-weight: 600; color: var(--primary); font-size: 16px; } 
+    input[type=date], select { text-align: center; font-weight: 600; cursor: pointer; }
+    input[type=number] { text-align: center; font-weight: 700; color: var(--primary); font-size: 18px; font-family: 'JetBrains Mono', monospace; } 
+    
     input:focus, select:focus, textarea:focus { 
       outline: none; 
       border-color: var(--primary); 
       box-shadow: 0 0 0 3px var(--primary-dim); 
+      background: var(--surface);
     }
-    input:disabled, textarea:disabled { opacity: 0.6; cursor: not-allowed; }
+    input:disabled, textarea:disabled { opacity: 0.5; cursor: not-allowed; }
     
-    .auto-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); padding: 0 18px 16px; max-width: 920px; margin: 0 auto; }
+    .auto-badge { 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 11px; 
+      color: var(--accent); 
+      text-align: center;
+      font-weight: 500;
+    }
     
     main { padding: 0 18px; max-width: 920px; margin: 0 auto; }
     .card { 
       background: var(--surface); border: 1px solid var(--line); 
-      border-radius: var(--radius); padding: 20px; margin-bottom: 20px; 
+      border-radius: var(--radius); padding: 24px; margin-bottom: 20px; 
       box-shadow: var(--shadow-md);
     }
     
     /* Top Navigation Buttons */
-    .top-nav-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .top-nav-buttons { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
     .top-nav-buttons button { flex: 1; padding: 14px; font-size: 15px; min-width: 140px; }
     
-    .breadcrumb { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; font-size: 14px; color: var(--muted); }
-    .breadcrumb .crumb { cursor: pointer; color: var(--primary); font-weight: 500; transition: color 0.2s; }
-    .breadcrumb .crumb:hover { color: var(--primary-hover); }
-    .breadcrumb .crumb.current { color: var(--text); cursor: default; font-weight: 600; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; font-size: 14px; color: var(--muted); }
+    .breadcrumb .crumb { cursor: pointer; color: var(--accent); font-weight: 600; transition: color 0.2s; }
+    .breadcrumb .crumb:hover { color: #fff; }
+    .breadcrumb .crumb.current { color: var(--text); cursor: default; }
     
     .back-btn {
-      display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--muted);
-      border: 1px solid var(--line); border-radius: 10px; padding: 8px 16px; font-size: 14px; 
-      margin-bottom: 16px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;
+      display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--muted);
+      border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font-size: 14px; 
+      margin-bottom: 20px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;
     }
-    .back-btn:hover { background: var(--surface-2); color: var(--text); }
+    .back-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--muted); }
     
-    .tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
     @media (min-width: 520px){ .tile-grid { grid-template-columns: repeat(3, 1fr); } }
     
     .tile {
       position: relative; background: var(--surface-2); border: 2px solid transparent; 
-      border-radius: 14px; padding: 16px 14px; cursor: pointer; text-align: left; 
-      transition: all 0.2s ease; box-shadow: var(--shadow-sm);
+      border-radius: 14px; padding: 18px 16px; cursor: pointer; text-align: left; 
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm);
     }
-    .tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .tile:hover { transform: translateY(-4px); box-shadow: var(--shadow-md), var(--glow); border-color: var(--line); }
     .tile:active { transform: translateY(0); border-color: var(--primary); }
-    .tile.state-full { border-color: var(--ok); background: rgba(16, 185, 129, 0.05); }
-    .tile.state-partial { border-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
-    .tile .tname { font-weight: 600; font-size: 15px; display: block; margin-bottom: 6px; color: var(--text); }
+    .tile.state-full { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
+    .tile.state-partial { border-color: rgba(245, 158, 11, 0.3); background: var(--primary-dim); }
+    .tile .tname { font-weight: 700; font-size: 15px; display: block; margin-bottom: 8px; color: var(--text); }
     .tile .tmeta { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-    .tile .dot { position: absolute; top: 12px; right: 12px; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
-    .tile.state-full .dot { background: var(--ok); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
-    .tile.state-partial .dot { background: var(--warning); box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
     
-    .area-title { font-size: 20px; font-weight: 700; margin: 0 0 4px; color: var(--text); }
+    .tile .dot { position: absolute; top: 14px; right: 14px; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+    .tile.state-full .dot { background: var(--ok); box-shadow: 0 0 10px rgba(16, 185, 129, 0.6); }
+    .tile.state-partial .dot { background: var(--primary); box-shadow: 0 0 10px rgba(245, 158, 11, 0.6); }
+    
+    .area-title { font-size: 22px; font-weight: 800; margin: 0 0 6px; color: var(--text); }
     .area-tag { 
       display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; 
-      letter-spacing: 0.08em; padding: 4px 10px; border-radius: 20px; margin-bottom: 14px; font-weight: 600;
+      letter-spacing: 0.1em; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; font-weight: 700;
     }
-    .tag-direct { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-    .tag-indirect { background: rgba(14, 165, 233, 0.15); color: var(--accent); }
+    .tag-direct { background: var(--primary-dim); color: var(--primary); }
+    .tag-indirect { background: var(--accent-dim); color: var(--accent); }
     
-    .grid3 { display: flex; flex-direction: column; gap: 14px; }
-    @media (min-width: 520px){ .grid3 { flex-direction: row; } .grid3 > .field { flex: 1; } }
+    .grid3 { display: flex; flex-direction: column; gap: 16px; }
+    @media (min-width: 520px){ .grid3 { flex-direction: row; } .grid3 > .field { flex: 1; align-items: flex-start; } .grid3 > .field input { width: 100%; } }
     
     .actual-readout { 
-      margin-top: 16px; background: var(--surface-2); border: 1.5px dashed var(--primary); 
-      border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; 
+      margin-top: 20px; background: #000; border: 1px solid var(--line); 
+      border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; 
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
     }
+    .actual-readout .sub { color: var(--accent); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
     .actual-readout .num { 
-      font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700; 
-      color: var(--primary); text-shadow: 0 0 20px var(--primary-dim); 
+      font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 800; 
+      color: var(--primary); text-shadow: 0 0 24px var(--primary-dim); line-height: 1;
     }
     
     .remark-prompt { 
       margin-top: 16px; display: flex; align-items: center; gap: 12px; 
-      background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; 
+      background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; 
     }
-    .remark-prompt input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+    .remark-prompt input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; }
     .remark-prompt input[type=number] { width: 80px; }
     .remark-prompt .rtext { font-size: 14px; font-weight: 500; }
-    textarea { width: 100%; resize: vertical; min-height: 50px; margin-top: 14px; }
+    textarea { width: 100%; resize: vertical; min-height: 60px; margin-top: 16px; }
     
     button { 
-      font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; 
-      border: none; border-radius: 12px; padding: 14px 20px; cursor: pointer; 
-      transition: all 0.2s ease;
+      font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.02em;
+      border: none; border-radius: 12px; padding: 16px 24px; cursor: pointer; 
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    button:active { transform: scale(0.98); }
-    .btn-primary { background: var(--primary); color: #ffffff; width: 100%; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    button:active { transform: scale(0.97); }
+    .btn-primary { background: var(--primary); color: #000; width: 100%; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); }
+    .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
     
-    .btn-secondary { background: var(--primary-dim); color: var(--primary); width: 100%; }
-    .btn-secondary:hover { background: rgba(37, 99, 235, 0.15); }
+    .btn-secondary { background: var(--accent-dim); color: var(--accent); width: 100%; }
+    .btn-secondary:hover { background: rgba(20, 184, 166, 0.25); }
     
     .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); width: 100%; }
-    .btn-ghost:hover { background: var(--surface-2); }
+    .btn-ghost:hover { background: var(--surface-2); border-color: var(--muted); }
     
-    .status-line { font-size: 13px; color: var(--muted); margin-top: 12px; min-height: 18px; display: flex; align-items: center; font-weight: 500; }
-    .status-line.ok { color: var(--ok); } .status-line.err { color: var(--danger); }
+    .status-line { font-size: 13.5px; color: var(--muted); margin-top: 16px; min-height: 20px; display: flex; align-items: center; justify-content: center; font-weight: 500; text-align: center; }
+    .status-line.ok { color: var(--ok); } .status-line.err { color: var(--danger); font-weight: 600; }
     
-    .notice-box {
-      background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); 
-      color: var(--warning); padding: 12px 16px; border-radius: 10px; margin-top: 16px; 
-      font-size: 13.5px; font-weight: 500; display: none; line-height: 1.4;
-    }
-
     /* ---------------------------------------------------- */
     /* EXCEL-STYLE DASHBOARD TABLES (PRESERVED DESIGN)      */
     /* ---------------------------------------------------- */
-    .section-title { font-size: 18px; font-weight: 700; color: var(--text); margin: 0 0 16px 0; border-bottom: 2px solid var(--line); padding-bottom: 10px; }
+    .section-title { font-size: 18px; font-weight: 800; color: var(--primary); margin: 0 0 16px 0; border-bottom: 2px solid var(--line); padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
     
-    .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 20px; border: 1px solid var(--line); }
+    .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 20px; box-shadow: inset 0 0 0 4px var(--surface-2); }
     .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; }
     .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
     
@@ -223,54 +232,57 @@
     .dash-actions button { flex: 1; min-width: 140px; }
     
     .toast { 
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); 
-      background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 30px; 
-      font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; 
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); 
+      background: var(--primary); color: #000; padding: 14px 24px; border-radius: 30px; 
+      font-size: 14px; font-weight: 700; opacity: 0; pointer-events: none; 
       transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 50; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); margin-right: 6px; animation: pulse 1s infinite ease-in-out; }
+    .loading-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-right: 8px; animation: pulse 1s infinite ease-in-out; }
     @keyframes pulse { 50% { opacity: 0.2; } }
   </style>
 </head>
 <body>
+  <div class="top-glow"></div>
   <header>
     <span class="eyebrow">SEZ-ARS &middot; VAML, Jharsuguda</span>
     <h1 id="pageTitle">Manpower Dashboard</h1>
     <span class="sub" id="pageSub">Loading&hellip;</span>
   </header>
 
-  <div class="controls">
-    <div class="field">
-      <label for="dateInput">Date</label>
-      <input type="date" id="dateInput">
+  <div class="controls-wrapper">
+    <div class="controls">
+      <div class="field">
+        <label for="dateInput">Date</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div class="field">
+        <label for="shiftInput">Shift</label>
+        <select id="shiftInput">
+          <option value="A">Shift A</option>
+          <option value="B">Shift B</option>
+          <option value="C">Shift C</option>
+        </select>
+      </div>
     </div>
-    <div class="field">
-      <label for="shiftInput">Shift</label>
-      <select id="shiftInput">
-        <option value="A">Shift A</option>
-        <option value="B">Shift B</option>
-        <option value="C">Shift C</option>
-      </select>
-    </div>
+    <div class="auto-badge" id="autoBadge"></div>
   </div>
-  <div class="auto-badge" id="autoBadge"></div>
 
-  <div id="successModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
-    <div style="background:var(--surface); border-radius:20px; padding:32px 26px; max-width:320px; width:85%; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.4);">
-      <div style="font-size:48px; margin-bottom:12px;">✅</div>
+  <div id="successModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(8px);">
+    <div style="background:var(--surface); border:1px solid var(--line); border-radius:24px; padding:40px 32px; max-width:340px; width:90%; text-align:center; box-shadow:0 24px 48px rgba(0,0,0,0.6);">
+      <div style="font-size:56px; margin-bottom:16px;">✅</div>
       <div id="successModalMsg" style="font-size:16px; color:var(--text); font-weight:600; line-height:1.5; white-space:pre-line;"></div>
-      <button id="successModalOkBtn" class="btn-primary" style="margin-top:24px;">Got it</button>
+      <button id="successModalOkBtn" class="btn-primary" style="margin-top:32px;">Got it</button>
     </div>
   </div>
 
   <main>
     
     <div id="restrictedView" style="display:none;">
-      <div class="card" style="text-align:center; padding:48px 20px;">
-        <div style="font-size:42px; margin-bottom:12px;">🔒</div>
-        <h2 class="section-title" style="margin-top:0; border:none;">Access Restricted</h2>
+      <div class="card" style="text-align:center; padding:64px 20px;">
+        <div style="font-size:48px; margin-bottom:16px;">🔒</div>
+        <h2 class="section-title" style="margin-top:0; border:none; color:var(--text);">Access Restricted</h2>
         <p class="sub" style="display:block; margin-top:8px;">This link doesn't have access to the dashboard. Please contact admin for the correct link.</p>
       </div>
     </div>
@@ -284,13 +296,13 @@
         <button class="btn-ghost" id="resetShiftBtn" style="border-color:var(--danger); color:var(--danger);">🗑️ Reset Shift</button>
       </div>
 
-      <div class="card" style="padding:16px 20px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--muted);">
-          <span>Report Filling Progress</span>
+      <div class="card" style="padding:20px 24px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:14px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">
+          <span>Filling Progress</span>
           <span id="progressBarLabel">0 / 0 filled</span>
         </div>
-        <div style="background:var(--surface-2); border-radius:8px; height:12px; overflow:hidden;">
-          <div id="progressBarFill" style="background:var(--ok); height:100%; width:0%; transition:width .4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+        <div style="background:#000; border-radius:8px; height:12px; overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
+          <div id="progressBarFill" style="background:var(--ok); height:100%; width:0%; transition:width .5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);"></div>
         </div>
       </div>
 
@@ -324,7 +336,7 @@
       </div>
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
-        <span class="sub" style="display:block; margin-bottom:16px;">Share a dedicated link with each agency — it opens straight to their form only.</span>
+        <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency — it opens straight to their form only.</span>
         <div id="agencyLinksList"></div>
       </div>
     </div>
@@ -335,7 +347,7 @@
       </div>
 
       <div class="card">
-        <h2 class="section-title" style="margin-top:0;">Full Master Data (All Agencies)</h2>
+        <h2 class="section-title" style="margin-top:0;">Full Master Data</h2>
         <div id="masterExportWrapper" class="excel-wrapper">
           <table id="masterDashTable" class="excel-table">
             <thead>
@@ -376,11 +388,11 @@
     </div>
 
     <div id="nameGateView" style="display:none;">
-      <div class="card" style="text-align:center; padding:40px 24px;">
-        <div style="font-size:42px; margin-bottom:12px;">👤</div>
-        <h2 class="section-title" style="margin-top:0; border:none;">Who's filling this in?</h2>
-        <p class="sub" style="display:block; margin-bottom:20px;">Enter your name to continue — this lets others see who filled each section.</p>
-        <input type="text" id="nameGateInput" placeholder="Your name" autocomplete="off" style="width:100%; box-sizing:border-box; margin-bottom:16px;">
+      <div class="card" style="text-align:center; padding:56px 24px;">
+        <div style="font-size:48px; margin-bottom:16px;">👤</div>
+        <h2 class="section-title" style="margin-top:0; border:none; color:var(--text);">Who's filling this in?</h2>
+        <p class="sub" style="display:block; margin-bottom:24px;">Enter your name to continue — this lets others see who filled each section.</p>
+        <input type="text" id="nameGateInput" placeholder="Your name" autocomplete="off" style="width:100%; box-sizing:border-box; margin-bottom:20px; text-align:center;">
         <button class="btn-primary" id="nameGateContinueBtn">Continue</button>
       </div>
     </div>
@@ -388,10 +400,6 @@
     <div id="bundleTileView" style="display:none;">
       <div class="card">
         <div class="tile-grid" id="bundleTileGrid"></div>
-      </div>
-      <!-- Hidden until quota exhausted -->
-      <div id="bundleTileNotice" class="notice-box">
-        ⚠️ For any modification, please contact your Shift In-charge.
       </div>
     </div>
 
@@ -404,7 +412,7 @@
         <div id="areaTagWrap"></div>
         <p class="area-title" id="areaTitle"></p>
 
-        <div class="grid3" style="margin-top: 16px;">
+        <div class="grid3" style="margin-top: 24px;">
           <div class="field">
             <label for="planInput">Plan</label>
             <input type="number" id="planInput" min="0" inputmode="numeric" autocomplete="off" required>
@@ -420,7 +428,7 @@
         </div>
 
         <div class="actual-readout">
-          <span class="sub" style="font-size: 13px;">Reported in shift<br/>(Actual &minus; OT)</span>
+          <span class="sub">Reported<br/>(Actual &minus; OT)</span>
           <span class="num" id="reportedBig">0</span>
         </div>
 
@@ -428,34 +436,24 @@
 
         <textarea id="remarksInput" placeholder="Additional remarks (optional)" autocomplete="off"></textarea>
 
-        <button class="btn-primary" style="margin-top:20px;" id="saveBtn">Save Entry</button>
-        <button class="btn-secondary" style="margin-top:20px; display:none;" id="updateBtn">✏️ Update My Entry</button>
+        <button class="btn-primary" style="margin-top:24px;" id="saveBtn">Save Entry</button>
+        <button class="btn-secondary" style="margin-top:24px; display:none;" id="updateBtn">✏️ Update My Entry</button>
         <div class="status-line" id="areaStatus"></div>
-        
-        <!-- Hidden until quota exhausted -->
-        <div id="entryBundleNotice" class="notice-box">
-          ⚠️ For any modification, please contact your Shift In-charge.
-        </div>
       </div>
     </div>
 
     <div id="multiEntryView" style="display:none;">
-      <div class="card" style="background:transparent; border:none; padding:0; margin-bottom:16px; box-shadow:none;">
+      <div class="card" style="background:transparent; border:none; padding:0; margin-bottom:20px; box-shadow:none;">
         <div id="multiBackBtnWrap">
           <button class="back-btn" onclick="showPicker()">&#8592; Back</button>
         </div>
-        <h2 class="area-title" id="multiEntryTitle" style="color:var(--primary); margin-top:10px; font-size:24px;"></h2>
+        <h2 class="area-title" id="multiEntryTitle" style="color:var(--primary); margin-top:12px; font-size:26px;"></h2>
         <span class="sub" style="margin-bottom:8px; display:block;">Enter numbers for all sections below, then save once.</span>
-        
-        <!-- Hidden until quota exhausted -->
-        <div id="bundleNotice" class="notice-box">
-          ⚠️ For any modification, please contact your Shift In-charge.
-        </div>
       </div>
       
       <div id="multiEntryForms"></div>
       
-      <div class="card" style="margin-top:20px;">
+      <div class="card" style="margin-top:24px;">
         <button class="btn-primary" id="multiSaveBtn">Save All Sections</button>
         <div class="status-line" id="multiAreaStatus"></div>
       </div>
@@ -876,31 +874,27 @@
       var container = document.getElementById('multiEntryForms');
       container.innerHTML = '';
       
-      // Check if update quota is exhausted for any area in this form
       var isMultiFilledAtAll = node.areaIds.some(id => !!shiftData[id]);
       var alreadyUpdatedOnce = node.areaIds.some(id => {
          var r = shiftData[id];
          return r && r.updatedBy && r.updatedBy.indexOf('(updated)') !== -1;
       });
 
-      // We only lock inputs if they've used up their update quota
       var isCardLocked = LINK_MODE && alreadyUpdatedOnce;
-
-      document.getElementById('bundleNotice').style.display = isCardLocked ? 'block' : 'none';
 
       node.areaIds.forEach(id => {
         var area = AREAS_BY_ID[id];
         var rec = shiftData[id] || { plan:'', actual:'', inOT:'', remarks:'', reported:0 };
         var isFilled = !!shiftData[id];
         var badge = isFilled
-          ? '<span style="color:var(--ok); font-size:12px; font-weight:600;">&#10003; Filled' + (rec.updatedBy ? ' by ' + rec.updatedBy : '') + '</span>'
+          ? '<span style="color:var(--ok); font-size:12px; font-weight:700;">✓ Filled' + (rec.updatedBy ? ' by ' + rec.updatedBy : '') + '</span>'
           : '<span style="color:var(--muted); font-size:12px;">Not filled yet</span>';
         
         var card = document.createElement('div');
         card.className = 'card';
         card.style.marginBottom = '16px';
         card.innerHTML = `
-          <div class="area-title" style="font-size:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <div class="area-title" style="font-size:18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
             <span>${cardLabel(area)}</span>${badge}
           </div>
           <div class="grid3">
@@ -908,23 +902,31 @@
             <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')" autocomplete="off" required ${isCardLocked ? 'disabled' : ''}></div>
             <div class="field"><label>In OT</label><input type="number" id="m_ot_${id}" value="${rec.inOT}" oninput="updateMultiReported('${id}')" autocomplete="off" ${isCardLocked ? 'disabled' : ''}></div>
           </div>
-          <div class="actual-readout" style="padding: 14px; margin-top: 14px;">
-            <span class="sub" style="font-size:12px;">Reported (Actual - OT)</span>
-            <span class="num" id="m_rep_${id}" style="font-size:24px;">${rec.reported}</span>
+          <div class="actual-readout">
+            <span class="sub">Reported (Actual - OT)</span>
+            <span class="num" id="m_rep_${id}">${rec.reported}</span>
           </div>
-          <textarea id="m_rem_${id}" placeholder="Remarks" style="margin-top:14px;" autocomplete="off" ${isCardLocked ? 'disabled' : ''}>${rec.remarks||''}</textarea>
+          <textarea id="m_rem_${id}" placeholder="Remarks" autocomplete="off" ${isCardLocked ? 'disabled' : ''}>${rec.remarks||''}</textarea>
         `;
         container.appendChild(card);
       });
       
       var saveBtn = document.getElementById('multiSaveBtn');
+      var statusEl = document.getElementById('multiAreaStatus');
       saveBtn.onclick = saveMultiArea;
       saveBtn.style.display = isCardLocked ? 'none' : 'block';
       
-      if (!isCardLocked && isMultiFilledAtAll && LINK_MODE) {
+      if (isCardLocked) {
+          statusEl.textContent = 'Already submitted and updated once for this shift. Contact your Shift In-charge for further changes.';
+          statusEl.className = 'status-line err';
+      } else if (isMultiFilledAtAll && LINK_MODE) {
           saveBtn.textContent = '✏️ Update All Sections';
+          statusEl.textContent = 'Already submitted for this shift. You can update it once more if needed.';
+          statusEl.className = 'status-line';
       } else {
           saveBtn.textContent = 'Save All Sections';
+          statusEl.textContent = '';
+          statusEl.className = 'status-line';
       }
     }
 
@@ -996,17 +998,10 @@
       var grid = document.getElementById('bundleTileGrid');
       grid.innerHTML = '';
       
-      var anyLocked = false;
-      
       bundle.areaIds.forEach(function(id){
         var area = AREAS_BY_ID[id];
         var rec = shiftData[id];
         var filled = !!rec;
-        
-        // If any tile in the bundle has exhausted its quota, flag it to show the warning
-        if (filled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1) {
-            anyLocked = true;
-        }
         
         var tile = document.createElement('div');
         tile.className = 'tile state-' + (filled ? 'full' : 'empty');
@@ -1015,12 +1010,6 @@
         tile.onclick = function(){ openEntry(id); };
         grid.appendChild(tile);
       });
-      
-      // Update visibility of the bundle tile notice based on update quota status
-      var noticeEl = document.getElementById('bundleTileNotice');
-      if (noticeEl) {
-          noticeEl.style.display = anyLocked ? 'block' : 'none';
-      }
     }
 
     function updateMultiReported(id) {
@@ -1048,7 +1037,6 @@
       var isMultiFilledAtAll = currentMultiNode.areaIds.some(id => !!shiftData[id]);
       var enteredByName = LINK_MODE ? (AGENCY_NAME || 'Agency') : 'you';
       
-      // Append (updated) tag if they are re-saving to mark quota exhausted
       if (LINK_MODE && isMultiFilledAtAll) {
          enteredByName += ' (updated)';
       }
@@ -1155,8 +1143,6 @@
       var alreadyFilled = LINK_MODE && !!rec;
       var alreadyUpdatedOnce = alreadyFilled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1;
       
-      // Lock inputs if filled. It requires clicking "Update" to unlock, 
-      // preventing accidental edits even if they have quota left.
       var locked = alreadyFilled; 
 
       function applyLockState(isLocked) {
@@ -1172,22 +1158,18 @@
       var saveBtn = document.getElementById('saveBtn');
       var updateBtn = document.getElementById('updateBtn');
       var statusEl = document.getElementById('areaStatus');
-      var noticeEl = document.getElementById('entryBundleNotice');
 
       if (!alreadyFilled) {
         saveBtn.style.display = 'block';
         updateBtn.style.display = 'none';
-        noticeEl.style.display = 'none';
       } else if (alreadyUpdatedOnce) {
         saveBtn.style.display = 'none';
         updateBtn.style.display = 'none';
-        noticeEl.style.display = LINK_MODE ? 'block' : 'none'; // Only show warning when quota is EXHAUSTED
         statusEl.textContent = 'Already submitted and updated once for this shift. Contact your Shift In-charge for further changes.';
         statusEl.className = 'status-line err';
       } else {
         saveBtn.style.display = 'none';
         updateBtn.style.display = 'block';
-        noticeEl.style.display = 'none'; // Hidden because they still have quota left!
         statusEl.textContent = 'Already submitted for this shift. You can update it once more if needed.';
         statusEl.className = 'status-line';
       }
@@ -1196,7 +1178,6 @@
         applyLockState(false);
         updateBtn.style.display = 'none';
         saveBtn.style.display = 'block';
-        noticeEl.style.display = 'none'; // Keep hidden during active update edit
         IS_UPDATE_SAVE = true;
         statusEl.textContent = 'Editing — this is your one allowed update.';
         statusEl.className = 'status-line';
