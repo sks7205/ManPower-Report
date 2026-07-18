@@ -1030,7 +1030,8 @@
         var checkId = currentMultiNode.areaIds[i];
         var planVal = document.getElementById('m_plan_' + checkId).value;
         var actualVal = document.getElementById('m_actual_' + checkId).value;
-        if (planVal === '' || actualVal === '') {
+        // Only enforce mandatory fields for agencies
+        if (LINK_MODE && (planVal === '' || actualVal === '')) {
           showToast('Plan and Actual are mandatory for ' + cardLabel(AREAS_BY_ID[checkId]));
           return;
         }
@@ -1217,7 +1218,8 @@
       var actual = document.getElementById('actualInput').value;
       var ot = document.getElementById('otInput').value;
 
-      if (plan === '' || actual === '') {
+      // Only agencies are forced to fill plan and actual; master user is exempt
+      if (LINK_MODE && (plan === '' || actual === '')) {
         showToast('Plan and Actual are mandatory');
         return;
       }
