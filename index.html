@@ -151,11 +151,30 @@
 
   <main>
     
+    <div id="restrictedView" style="display:none;">
+      <div class="card" style="text-align:center; padding:36px 20px;">
+        <div style="font-size:36px; margin-bottom:10px;">&#128274;</div>
+        <h2 class="section-title" style="margin-top:0;">Access Restricted</h2>
+        <p class="sub" style="display:block; margin-top:8px;">This link doesn't have access to the dashboard. Please contact your Shift In-charge for the correct link.</p>
+      </div>
+    </div>
+
     <div id="customDashboardView" style="display:none;">
       
       <div class="top-nav-buttons">
         <button class="btn-primary" onclick="showPicker()">&#9998; Data Entry</button>
         <button class="btn-secondary" onclick="showMasterDashboard()">&#128202; Master Report</button>
+        <button class="btn-secondary" id="refreshBtn">&#8635; Refresh</button>
+      </div>
+
+      <div class="card" style="padding:14px 16px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; color:var(--muted);">
+          <span>Shift Filling Progress</span>
+          <span id="progressBarLabel">0 / 0 filled</span>
+        </div>
+        <div style="background:var(--surface-2); border-radius:6px; height:10px; overflow:hidden;">
+          <div id="progressBarFill" style="background:var(--ok); height:100%; width:0%; transition:width .3s;"></div>
+        </div>
       </div>
 
       <div class="card">
@@ -329,6 +348,12 @@
     var LINK_MODE = false; // true when opened via a dedicated ?link=... URL
     var currentBundleKey = null; // which bundle's tile view to return to
 
+    // Main dashboard access requires ?key=<this value> in the URL.
+    // Only share this full link with people who should see/edit all agencies.
+    // NOTE: this is a client-side check only — it stops casual URL-editing by
+    // agency workers, but anyone who views page source can find this value.
+    const ADMIN_KEY = "ars2incharge2026";
+
     // Display label helper: uses the full disambiguated name, but keeps
     // "Shift Activity" wording for TKIL Mech/Ele ARS2/ARS3 sections.
     function cardLabel(area) {
@@ -353,7 +378,14 @@
     };
 
     function pad(n){ return String(n).padStart(2,'0'); }
-    function autoDate(){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+    function autoDate(){
+      var d = new Date();
+      if (d.getHours() < 6) {
+        // Between 12:00 AM and 6:00 AM — this is the tail end of last night's C shift
+        d.setDate(d.getDate() - 1);
+      }
+      return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    }
     function autoShift(){ var h = new Date().getHours(); if (h >= 6 && h < 14) return 'A'; if (h >= 14 && h < 22) return 'B'; return 'C'; }
 
     document.getElementById('dateInput').value = autoDate();
@@ -382,12 +414,21 @@
     // SPA NAVIGATION LOGIC
     // ----------------------------------------------------
     function hideAllViews() {
+      document.getElementById('restrictedView').style.display = 'none';
       document.getElementById('customDashboardView').style.display = 'none';
       document.getElementById('masterDashboardView').style.display = 'none';
       document.getElementById('pickerView').style.display = 'none';
       document.getElementById('bundleTileView').style.display = 'none';
       document.getElementById('entryView').style.display = 'none';
       document.getElementById('multiEntryView').style.display = 'none';
+    }
+
+    function showRestrictedView() {
+      CURRENT_VIEW = 'restricted';
+      hideAllViews();
+      document.getElementById('restrictedView').style.display = 'block';
+      document.getElementById('pageTitle').textContent = 'Access Restricted';
+      document.getElementById('pageSub').textContent = '';
     }
 
     function showCustomDashboard() {
@@ -454,11 +495,16 @@
 
         var urlParams = new URLSearchParams(window.location.search);
         var linkKey = urlParams.get('link');
+        var adminKey = urlParams.get('key');
         if (linkKey && BUNDLES[linkKey]) {
           openBundleEntry(linkKey);
-        } else {
+        } else if (adminKey === ADMIN_KEY) {
           showCustomDashboard(); // Default to Home View
+        } else {
+          showRestrictedView();
         }
+
+        startAutoSync();
 
       } catch (err) {
         showToast("Error connecting to database.");
@@ -474,10 +520,32 @@
       } catch (err) { console.error(err); }
     }
 
+    async function syncData(silent) {
+      // Don't interrupt someone actively filling in a form
+      if (CURRENT_VIEW === 'entry' || CURRENT_VIEW === 'multi') return;
+      await refreshShiftData();
+      if (CURRENT_VIEW === 'custom') { buildCustomTable(); renderAgencyLinks(); }
+      else if (CURRENT_VIEW === 'master') { buildMasterTable(); }
+      else if (CURRENT_VIEW === 'picker') { renderPicker(); }
+      else if (CURRENT_VIEW === 'bundleTiles') { renderBundleTiles(); }
+      if (!silent) showToast('Updated');
+    }
+
+    function startAutoSync(){
+      setInterval(function(){ syncData(true); }, 30000); // every 30 seconds, silent
+    }
+
     function init(){
       fetchInitData();
       document.getElementById('dateInput').addEventListener('change', onDateShiftChange);
       document.getElementById('shiftInput').addEventListener('change', onDateShiftChange);
+      var refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function(){
+          showToast('Refreshing\u2026');
+          syncData(false);
+        });
+      }
     }
 
     async function onDateShiftChange(){
@@ -940,8 +1008,20 @@
       document.getElementById('thDateMaster').textContent = dtStr;
     }
 
+    function updateProgressBar() {
+      var bar = document.getElementById('progressBarFill');
+      var label = document.getElementById('progressBarLabel');
+      if (!bar || !label || !AREAS.length) return;
+      var total = AREAS.length;
+      var filled = AREAS.filter(function(a){ return !!shiftData[a.id]; }).length;
+      var pct = total ? Math.round((filled / total) * 100) : 0;
+      bar.style.width = pct + '%';
+      label.textContent = filled + ' / ' + total + ' filled (' + pct + '%)';
+    }
+
     function buildCustomTable(){
       updateDashboardHeaders();
+      updateProgressBar();
       var body = document.getElementById('dashBody');
       body.innerHTML = '';
       
@@ -1190,7 +1270,7 @@
     }
 
     document.getElementById('copyEntryLinkBtn').addEventListener('click', function(){
-      var link = window.location.href.split('?')[0];
+      var link = window.location.href.split('?')[0] + '?key=' + ADMIN_KEY;
       navigator.clipboard.writeText(link).then(function(){ showToast('Dashboard link copied');
       }).catch(function(){ window.prompt('Copy this link:', link); });
     });
@@ -1206,7 +1286,10 @@
         var row = document.createElement('div');
         row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--surface-2);';
         row.innerHTML = '<span style="font-size:14px;">' + bundle.title + '</span>' +
-          '<button class="btn-ghost" style="min-width:auto; padding:6px 14px; flex:none;" data-link="' + link + '">Copy Link</button>';
+          '<span style="display:flex; gap:8px; flex:none;">' +
+          '<a href="' + link + '" target="_blank" rel="noopener" class="btn-ghost" style="min-width:auto; padding:6px 14px; display:inline-flex; align-items:center; text-decoration:none;">Go</a>' +
+          '<button class="btn-ghost" style="min-width:auto; padding:6px 14px;" data-link="' + link + '">Copy Link</button>' +
+          '</span>';
         list.appendChild(row);
       });
       list.querySelectorAll('button[data-link]').forEach(function(btn){
