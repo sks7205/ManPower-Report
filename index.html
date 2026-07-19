@@ -215,8 +215,38 @@
     
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
     .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
-    .inline-edit-cell { width: 100%; max-width: 60px; text-align: center; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid #2563eb; border-radius: 4px; padding: 2px 4px; background: #eff6ff; color: #000; }
-    .inline-edit-cell:focus { outline: none; border-color: #1d4ed8; background: #dbeafe; }
+    /* Excel-style invisible inputs */
+    .inline-edit-cell { 
+      width: 100%; 
+      max-width: 100%; 
+      text-align: center; 
+      font-family: 'Inter', sans-serif; 
+      font-size: inherit; 
+      border: 2px solid transparent; 
+      border-radius: 0; 
+      padding: 0px 4px; 
+      background: transparent; 
+      color: inherit; 
+      box-sizing: border-box;
+      outline: none;
+    }
+    
+    /* Classic Excel green focus ring when clicked */
+    .inline-edit-cell:focus { 
+      border: 2px solid #217346; 
+      background: #ffffff; 
+      color: #000;
+    }
+
+    /* Hide the up/down arrows in number inputs to look like raw text */
+    .inline-edit-cell::-webkit-outer-spin-button,
+    .inline-edit-cell::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .inline-edit-cell[type=number] {
+      -moz-appearance: textfield;
+    }
     
     .excel-table .grand-total-row td { background-color: #fce444; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     
