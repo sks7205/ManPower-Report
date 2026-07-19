@@ -1031,7 +1031,7 @@
         var planVal = document.getElementById('m_plan_' + checkId).value;
         var actualVal = document.getElementById('m_actual_' + checkId).value;
         // Only enforce mandatory fields for agencies
-        if (LINK_MODE && (planVal !== '' || actualVal === '')) {
+        if (LINK_MODE && (planVal !== '' && actualVal === '')) {
           showToast('Actual are mandatory If Plan box filled ' + cardLabel(AREAS_BY_ID[checkId]));
           return;
         }
@@ -1219,7 +1219,7 @@
       var ot = document.getElementById('otInput').value;
 
       // Only agencies are forced to fill plan and actual; master user is exempt
-      if (LINK_MODE && (plan !== '' || actual === '')) {
+      if (LINK_MODE && (plan !== '' && actual === '')) {
         showToast('Actual are mandatory if Plan box filled');
         return;
       }
