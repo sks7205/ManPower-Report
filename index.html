@@ -168,6 +168,7 @@
     .grid3 { display: flex; flex-direction: column; gap: 16px; }
     @media (min-width: 520px){ .grid3 { flex-direction: row; } .grid3 > .field { flex: 1; align-items: flex-start; } .grid3 > .field input { width: 100%; } }
     
+    /* Updated Background Color for Reported Block */
     .actual-readout { 
       margin-top: 20px; background: rgba(20, 184, 166, 0.12); border: 1px solid rgba(20, 184, 166, 0.4); 
       border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; 
@@ -215,38 +216,8 @@
     
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
     .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
-    /* Excel-style invisible inputs */
-    .inline-edit-cell { 
-      width: 100%; 
-      max-width: 100%; 
-      text-align: center; 
-      font-family: 'Inter', sans-serif; 
-      font-size: inherit; 
-      border: 2px solid transparent; 
-      border-radius: 0; 
-      padding: 0px 4px; 
-      background: transparent; 
-      color: inherit; 
-      box-sizing: border-box;
-      outline: none;
-    }
-    
-    /* Classic Excel green focus ring when clicked */
-    .inline-edit-cell:focus { 
-      border: 2px solid #217346; 
-      background: #ffffff; 
-      color: #000;
-    }
-
-    /* Hide the up/down arrows in number inputs to look like raw text */
-    .inline-edit-cell::-webkit-outer-spin-button,
-    .inline-edit-cell::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .inline-edit-cell[type=number] {
-      -moz-appearance: textfield;
-    }
+    .inline-edit-cell { width: 100%; max-width: 60px; text-align: center; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid #2563eb; border-radius: 4px; padding: 2px 4px; background: #eff6ff; color: #000; }
+    .inline-edit-cell:focus { outline: none; border-color: #1d4ed8; background: #dbeafe; }
     
     .excel-table .grand-total-row td { background-color: #fce444; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     
@@ -399,7 +370,6 @@
 
         <div class="dash-actions">
           <button class="btn-ghost" onclick="downloadFullHDImage('masterExportWrapper', 'Master_Shift_Data')">⬇️ Save Image</button>
-          <button class="btn-secondary" id="editMasterBtn">✏️ Edit Master Data</button>
         </div>
         <div class="status-line" id="dashStatusMaster"></div>
       </div>
@@ -511,7 +481,6 @@
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
     var DASHBOARD_EDIT_MODE = false; 
-    var MASTER_EDIT_MODE = false;
 
     const ADMIN_KEY = "ars2incharge2026";
 
@@ -733,16 +702,6 @@
         });
       }
 
-      var editMasterBtn = document.getElementById('editMasterBtn');
-      if (editMasterBtn) {
-        editMasterBtn.addEventListener('click', function(){
-          MASTER_EDIT_MODE = !MASTER_EDIT_MODE;
-          this.innerHTML = MASTER_EDIT_MODE ? '✅ Done Editing' : '✏️ Edit Master Data';
-          this.className = MASTER_EDIT_MODE ? 'btn-primary' : 'btn-secondary';
-          buildMasterTable();
-        });
-      }
-
       document.getElementById('successModalOkBtn').addEventListener('click', hideSuccessPopup);
       document.getElementById('successModalOverlay').addEventListener('click', function(e){
         if (e.target === this) hideSuccessPopup();
@@ -771,7 +730,6 @@
         if (result.success) {
           shiftData = {};
           buildCustomTable();
-          if (CURRENT_VIEW === 'master') buildMasterTable();
           renderAgencyLinks();
           showToast('Cleared all data for ' + dateStr + ' Shift ' + shiftStr);
         } else {
@@ -1065,6 +1023,7 @@
         var checkId = currentMultiNode.areaIds[i];
         var planVal = document.getElementById('m_plan_' + checkId).value;
         var actualVal = document.getElementById('m_actual_' + checkId).value;
+        // Only enforce mandatory fields for agencies
         if (LINK_MODE && (planVal !== '' && actualVal === '')) {
           showToast('Actual are mandatory If Plan box filled ' + cardLabel(AREAS_BY_ID[checkId]));
           return;
@@ -1250,6 +1209,7 @@
       var actual = document.getElementById('actualInput').value;
       var ot = document.getElementById('otInput').value;
 
+      // Only agencies are forced to fill plan and actual; master user is exempt
       if (LINK_MODE && (plan !== '' && actual === '')) {
         showToast('Actual are mandatory if Plan box filled');
         return;
@@ -1350,12 +1310,13 @@
       label.textContent = filled + ' / ' + total + ' filled (' + pct + '%)';
     }
 
-    const CUSTOM_DIRECT_IDS = ['VL'];
+    const CUSTOM_DIRECT_IDS = ['VL_ARS2', 'VL_ARS3'];
     const CUSTOM_INDIRECT_IDS = [
-      'TKIL_MECH', 'TKIL_ELE', 'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2', 
-      'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR', 'SKE_OA_BUTTCLEAN', 
-      'SKE_OA_BELTHK', 'SKE_OA_LADIES', 'TARON', 'TENON_HK', 'TENON_DULEVO', 
-      'SSE_SKE', 'LLOYD', 'UIL', 'GMPL', 'NATARAJ'
+      'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS', 'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS',
+      'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2', 'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR',
+      'SKE_OA_BUTTCLEAN', 'SKE_OA_BELTHK', 'SKE_OA_LADIES', 'TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE',
+      'TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH', 'TENON_HK', 'TENON_DULEVO',
+      'SSE', 'SKE_OP_ATV', 'LLOYD', 'UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA', 'GMPL', 'NATARAJ'
     ];
 
     function getMetricsGlobal(id) {
@@ -1397,14 +1358,8 @@
       var planEl = document.querySelector('input.inline-edit-cell[data-areaid="' + areaId + '"][data-field="plan"]');
       var actualEl = document.querySelector('input.inline-edit-cell[data-areaid="' + areaId + '"][data-field="actual"]');
       var otEl = document.querySelector('input.inline-edit-cell[data-areaid="' + areaId + '"][data-field="inOT"]');
-      var remarksEl = document.querySelector('input.inline-edit-cell[data-areaid="' + areaId + '"][data-field="remarks"]');
-      
       if (!planEl || !actualEl || !otEl) return;
-      
-      var plan = planEl.value;
-      var actual = actualEl.value;
-      var ot = otEl.value;
-      var remarks = remarksEl ? remarksEl.value : '';
+      var plan = planEl.value, actual = actualEl.value, ot = otEl.value;
       var reported = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
       var rowEl = actualEl.closest('tr');
@@ -1414,16 +1369,16 @@
       var existing = shiftData[areaId] || {};
       shiftData[areaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0), inOT: Number(ot || 0), reported: reported,
-        remarks: remarks, updatedBy: existing.updatedBy || 'you',
+        remarks: existing.remarks || '', updatedBy: existing.updatedBy || 'you',
         timestamp: existing.timestamp || new Date().toLocaleString()
       };
 
-      if(typeof recalcCustomFooter === 'function') recalcCustomFooter();
+      recalcCustomFooter();
       updateProgressBar();
 
       clearTimeout(inlineEditSaveTimers[areaId]);
       inlineEditSaveTimers[areaId] = setTimeout(function(){
-        var area = AREAS_BY_ID[areaId] || { fullName: areaId };
+        var area = AREAS_BY_ID[areaId];
         fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1456,19 +1411,35 @@
         };
       }
 
-      function appendRow(label, id, className) {
-        var data = getMetrics(id);
+      function sumMetrics(arr) {
+        var res = { plan:0, actual:0, inOT:0, reported:0, remarks:[] };
+        arr.forEach(function(id) {
+          var m = getMetrics(id);
+          res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
+          if (m.remarks) {
+            var parts = m.remarks.split('; ');
+            parts.forEach(function(p){ if(res.remarks.indexOf(p) === -1) res.remarks.push(p); });
+          }
+        });
+        res.remarks = res.remarks.filter(Boolean).join('; ');
+        return res;
+      }
+
+      function appendRow(label, data, className, forceNoRemarks, editTarget) {
         var tr = document.createElement('tr');
         if (className) tr.className = className;
+        var displayRemarks = forceNoRemarks ? '' : (data.remarks || '');
+        var isEditableLeaf = DASHBOARD_EDIT_MODE && editTarget && editTarget.type === 'leaf';
 
-        if (DASHBOARD_EDIT_MODE) {
+        if (isEditableLeaf) {
+          var id = editTarget.id;
           tr.innerHTML =
             '<td>' + label + '</td>' +
             '<td class="num"><input type="number" class="inline-edit-cell" data-areaid="' + id + '" data-field="plan" value="' + data.plan + '" oninput="onInlineCellEdit(\'' + id + '\')"></td>' +
             '<td class="num inline-reported-cell">' + data.reported + '</td>' +
             '<td class="num"><input type="number" class="inline-edit-cell" data-areaid="' + id + '" data-field="inOT" value="' + data.inOT + '" oninput="onInlineCellEdit(\'' + id + '\')"></td>' +
             '<td class="num"><input type="number" class="inline-edit-cell" data-areaid="' + id + '" data-field="actual" value="' + data.actual + '" oninput="onInlineCellEdit(\'' + id + '\')"></td>' +
-            '<td class="remarks-cell"><input type="text" class="inline-edit-cell" data-areaid="' + id + '" data-field="remarks" value="' + data.remarks + '" oninput="onInlineCellEdit(\'' + id + '\')" style="width:100%; max-width:none; text-align:left;"></td>';
+            '<td class="remarks-cell">' + displayRemarks + '</td>';
         } else {
           tr.innerHTML =
             '<td>' + label + '</td>' +
@@ -1476,47 +1447,66 @@
             '<td class="num">' + data.reported + '</td>' +
             '<td class="num">' + data.inOT + '</td>' +
             '<td class="num">' + data.actual + '</td>' +
-            '<td class="remarks-cell">' + data.remarks + '</td>';
+            '<td class="remarks-cell">' + displayRemarks + '</td>';
         }
+        if (editTarget && editTarget.rowId) tr.id = editTarget.rowId;
         body.appendChild(tr);
       }
 
-      appendRow('VL', 'VL', '');
-      appendRow('TKII(mech)', 'TKIL_MECH', 'depth-0');
-      appendRow('TKII(elec)', 'TKIL_ELE', 'depth-0');
-      appendRow('SKE OA', 'SKE_OA_ARS2', '');
-      appendRow('SKE OA(scoop bath)', 'SKE_OA_SCOOPBATH', '');
-      appendRow('SKE operator', 'SKE_OP_ARS2', '');
-      appendRow('SKE OA(ARS3)', 'SKE_OA_ARS3', '');
-      appendRow('SKE operator(ARS3)', 'SKE_OP_ARS3', '');
-      appendRow('SKE Rod Repair', 'SKE_OA_RODREPAIR', '');
-      appendRow('SKE Butt Clean', 'SKE_OA_BUTTCLEAN', '');
-      appendRow('SKE HK(Belt)', 'SKE_OA_BELTHK', '');
-      appendRow('SKE OA(Ladies)', 'SKE_OA_LADIES', '');
-      appendRow('TARON', 'TARON', 'depth-1');
-      appendRow('Tenon hk', 'TENON_HK', '');
-      appendRow('Tenon dulevo', 'TENON_DULEVO', '');
-      appendRow('SSE + SKE', 'SSE_SKE', 'depth-2');
-      appendRow('LLOYD', 'LLOYD', '');
-      appendRow('UIL', 'UIL', 'depth-1');
-      appendRow('GMPL', 'GMPL', '');
-      appendRow('Nataraj Eng', 'NATARAJ', '');
+      var vlSum = sumMetrics(['VL_ARS2', 'VL_ARS3']);
+      if (getMetrics('VL_ARS3').reported > 0 && vlSum.remarks.indexOf('Including ARS3') === -1) {
+        vlSum.remarks = ['Including ARS3', vlSum.remarks].filter(Boolean).join('; ');
+      }
+      appendRow('VL', vlSum, '', false, {type: 'multi', id: 'VL'});
 
-      var dTot = sumMetricsGlobal(CUSTOM_DIRECT_IDS);
-      var iTot = sumMetricsGlobal(CUSTOM_INDIRECT_IDS);
+      var tkilMechSum = sumMetrics(['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS']);
+      if (getMetrics('TKIL_MECH_ARS3').reported > 0 && tkilMechSum.remarks.indexOf('Including ARS3') === -1) {
+        tkilMechSum.remarks = ['Including ARS3', tkilMechSum.remarks].filter(Boolean).join('; ');
+      }
+      appendRow('TKII(mech)', tkilMechSum, 'depth-0', false, {type: 'multi', id: 'TKIL_MECH'});
+
+      var tkilElecSum = sumMetrics(['TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS']);
+      if (getMetrics('TKIL_ELE_ARS3').reported > 0 && tkilElecSum.remarks.indexOf('Including ARS3') === -1) {
+        tkilElecSum.remarks = ['Including ARS3', tkilElecSum.remarks].filter(Boolean).join('; ');
+      }
+      appendRow('TKII(elec)', tkilElecSum, 'depth-0', false, {type: 'multi', id: 'TKIL_ELE'});
+
+      appendRow('SKE OA', getMetrics('SKE_OA_ARS2'), '', false, {type: 'leaf', id: 'SKE_OA_ARS2'});
+      appendRow('SKE OA(scoop bath)', getMetrics('SKE_OA_SCOOPBATH'), '', false, {type: 'leaf', id: 'SKE_OA_SCOOPBATH'});
+      appendRow('SKE operator', getMetrics('SKE_OP_ARS2'), '', false, {type: 'leaf', id: 'SKE_OP_ARS2'});
+      appendRow('SKE OA(ARS3)', getMetrics('SKE_OA_ARS3'), '', false, {type: 'leaf', id: 'SKE_OA_ARS3'});
+      appendRow('SKE operator(ARS3)', getMetrics('SKE_OP_ARS3'), '', false, {type: 'leaf', id: 'SKE_OP_ARS3'});
+      appendRow('SKE Rod Repair', getMetrics('SKE_OA_RODREPAIR'), '', false, {type: 'leaf', id: 'SKE_OA_RODREPAIR'});
+      appendRow('SKE Butt Clean', getMetrics('SKE_OA_BUTTCLEAN'), '', false, {type: 'leaf', id: 'SKE_OA_BUTTCLEAN'});
+      appendRow('SKE HK(Belt)', getMetrics('SKE_OA_BELTHK'), '', false, {type: 'leaf', id: 'SKE_OA_BELTHK'});
+      appendRow('SKE OA(Ladies)', getMetrics('SKE_OA_LADIES'), '', false, {type: 'leaf', id: 'SKE_OA_LADIES'});
+
+      appendRow('TARON', sumMetrics(['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH']), 'depth-1', false, {type: 'group', path: ['TARON']});
+      appendRow('Tenon hk', getMetrics('TENON_HK'), '', false, {type: 'leaf', id: 'TENON_HK'});
+      appendRow('Tenon dulevo', getMetrics('TENON_DULEVO'), '', false, {type: 'leaf', id: 'TENON_DULEVO'});
+
+      var sseMetrics = getMetrics('SSE'), skeAtvMetrics = getMetrics('SKE_OP_ATV');
+      var sseSkeSum = {
+        plan: sseMetrics.plan + skeAtvMetrics.plan, reported: sseMetrics.reported + skeAtvMetrics.reported,
+        inOT: sseMetrics.inOT + skeAtvMetrics.inOT, actual: sseMetrics.actual + skeAtvMetrics.actual,
+        remarks: "SKE - " + skeAtvMetrics.actual
+      };
+      if (sseMetrics.remarks) sseSkeSum.remarks += "; " + sseMetrics.remarks;
+      appendRow('SSE + SKE', sseSkeSum, 'depth-2', false, {type: 'group', path: []}); 
+
+      appendRow('LLOYD', getMetrics('LLOYD'), '', false, {type: 'leaf', id: 'LLOYD'});
+      appendRow('UIL', sumMetrics(['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA']), 'depth-1', false, {type: 'group', path: ['UIL']});
+      appendRow('GMPL', getMetrics('GMPL'), '', false, {type: 'leaf', id: 'GMPL'});
+      appendRow('Nataraj Eng', getMetrics('NATARAJ'), '', false, {type: 'leaf', id: 'NATARAJ'});
+
+      var dTot = sumMetrics(CUSTOM_DIRECT_IDS);
+      var iTot = sumMetrics(CUSTOM_INDIRECT_IDS);
+      
       var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual };
       
-      var footerTr1 = document.createElement('tr'); footerTr1.className = 'grand-total-row'; footerTr1.id = 'footerRowTotal';
-      footerTr1.innerHTML = '<td>TOTAL:-</td><td class="num">' + gTot.plan + '</td><td class="num">' + gTot.reported + '</td><td class="num">' + gTot.inOT + '</td><td class="num">' + gTot.actual + '</td><td class="remarks-cell"></td>';
-      body.appendChild(footerTr1);
-
-      var footerTr2 = document.createElement('tr'); footerTr2.className = 'grand-total-row'; footerTr2.id = 'footerRowDirect';
-      footerTr2.innerHTML = '<td>DIRECT:-</td><td class="num">' + dTot.plan + '</td><td class="num">' + dTot.reported + '</td><td class="num">' + dTot.inOT + '</td><td class="num">' + dTot.actual + '</td><td class="remarks-cell"></td>';
-      body.appendChild(footerTr2);
-
-      var footerTr3 = document.createElement('tr'); footerTr3.className = 'grand-total-row'; footerTr3.id = 'footerRowIndirect';
-      footerTr3.innerHTML = '<td>INDIRECT:-</td><td class="num">' + iTot.plan + '</td><td class="num">' + iTot.reported + '</td><td class="num">' + iTot.inOT + '</td><td class="num">' + iTot.actual + '</td><td class="remarks-cell"></td>';
-      body.appendChild(footerTr3);
+      appendRow('TOTAL:-', gTot, 'grand-total-row', true, {rowId: 'footerRowTotal'});
+      appendRow('DIRECT:-', dTot, 'grand-total-row', true, {rowId: 'footerRowDirect'});
+      appendRow('INDIRECT:-', iTot, 'grand-total-row', true, {rowId: 'footerRowIndirect'});
     }
 
     function buildMasterTable(){
@@ -1537,23 +1527,13 @@
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
         var tr = document.createElement('tr');
         
-        if (MASTER_EDIT_MODE) {
-          tr.innerHTML =
-            '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
-            '<td class="num"><input type="number" class="inline-edit-cell" data-areaid="' + areaId + '" data-field="plan" value="' + (rec.plan || 0) + '" oninput="onInlineCellEdit(\'' + areaId + '\')"></td>' +
-            '<td class="num inline-reported-cell">' + (rec.reported || 0) + '</td>' +
-            '<td class="num"><input type="number" class="inline-edit-cell" data-areaid="' + areaId + '" data-field="inOT" value="' + (rec.inOT || 0) + '" oninput="onInlineCellEdit(\'' + areaId + '\')"></td>' +
-            '<td class="num"><input type="number" class="inline-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onInlineCellEdit(\'' + areaId + '\')"></td>' +
-            '<td class="remarks-cell"><input type="text" class="inline-edit-cell" data-areaid="' + areaId + '" data-field="remarks" value="' + (rec.remarks || '') + '" oninput="onInlineCellEdit(\'' + areaId + '\')" style="width:100%; max-width:none; text-align:left;"></td>';
-        } else {
-          tr.innerHTML =
-            '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
-            '<td class="num">' + (rec.plan || 0) + '</td>' +
-            '<td class="num">' + (rec.reported || 0) + '</td>' +
-            '<td class="num">' + (rec.inOT || 0) + '</td>' +
-            '<td class="num">' + (rec.actual || 0) + '</td>' +
-            '<td class="remarks-cell">' + (rec.remarks || '') + '</td>';
-        }
+        tr.innerHTML =
+          '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
+          '<td class="num">' + (rec.plan || 0) + '</td>' +
+          '<td class="num">' + (rec.reported || 0) + '</td>' +
+          '<td class="num">' + (rec.inOT || 0) + '</td>' +
+          '<td class="num">' + (rec.actual || 0) + '</td>' +
+          '<td class="remarks-cell">' + (rec.remarks || '') + '</td>';
         masterBody.appendChild(tr);
         
         var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0);
@@ -1663,6 +1643,9 @@
       var originalBoxShadow = wrapper.style.boxShadow;
       wrapper.style.overflow = 'visible';
       wrapper.style.width = 'max-content';
+      // html2canvas renders inset box-shadows unreliably — it can fill the
+      // whole element with the shadow color instead of a thin ring. Strip it
+      // just for the capture; the on-screen border is untouched afterward.
       wrapper.style.boxShadow = 'none';
 
       var rect = wrapper.getBoundingClientRect();
