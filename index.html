@@ -1582,29 +1582,35 @@
     }
 
     function downloadFullHDImage(wrapperId, filenamePrefix) {
-      var wrapper = document.getElementById(wrapperId);
-      if (!wrapper) { showToast('Could not find content to export'); return; }
+      var original = document.getElementById(wrapperId);
+      if (!original) { showToast('Could not find content to export'); return; }
       if (typeof html2canvas === 'undefined') {
         showToast('Image tool failed to load — check your connection and try again');
         return;
       }
       showToast('Generating image\u2026');
 
-      var originalOverflow = wrapper.style.overflow;
-      var originalWidth = wrapper.style.width;
-      wrapper.style.overflow = 'visible';
-      wrapper.style.width = 'max-content';
+      // Clone into a fully isolated off-screen container — no parent .card,
+      // no background, no border — so nothing but the table itself can be captured.
+      var clone = original.cloneNode(true);
+      clone.style.overflow = 'visible';
+      clone.style.width = 'max-content';
+      clone.style.margin = '0';
 
-      var rect = wrapper.getBoundingClientRect();
+      var isolatedContainer = document.createElement('div');
+      isolatedContainer.style.cssText = 'position:fixed; top:0; left:-99999px; background:#ffffff; display:inline-block; padding:0; margin:0; border:none;';
+      isolatedContainer.appendChild(clone);
+      document.body.appendChild(isolatedContainer);
+
+      var rect = clone.getBoundingClientRect();
       var maxDimension = 4000;
       var scale = 3;
       if (rect.width * scale > maxDimension || rect.height * scale > maxDimension) {
         scale = Math.max(1, Math.floor(maxDimension / Math.max(rect.width, rect.height, 1)));
       }
 
-      html2canvas(wrapper, { backgroundColor: '#ffffff', scale: scale, useCORS: true }).then(function(canvas){
-        wrapper.style.overflow = originalOverflow;
-        wrapper.style.width = originalWidth;
+      html2canvas(clone, { backgroundColor: '#ffffff', scale: scale, useCORS: true }).then(function(canvas){
+        document.body.removeChild(isolatedContainer);
 
         var filename = filenamePrefix + '_' + currentShift() + '_' + currentDate() + '.png';
         var dataUrl = canvas.toDataURL('image/png');
@@ -1634,8 +1640,7 @@
           showToast('Image downloaded');
         }
       }).catch(function(err){
-        wrapper.style.overflow = originalOverflow;
-        wrapper.style.width = originalWidth;
+        document.body.removeChild(isolatedContainer);
         showToast('Error generating image — please try again');
         console.error(err);
       });
