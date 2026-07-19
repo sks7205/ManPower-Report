@@ -216,27 +216,28 @@
     
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
     .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
-    /* Excel-style invisible inputs */
+    /* Pure Excel Cell - White, No Border, No Padding */
     .inline-edit-cell { 
       width: 100%; 
       max-width: 100%; 
       text-align: center; 
       font-family: 'Inter', sans-serif; 
       font-size: inherit; 
-      border: 0px solid #ffffff; 
+      border: none; 
       border-radius: 0; 
-      padding: 0px 0px; 
+      padding: 0; 
+      margin: 0;
       background: #ffffff; 
-      color: #ffffff; 
+      color: #000; 
       box-sizing: border-box;
       outline: none;
     }
     
-    /* Classic Excel green focus ring when clicked */
+    /* Removes any highlight or border when clicking on the cell */
     .inline-edit-cell:focus { 
-      border: 2px solid #217346; 
+      border: none; 
+      outline: none; 
       background: #ffffff; 
-      color: #000;
     }
 
     /* Hide the up/down arrows in number inputs to look like raw text */
