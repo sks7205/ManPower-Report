@@ -296,7 +296,7 @@
         <button class="btn-primary" onclick="showPicker()">✏️ Data Entry</button>
         <button class="btn-secondary" onclick="showMasterDashboard()">📊 Master Report</button>
         <button class="btn-secondary" id="refreshBtn">🔄 Refresh</button>
-        <button class="btn-ghost" id="resetShiftBtn" style="border-color:var(--danger); color:var(--danger);">🗑️ Reset Shift</button>
+        <button class="btn-ghost" id="resetShiftBtn" style="border-color:var(--danger); color:var(--danger);">🗑️ Reset Data </button>
       </div>
 
       <div class="card" style="padding:20px 24px;">
@@ -1644,7 +1644,7 @@
       };
       
       var footerRowIds = ['footerRowMasterTotal', 'footerRowMasterDirect', 'footerRowMasterIndirect'];
-      [['TOTAL MASTER:-', mTotals], ['DIRECT MASTER:-', mDirectTotals], ['INDIRECT MASTER:-', mIndirectTotals]].forEach(function(pair, idx){
+      [['TOTAL:-', mTotals], ['DIRECT:-', mDirectTotals], ['INDIRECT:-', mIndirectTotals]].forEach(function(pair, idx){
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
