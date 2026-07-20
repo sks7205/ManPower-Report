@@ -225,9 +225,20 @@
     /* Master Report Color Blocks & Strict Non-Italic Rule */
     #masterDashTable th, #masterDashTable td, #masterDashTable * { font-style: normal !important; }
     
-    .bg-blue td { background-color: #e6f2ff !important; }
-    .bg-green td { background-color: #e6ffe6 !important; }
-    .bg-gray td { background-color: #f2f2f2 !important; }
+    /* Unique Agency Colors */
+    .bg-vl td { background-color: #e6f2ff !important; }      /* Light Blue */
+    .bg-tkil td { background-color: #e6ffe6 !important; }    /* Light Green */
+    .bg-ske td { background-color: #fff0e6 !important; }     /* Light Peach */
+    .bg-taron td { background-color: #f9e6ff !important; }   /* Light Purple */
+    .bg-tenon td { background-color: #e6ffff !important; }   /* Light Cyan */
+    .bg-uil td { background-color: #ffe6e6 !important; }     /* Light Rose */
+    
+    /* Unique colors for the bottom single agencies */
+    .bg-sse td { background-color: #fffde6 !important; }     /* Light Yellow */
+    .bg-lloyd td { background-color: #e6e9ff !important; }   /* Light Periwinkle */
+    .bg-gmpl td { background-color: #efffe6 !important; }    /* Light Lime */
+    .bg-nataraj td { background-color: #ffe6f2 !important; } /* Light Pink */
+    .bg-default td { background-color: #f2f2f2 !important; } /* Gray fallback */
     
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
@@ -1644,10 +1655,22 @@
       var bottomTree = TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) !== -1; });
 
       // Apply Agency Specific Colors
+      // Apply Unique Agency Specific Colors
       function getBlockColor(id) {
-        if (['VL', 'TENON', 'UIL'].indexOf(id) !== -1) return 'bg-blue';
-        if (['TKIL', 'SKE', 'TARON'].indexOf(id) !== -1) return 'bg-green';
-        return 'bg-gray'; 
+        if (id === 'VL') return 'bg-vl';
+        if (id === 'TKIL') return 'bg-tkil';
+        if (id === 'SKE') return 'bg-ske';
+        if (id === 'TARON') return 'bg-taron';
+        if (id === 'TENON') return 'bg-tenon';
+        if (id === 'UIL') return 'bg-uil';
+        
+        // Single entries at the bottom
+        if (id === 'SSE') return 'bg-sse';
+        if (id === 'LLOYD') return 'bg-lloyd';
+        if (id === 'GMPL') return 'bg-gmpl';
+        if (id === 'NATARAJ') return 'bg-nataraj';
+        
+        return 'bg-default';
       }
 
       // Render top agencies with their block colors
