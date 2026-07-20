@@ -1295,6 +1295,16 @@
       var masterTableEl = document.getElementById('masterDashTable');
       if (dashTableEl) dashTableEl.classList.toggle('hide-ot', hideOT);
       if (masterTableEl) masterTableEl.classList.toggle('hide-ot', hideOT);
+
+      // Explicit fallback alongside the CSS class, and fix the colspan to match
+      // the real number of visible sub-columns (Plan/Reported/[OT]/Actual)
+      document.querySelectorAll('.ot-cell').forEach(function(el){
+        el.style.display = hideOT ? 'none' : '';
+      });
+      var thDate = document.getElementById('thDate');
+      var thDateMaster = document.getElementById('thDateMaster');
+      if (thDate) thDate.setAttribute('colspan', hideOT ? '3' : '4');
+      if (thDateMaster) thDateMaster.setAttribute('colspan', hideOT ? '3' : '4');
       
       const now = new Date();
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
