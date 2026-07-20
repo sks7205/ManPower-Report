@@ -222,13 +222,14 @@
     .excel-edit-cell-text { max-width: none; text-align: left; }
     .hide-ot .ot-cell { display: none; }
     
-    .excel-table .grand-total-row td { background-color: #fce444; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
+    /* Master Report Color Blocks & Strict Non-Italic Rule */
+    #masterDashTable th, #masterDashTable td, #masterDashTable * { font-style: normal !important; }
     
-    .excel-table .depth-0 td { background-color: #e6f2ff; font-weight: bold; font-size: 13.5px; } 
-    .excel-table .depth-1 td { background-color: #e6ffe6; font-weight: bold; font-size: 13px; }    
-    .excel-table .depth-2 td { background-color: #f9e6ff; font-weight: bold; font-size: 12.5px; }  
+    .bg-blue td { background-color: #e6f2ff !important; }
+    .bg-green td { background-color: #e6ffe6 !important; }
+    .bg-gray td { background-color: #f2f2f2 !important; }
     
-    .excel-table .subtotal-row td { background-color: #f5f5f5; font-weight: 600; font-style: italic; font-size: 13px; }
+    .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
     
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -1540,12 +1541,13 @@
         return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       }
 
-      function addMasterLeafRow(areaId, indent){
+      function addMasterLeafRow(areaId, indent, blockClass){
         var area = AREAS_BY_ID[areaId];
         if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0 };
         
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
         var tr = document.createElement('tr');
+        if (blockClass) tr.className = blockClass;
 
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
@@ -1575,36 +1577,36 @@
         return { plan: p, actual: a, inOT: o, reported: r };
       }
 
-      function walkMaster(nodes, depth){
+      function walkMaster(nodes, depth, blockClass){
         var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
         if (!nodes) return groupTotal; 
         
         nodes.forEach(function(node){
           if (node.type === 'leaf'){
-            var leafVals = addMasterLeafRow(node.areaId, depth > 0);
+            var leafVals = addMasterLeafRow(node.areaId, depth > 0, blockClass);
             groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
             groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
           } else if (node.type === 'multi') {
             var tr = document.createElement('tr');
-            tr.className = 'depth-' + (depth > 2 ? 2 : depth); 
-            tr.innerHTML = '<td colspan="6">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            if (blockClass) tr.className = blockClass;
+            tr.innerHTML = '<td colspan="6" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
             var childTotals = { plan:0, actual:0, inOT:0, reported:0 };
             node.areaIds.forEach(function(id){
-               var leafVals = addMasterLeafRow(id, depth + 1);
+               var leafVals = addMasterLeafRow(id, depth + 1, blockClass);
                childTotals.plan += leafVals.plan; childTotals.actual += leafVals.actual;
                childTotals.inOT += leafVals.inOT; childTotals.reported += leafVals.reported;
             });
 
             var subTr = document.createElement('tr');
-            subTr.className = 'subtotal-row';
+            if (blockClass) subTr.className = blockClass;
             subTr.innerHTML =
-              '<td>' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
-              '<td class="num">' + childTotals.plan + '</td>' +
-              '<td class="num">' + childTotals.reported + '</td>' +
-              '<td class="num ot-cell">' + childTotals.inOT + '</td>' +
-              '<td class="num">' + childTotals.actual + '</td>' +
+              '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
+              '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
+              '<td class="num" style="font-weight:bold;">' + childTotals.reported + '</td>' +
+              '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
+              '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td></td>';
             masterBody.appendChild(subTr);
 
@@ -1612,20 +1614,20 @@
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
           } else {
             var tr = document.createElement('tr');
-            tr.className = 'depth-' + (depth > 2 ? 2 : depth); 
-            tr.innerHTML = '<td colspan="6">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            if (blockClass) tr.className = blockClass;
+            tr.innerHTML = '<td colspan="6" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
-            var childTotals = walkMaster(node.children, depth + 1);
+            var childTotals = walkMaster(node.children, depth + 1, blockClass);
 
             var subTr = document.createElement('tr');
-            subTr.className = 'subtotal-row';
+            if (blockClass) subTr.className = blockClass;
             subTr.innerHTML =
-              '<td>' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
-              '<td class="num">' + childTotals.plan + '</td>' +
-              '<td class="num">' + childTotals.reported + '</td>' +
-              '<td class="num ot-cell">' + childTotals.inOT + '</td>' +
-              '<td class="num">' + childTotals.actual + '</td>' +
+              '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
+              '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
+              '<td class="num" style="font-weight:bold;">' + childTotals.reported + '</td>' +
+              '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
+              '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td></td>';
             masterBody.appendChild(subTr);
 
@@ -1636,7 +1638,27 @@
         return groupTotal;
       }
       
-      walkMaster(TREE, 0);
+      // Separate out Single Agencies to be pushed to the bottom
+      var singleIds = ['SSE', 'LLOYD', 'GMPL', 'NATARAJ'];
+      var mainTree = TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) === -1; });
+      var bottomTree = TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) !== -1; });
+
+      // Apply Agency Specific Colors
+      function getBlockColor(id) {
+        if (['VL', 'TENON', 'UIL'].indexOf(id) !== -1) return 'bg-blue';
+        if (['TKIL', 'SKE', 'TARON'].indexOf(id) !== -1) return 'bg-green';
+        return 'bg-gray'; 
+      }
+
+      // Render top agencies with their block colors
+      mainTree.forEach(function(node){
+        walkMaster([node], 0, getBlockColor(node.id));
+      });
+      
+      // Render single entries at the bottom in gray
+      bottomTree.forEach(function(node){
+        walkMaster([node], 0, 'bg-gray');
+      });
 
       var mIndirectTotals = {
         plan: mTotals.plan - mDirectTotals.plan, actual: mTotals.actual - mDirectTotals.actual,
@@ -1660,7 +1682,6 @@
 
       status.textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
-
     function downloadFullHDImage(wrapperId, filenamePrefix) {
       var wrapper = document.getElementById(wrapperId);
       if (!wrapper) { showToast('Could not find content to export'); return; }
