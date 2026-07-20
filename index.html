@@ -1676,12 +1676,12 @@
 
       // Render top agencies with their block colors
       mainTree.forEach(function(node){
-        walkMaster([node], 0, getBlockColor(node.id));
+        walkMaster([node], 0, getBlockColor(node.id || node.areaId));
       });
       
-      // Render single entries at the bottom in gray
+      // Render single entries at the bottom with their specific colors
       bottomTree.forEach(function(node){
-        walkMaster([node], 0, 'bg-gray');
+        walkMaster([node], 0, getBlockColor(node.id || node.areaId));
       });
 
       var mIndirectTotals = {
