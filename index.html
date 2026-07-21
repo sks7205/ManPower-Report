@@ -1217,6 +1217,19 @@
       document.getElementById('actualInput').value = rec ? rec.actual : '';
       document.getElementById('otInput').value = rec ? rec.inOT : '';
       updateReported();
+
+      var area = AREAS_BY_ID[currentLeaf];
+      var flagEl = document.getElementById('remarkFlag');
+      if (flagEl && area.remarkPrompt) {
+        var remarksText = (rec && rec.remarks) ? rec.remarks : '';
+        if (area.remarkPrompt.kind === 'boolean') {
+          flagEl.checked = (remarksText === area.remarkPrompt.text);
+        } else {
+          var match = remarksText.match(/^(\d+)/);
+          flagEl.value = match ? match[1] : 0;
+        }
+      }
+
       status.textContent = rec ? ('Last saved by ' + rec.updatedBy + ' at ' + rec.timestamp) : 'No entry yet for this date/shift.';
       status.className = 'status-line';
     }
