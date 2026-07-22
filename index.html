@@ -355,6 +355,11 @@
         <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency — it opens straight to their form only.</span>
         <div id="agencyLinksList"></div>
       </div>
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0;">Fill History (Area-wise)</h2>
+        <span class="sub" style="display:block; margin-bottom:20px;">Names captured automatically the first time each area was filled. Tap a name to send a reminder notification.</span>
+        <div id="fillHistoryList"></div>
+      </div>
     </div>
 
     <div id="masterDashboardView" style="display:none;">
@@ -1908,6 +1913,44 @@
       list.querySelectorAll('input[data-key]').forEach(function(inp){
         inp.addEventListener('change', function(){
           saveContactDirectoryEntry(inp.getAttribute('data-key'), inp.getAttribute('data-field'), inp.value.trim());
+        });
+      });
+      renderFillHistory();
+    }
+
+    function requestNotifyPermission(){
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    function sendReminderNotification(areaLabel, name){
+      requestNotifyPermission();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Reminder: ' + areaLabel, { body: name + ', please fill your shift entry.' });
+      } else {
+        showToast('Reminder noted for ' + name + ' (enable browser notifications to see a popup)');
+      }
+    }
+
+    function renderFillHistory(){
+      var wrap = document.getElementById('fillHistoryList');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      AREAS.forEach(function(a){
+        var name = AREA_CONTACTS[a.id];
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);';
+        row.innerHTML = '<span style="font-size:14px;">' + (a.fullName || a.id) + '</span>' +
+          (name
+            ? '<button data-remind-area="' + a.id + '" data-remind-name="' + name.replace(/"/g,'&quot;') + '" style="min-width:auto; padding:6px 12px; border-radius:8px; background:var(--accent); color:#000; font-size:13px;">' + name + '</button>'
+            : '<span style="font-size:12px; color:var(--muted);">Not yet filled</span>');
+        wrap.appendChild(row);
+      });
+      wrap.querySelectorAll('button[data-remind-area]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var area = AREAS_BY_ID[btn.getAttribute('data-remind-area')];
+          sendReminderNotification(area ? (area.fullName || area.id) : '', btn.getAttribute('data-remind-name'));
         });
       });
     }
