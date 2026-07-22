@@ -352,8 +352,9 @@
       </div>
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
-        <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency — it opens straight to their form only.</span>
-        <div id="agencyLinksList"></div>
+        <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency. Registered people (who opened the link and enabled notifications) show up below, section-wise — tick who's in shift and notify them.</span>
+        <button class="btn-primary" id="notifySelectedBtn" style="margin-bottom:16px;">🔔 Notify Selected</button>
+        <div id="agencyLinksList">Loading registered people…</div>
       </div>
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Fill History (Area-wise)</h2>
@@ -417,6 +418,17 @@
         <p class="sub" style="display:block; margin-bottom:24px;">Enter your name to continue — this lets others see who filled each section.</p>
         <input type="text" id="nameGateInput" placeholder="Your name" autocomplete="off" style="width:100%; box-sizing:border-box; margin-bottom:20px; text-align:center;">
         <button class="btn-primary" id="nameGateContinueBtn">Continue</button>
+      </div>
+    </div>
+
+    <div id="notifyGateView" style="display:none;">
+      <div class="card" style="text-align:center; padding:56px 24px;">
+        <div style="font-size:48px; margin-bottom:16px;">🔔</div>
+        <h2 class="section-title" style="margin-top:0; border:none; color:var(--text);">Allow notifications to continue</h2>
+        <p class="sub" style="display:block; margin-bottom:24px;">You'll get a reminder here if you forget to fill your shift entry. This is required to continue.</p>
+        <button class="btn-primary" id="notifyGateAllowBtn">Allow Notifications</button>
+        <p class="sub" id="notifyGateHint" style="display:none; margin-top:16px; color:var(--primary);">Notifications are blocked for this site. Enable them in your browser's site settings, then tap below.</p>
+        <button class="btn-secondary" id="notifyGateRecheckBtn" style="display:none; margin-top:12px;">I've enabled it — Continue</button>
       </div>
     </div>
 
@@ -531,22 +543,17 @@
     }
 
     // Every section/agency link gets one fixed topic — no manual setup needed.
-    function bundleTopic(key){ return 'ars2mp-' + key; }
-
-    function subscribeToBundlePush(key){
-      if (!('Notification' in window) || !('EventSource' in window)) return;
-      if (Notification.permission === 'granted') { openPushStream(key); return; }
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then(function(perm){
-          if (perm === 'granted') openPushStream(key);
-        });
-      }
+    function slugify(str){
+      return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24) || 'anon';
     }
+    function bundleTopic(key){ return 'ars2mp-' + key; }
+    function registryTopic(key){ return 'ars2mpreg-' + key; }
+    function personalTopic(key, name){ return 'ars2mp-' + key + '-' + slugify(name); }
 
-    function openPushStream(key){
+    function openPushStream(topic){
       if (window._pushES) { try { window._pushES.close(); } catch(e){} }
       try {
-        var es = new EventSource('https://ntfy.sh/' + bundleTopic(key) + '/sse');
+        var es = new EventSource('https://ntfy.sh/' + topic + '/sse');
         es.onmessage = function(ev){
           try {
             var data = JSON.parse(ev.data);
@@ -557,6 +564,32 @@
         };
         window._pushES = es;
       } catch(e){}
+    }
+
+    async function publishRegistration(key, name){
+      try {
+        await fetch('https://ntfy.sh/' + registryTopic(key), {
+          method: 'POST',
+          body: name,
+          headers: { 'Title': 'registration', 'Priority': 'min' }
+        });
+      } catch(e){}
+    }
+
+    async function fetchRegisteredNames(key){
+      try {
+        var res = await fetch('https://ntfy.sh/' + registryTopic(key) + '/json?poll=1&since=all');
+        var text = await res.text();
+        var names = [];
+        text.split('\n').forEach(function(line){
+          if (!line.trim()) return;
+          try {
+            var obj = JSON.parse(line);
+            if (obj.event === 'message' && obj.message && names.indexOf(obj.message) === -1) names.push(obj.message);
+          } catch(e){}
+        });
+        return names;
+      } catch(e){ return []; }
     }
 
     async function pushNotify(key){
@@ -576,6 +609,22 @@
       } catch (err) {
         showToast('Push failed — check connection');
       }
+    }
+
+    async function pushNotifyPerson(key, name){
+      var bundle = BUNDLES[key];
+      var base = window.location.href.split('?')[0];
+      var link = base + '?link=' + key;
+      var msg = 'Hi ' + name + ', please fill your shift entry for ' + bundle.title +
+        ' (' + currentDate() + ', Shift ' + currentShift() + '). Link: ' + link;
+      try {
+        await fetch('https://ntfy.sh/' + personalTopic(key, name), {
+          method: 'POST',
+          body: msg,
+          headers: { 'Title': bundle.title + ' — Fill Reminder', 'Priority': 'high', 'Tags': 'bell' }
+        });
+        return true;
+      } catch (err) { return false; }
     }
     var MASTER_EDIT_MODE = false; 
 
@@ -650,6 +699,7 @@
     function hideAllViews() {
       document.getElementById('restrictedView').style.display = 'none';
       document.getElementById('nameGateView').style.display = 'none';
+      document.getElementById('notifyGateView').style.display = 'none';
       document.getElementById('customDashboardView').style.display = 'none';
       document.getElementById('masterDashboardView').style.display = 'none';
       document.getElementById('pickerView').style.display = 'none';
@@ -814,6 +864,10 @@
       document.getElementById('nameGateInput').addEventListener('keydown', function(e){
         if (e.key === 'Enter') continueFromNameGate();
       });
+      document.getElementById('notifyGateAllowBtn').addEventListener('click', requestNotifyGatePermission);
+      document.getElementById('notifyGateRecheckBtn').addEventListener('click', recheckNotifyGatePermission);
+      var notifySelBtn = document.getElementById('notifySelectedBtn');
+      if (notifySelBtn) notifySelBtn.addEventListener('click', notifySelectedPeople);
     }
 
     async function resetShiftData(){
@@ -1041,7 +1095,6 @@
       }
       LINK_MODE = true;
       currentBundleKey = key;
-      subscribeToBundlePush(key);
 
       if (!AGENCY_NAME) {
         var cached = '';
@@ -1054,6 +1107,15 @@
           return;
         }
       }
+
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        PENDING_BUNDLE_KEY = key;
+        showNotifyGate();
+        return;
+      }
+
+      openPushStream(personalTopic(key, AGENCY_NAME));
+      publishRegistration(key, AGENCY_NAME);
 
       if (bundle.areaIds.length === 1) {
         openEntry(bundle.areaIds[0]);
@@ -1083,6 +1145,39 @@
       var key = PENDING_BUNDLE_KEY;
       PENDING_BUNDLE_KEY = null;
       if (key) openBundleEntry(key);
+    }
+
+    function showNotifyGate() {
+      CURRENT_VIEW = 'notifyGate';
+      hideAllViews();
+      document.getElementById('notifyGateView').style.display = 'block';
+      document.getElementById('pageTitle').textContent = 'Welcome';
+      document.getElementById('pageSub').textContent = '';
+      var denied = ('Notification' in window) && Notification.permission === 'denied';
+      document.getElementById('notifyGateAllowBtn').style.display = denied ? 'none' : 'inline-flex';
+      document.getElementById('notifyGateHint').style.display = denied ? 'block' : 'none';
+      document.getElementById('notifyGateRecheckBtn').style.display = denied ? 'inline-flex' : 'none';
+    }
+
+    function requestNotifyGatePermission(){
+      if (!('Notification' in window)) { showToast('Notifications not supported on this browser'); return; }
+      Notification.requestPermission().then(function(perm){
+        if (perm === 'granted') {
+          var key = PENDING_BUNDLE_KEY;
+          if (key) openBundleEntry(key);
+        } else {
+          showNotifyGate();
+        }
+      });
+    }
+
+    function recheckNotifyGatePermission(){
+      if ('Notification' in window && Notification.permission === 'granted') {
+        var key = PENDING_BUNDLE_KEY;
+        if (key) openBundleEntry(key);
+      } else {
+        showToast('Still blocked — check your browser\'s site settings');
+      }
     }
 
     function showBundleTiles(key) {
@@ -1888,32 +1983,41 @@
       }
     }
 
-    function renderAgencyLinks() {
+    async function renderAgencyLinks() {
       var base = window.location.href.split('?')[0];
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
+      var keys = Object.keys(BUNDLES);
+      var registries = await Promise.all(keys.map(function(key){ return fetchRegisteredNames(key); }));
+
       list.innerHTML = '';
-      Object.keys(BUNDLES).forEach(function(key){
+      keys.forEach(function(key, idx){
         var bundle = BUNDLES[key];
         var link = base + '?link=' + key;
-        var contact = bundleContact(bundle);
         var state = bundleFillState(bundle);
         var full = state.total > 0 && state.filled === state.total;
         var badge = full
           ? '<span style="font-size:11px; font-weight:700; color:var(--ok);">FILLED</span>'
           : '<span style="font-size:11px; font-weight:700; color:var(--primary);">PENDING (' + state.filled + '/' + state.total + ')</span>';
+        var names = registries[idx];
+
+        var namesHtml = names.length
+          ? names.map(function(n){
+              var esc = n.replace(/"/g,'&quot;');
+              return '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px;">' +
+                '<input type="checkbox" data-select-key="' + key + '" data-select-name="' + esc + '"> ' + esc +
+                '</label>';
+            }).join('')
+          : '<span style="font-size:12px; color:var(--muted);">No one registered yet</span>';
 
         var row = document.createElement('div');
         row.style.cssText = 'padding:14px 0; border-bottom:1px solid var(--line);';
         row.innerHTML =
-          '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;">' +
+          '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">' +
             '<span style="font-size:15px; font-weight:600;">' + bundle.title + '</span>' + badge +
           '</div>' +
-          '<div style="font-size:13px; color:' + (contact ? 'var(--accent)' : 'var(--muted)') + '; font-weight:' + (contact ? '600' : '400') + '; margin-bottom:10px;">' +
-            (contact ? contact : 'No entry yet — name will appear once someone fills it') +
-          '</div>' +
+          '<div style="margin-bottom:10px;">' + namesHtml + '</div>' +
           '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
-            '<button style="min-width:auto; padding:8px 14px; border-radius:8px; background:var(--primary); color:#000;" data-push="' + key + '">\uD83D\uDD14 Push Notify</button>' +
             '<a href="' + link + '" target="_blank" rel="noopener" class="btn-secondary" style="min-width:auto; padding:8px 14px; display:inline-flex; align-items:center; text-decoration:none; border-radius:8px;">Open</a>' +
             '<button class="btn-primary" style="min-width:auto; padding:8px 14px; border-radius:8px;" data-link="' + link + '" data-title="' + bundle.title + '">Share Link</button>' +
           '</div>';
@@ -1924,12 +2028,21 @@
           shareLink(btn.getAttribute('data-link'), btn.getAttribute('data-title'));
         });
       });
-      list.querySelectorAll('button[data-push]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          pushNotify(btn.getAttribute('data-push'));
-        });
-      });
       renderFillHistory();
+    }
+
+    async function notifySelectedPeople(){
+      var checked = document.querySelectorAll('#agencyLinksList input[data-select-key]:checked');
+      if (!checked.length) { showToast('Select at least one person first'); return; }
+      var btn = document.getElementById('notifySelectedBtn');
+      btn.disabled = true;
+      var sent = 0;
+      for (var i = 0; i < checked.length; i++){
+        var ok = await pushNotifyPerson(checked[i].getAttribute('data-select-key'), checked[i].getAttribute('data-select-name'));
+        if (ok) sent++;
+      }
+      btn.disabled = false;
+      showToast('Notified ' + sent + ' of ' + checked.length + ' selected');
     }
 
     function requestNotifyPermission(){
