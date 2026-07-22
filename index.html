@@ -416,17 +416,6 @@
       </div>
     </div>
 
-    <div id="notifyGateView" style="display:none;">
-      <div class="card" style="text-align:center; padding:56px 24px;">
-        <div style="font-size:48px; margin-bottom:16px;">🔔</div>
-        <h2 class="section-title" style="margin-top:0; border:none; color:var(--text);">Allow notifications to continue</h2>
-        <p class="sub" style="display:block; margin-bottom:24px;">You'll get a reminder here if you forget to fill your shift entry. This is required to continue.</p>
-        <button class="btn-primary" id="notifyGateAllowBtn">Allow Notifications</button>
-        <p class="sub" id="notifyGateHint" style="display:none; margin-top:16px; color:var(--primary);">Notifications are blocked for this site. Enable them in your browser's site settings, then tap below.</p>
-        <button class="btn-secondary" id="notifyGateRecheckBtn" style="display:none; margin-top:12px;">I've enabled it — Continue</button>
-      </div>
-    </div>
-
     <div id="bundleTileView" style="display:none;">
       <div class="card">
         <div class="tile-grid" id="bundleTileGrid"></div>
@@ -667,7 +656,6 @@
     function hideAllViews() {
       document.getElementById('restrictedView').style.display = 'none';
       document.getElementById('nameGateView').style.display = 'none';
-      document.getElementById('notifyGateView').style.display = 'none';
       document.getElementById('customDashboardView').style.display = 'none';
       document.getElementById('masterDashboardView').style.display = 'none';
       document.getElementById('pickerView').style.display = 'none';
@@ -829,8 +817,6 @@
       document.getElementById('nameGateInput').addEventListener('keydown', function(e){
         if (e.key === 'Enter') continueFromNameGate();
       });
-      document.getElementById('notifyGateAllowBtn').addEventListener('click', requestNotifyGatePermission);
-      document.getElementById('notifyGateRecheckBtn').addEventListener('click', recheckNotifyGatePermission);
       var notifySelBtn = document.getElementById('notifySelectedBtn');
       if (notifySelBtn) notifySelBtn.addEventListener('click', notifySelectedPeople);
     }
@@ -1073,14 +1059,16 @@
         }
       }
 
-      if (!('Notification' in window) || Notification.permission !== 'granted') {
-        PENDING_BUNDLE_KEY = key;
-        showNotifyGate();
-        return;
-      }
-
-      openPushStream(personalTopic(key, AGENCY_NAME));
       publishRegistration(key, AGENCY_NAME);
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          openPushStream(personalTopic(key, AGENCY_NAME));
+        } else if (Notification.permission === 'default') {
+          Notification.requestPermission().then(function(perm){
+            if (perm === 'granted') openPushStream(personalTopic(key, AGENCY_NAME));
+          }).catch(function(){});
+        }
+      }
 
       if (bundle.areaIds.length === 1) {
         openEntry(bundle.areaIds[0]);
@@ -1110,39 +1098,6 @@
       var key = PENDING_BUNDLE_KEY;
       PENDING_BUNDLE_KEY = null;
       if (key) openBundleEntry(key);
-    }
-
-    function showNotifyGate() {
-      CURRENT_VIEW = 'notifyGate';
-      hideAllViews();
-      document.getElementById('notifyGateView').style.display = 'block';
-      document.getElementById('pageTitle').textContent = 'Welcome';
-      document.getElementById('pageSub').textContent = '';
-      var denied = ('Notification' in window) && Notification.permission === 'denied';
-      document.getElementById('notifyGateAllowBtn').style.display = denied ? 'none' : 'inline-flex';
-      document.getElementById('notifyGateHint').style.display = denied ? 'block' : 'none';
-      document.getElementById('notifyGateRecheckBtn').style.display = denied ? 'inline-flex' : 'none';
-    }
-
-    function requestNotifyGatePermission(){
-      if (!('Notification' in window)) { showToast('Notifications not supported on this browser'); return; }
-      Notification.requestPermission().then(function(perm){
-        if (perm === 'granted') {
-          var key = PENDING_BUNDLE_KEY;
-          if (key) openBundleEntry(key);
-        } else {
-          showNotifyGate();
-        }
-      });
-    }
-
-    function recheckNotifyGatePermission(){
-      if ('Notification' in window && Notification.permission === 'granted') {
-        var key = PENDING_BUNDLE_KEY;
-        if (key) openBundleEntry(key);
-      } else {
-        showToast('Still blocked — check your browser\'s site settings');
-      }
     }
 
     function showBundleTiles(key) {
