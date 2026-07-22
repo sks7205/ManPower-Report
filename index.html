@@ -498,6 +498,61 @@
     var AGENCY_NAME = ''; 
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
+    var AREA_CONTACTS = {};
+    try { AREA_CONTACTS = JSON.parse(localStorage.getItem('areaContacts') || '{}'); } catch(e){ AREA_CONTACTS = {}; }
+
+    function recordAreaContact(areaId, rawName){
+      if (!areaId || !rawName) return;
+      var clean = String(rawName).replace(/\s*\(updated\)\s*$/,'').trim();
+      if (!clean || clean === 'you' || clean === 'Agency') return;
+      if (!AREA_CONTACTS[areaId]) {
+        AREA_CONTACTS[areaId] = clean;
+        try { localStorage.setItem('areaContacts', JSON.stringify(AREA_CONTACTS)); } catch(e){}
+      }
+    }
+
+    function bundleContact(bundle){
+      if (!bundle || !bundle.areaIds) return '';
+      for (var i = 0; i < bundle.areaIds.length; i++){
+        if (AREA_CONTACTS[bundle.areaIds[i]]) return AREA_CONTACTS[bundle.areaIds[i]];
+      }
+      return '';
+    }
+
+    var CONTACT_DIRECTORY = {};
+    try { CONTACT_DIRECTORY = JSON.parse(localStorage.getItem('contactDirectory') || '{}'); } catch(e){ CONTACT_DIRECTORY = {}; }
+
+    function saveContactDirectoryEntry(key, field, value){
+      if (!CONTACT_DIRECTORY[key]) CONTACT_DIRECTORY[key] = { name: '', phone: '' };
+      CONTACT_DIRECTORY[key][field] = value;
+      try { localStorage.setItem('contactDirectory', JSON.stringify(CONTACT_DIRECTORY)); } catch(e){}
+    }
+
+    function bundleFillState(bundle){
+      if (!bundle || !bundle.areaIds || !bundle.areaIds.length) return { filled: 0, total: 0 };
+      var filled = bundle.areaIds.filter(function(id){ return !!shiftData[id]; }).length;
+      return { filled: filled, total: bundle.areaIds.length };
+    }
+
+    function whatsappNumber(raw){
+      var digits = String(raw || '').replace(/\D/g, '');
+      if (!digits) return '';
+      if (digits.length === 10) digits = '91' + digits; // assume India, add country code
+      return digits;
+    }
+
+    function notifyContact(key){
+      var bundle = BUNDLES[key];
+      var entry = CONTACT_DIRECTORY[key] || {};
+      var phone = whatsappNumber(entry.phone);
+      if (!phone) { showToast('Add a phone number first'); return; }
+      var base = window.location.href.split('?')[0];
+      var link = base + '?link=' + key;
+      var name = entry.name ? entry.name : 'there';
+      var msg = 'Hi ' + name + ', please fill your shift entry for ' + bundle.title +
+        ' (' + currentDate() + ', Shift ' + currentShift() + '). Link: ' + link;
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    }
     var MASTER_EDIT_MODE = false; 
 
     const ADMIN_KEY = "ars2incharge2026";
@@ -648,6 +703,10 @@
         if (AREAS_BY_ID['SKE_OA_BUTTCLEAN'] && !AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt) {
           AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt = { kind: 'boolean', text: '1 supervisor included' };
         }
+
+        if (AREAS_BY_ID['GMPL']) {
+          AREAS_BY_ID['GMPL'].remarkPrompt = { kind: 'number', text: 'supervisor(s) included' };
+        }
         
         await refreshShiftData();
 
@@ -675,6 +734,9 @@
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${currentShift()}`);
         shiftData = await res.json();
+        Object.keys(shiftData).forEach(function(id){
+          if (shiftData[id] && shiftData[id].updatedBy) recordAreaContact(id, shiftData[id].updatedBy);
+        });
       } catch (err) { console.error(err); }
     }
 
@@ -1281,6 +1343,7 @@
         inOT: Number(ot || 0), reported: reportedGuess,
         remarks: finalRemarks, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
       };
+      recordAreaContact(savedAreaId, enteredByName);
       
       showSuccessPopup(area.fullName + ' saved successfully!\nReported: ' + reportedGuess);
       if (LINK_MODE) {
@@ -1808,18 +1871,43 @@
       Object.keys(BUNDLES).forEach(function(key){
         var bundle = BUNDLES[key];
         var link = base + '?link=' + key;
+        var entry = CONTACT_DIRECTORY[key] || { name: '', phone: '' };
+        var state = bundleFillState(bundle);
+        var full = state.total > 0 && state.filled === state.total;
+        var badge = full
+          ? '<span style="font-size:11px; font-weight:700; color:var(--ok);">FILLED</span>'
+          : '<span style="font-size:11px; font-weight:700; color:var(--primary);">PENDING (' + state.filled + '/' + state.total + ')</span>';
+
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-bottom:1px solid var(--line);';
-        row.innerHTML = '<span style="font-size:15px; font-weight:500;">' + bundle.title + '</span>' +
-          '<span style="display:flex; gap:8px; flex:none;">' +
-          '<a href="' + link + '" target="_blank" rel="noopener" class="btn-secondary" style="min-width:auto; padding:6px 14px; display:inline-flex; align-items:center; text-decoration:none; border-radius:8px;">Open</a>' +
-          '<button class="btn-primary" style="min-width:auto; padding:6px 14px; border-radius:8px;" data-link="' + link + '" data-title="' + bundle.title + '">Share Link</button>' +
-          '</span>';
+        row.style.cssText = 'padding:14px 0; border-bottom:1px solid var(--line);';
+        row.innerHTML =
+          '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">' +
+            '<span style="font-size:15px; font-weight:600;">' + bundle.title + '</span>' + badge +
+          '</div>' +
+          '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">' +
+            '<input type="text" placeholder="Contact name" value="' + (entry.name || '').replace(/"/g,'&quot;') + '" data-key="' + key + '" data-field="name" style="flex:1; min-width:120px; padding:8px 10px; font-size:13px;">' +
+            '<input type="tel" placeholder="WhatsApp number" value="' + (entry.phone || '').replace(/"/g,'&quot;') + '" data-key="' + key + '" data-field="phone" style="flex:1; min-width:120px; padding:8px 10px; font-size:13px;">' +
+          '</div>' +
+          '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
+            '<button style="min-width:auto; padding:8px 14px; border-radius:8px; background:#25D366; color:#000;" data-notify="' + key + '">\uD83D\uDCAC Notify</button>' +
+            '<a href="' + link + '" target="_blank" rel="noopener" class="btn-secondary" style="min-width:auto; padding:8px 14px; display:inline-flex; align-items:center; text-decoration:none; border-radius:8px;">Open</a>' +
+            '<button class="btn-primary" style="min-width:auto; padding:8px 14px; border-radius:8px;" data-link="' + link + '" data-title="' + bundle.title + '">Share Link</button>' +
+          '</div>';
         list.appendChild(row);
       });
       list.querySelectorAll('button[data-link]').forEach(function(btn){
         btn.addEventListener('click', function(){
           shareLink(btn.getAttribute('data-link'), btn.getAttribute('data-title'));
+        });
+      });
+      list.querySelectorAll('button[data-notify]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          notifyContact(btn.getAttribute('data-notify'));
+        });
+      });
+      list.querySelectorAll('input[data-key]').forEach(function(inp){
+        inp.addEventListener('change', function(){
+          saveContactDirectoryEntry(inp.getAttribute('data-key'), inp.getAttribute('data-field'), inp.value.trim());
         });
       });
     }
