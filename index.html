@@ -531,6 +531,11 @@
       return { filled: filled, total: bundle.areaIds.length };
     }
 
+    function tbtCompliancePct(data) {
+      if (!data.reported) return '';
+      return Math.round((data.tbtAttended / data.reported) * 100) + '%';
+    }
+
     function whatsappNumber(raw){
       var digits = String(raw || '').replace(/\D/g, '');
       if (!digits) return '';
