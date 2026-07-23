@@ -347,7 +347,7 @@
                 <th class="ot-cell">In OT</th>
                 <th class="narrow-cell">Actual<br>on work</th>
                 <th>Remarks</th>
-                <th class="tbt-cell">TBT<br>Compliance %</th>
+                <th class="tbt-cell">TBT Attd<br>& Comp. %</th>
               </tr>
             </thead>
             <tbody id="dashBody"></tbody>
@@ -388,7 +388,7 @@
                 <th class="ot-cell">In OT</th>
                 <th class="narrow-cell">Actual<br>on work</th>
                 <th>Remarks</th>
-                <th class="tbt-cell">TBT<br>Compliance %</th>
+                <th class="tbt-cell">TBT Attd<br>& Comp. %</th>
               </tr>
             </thead>
             <tbody id="masterDashBody"></tbody>
@@ -538,7 +538,9 @@
 
     function tbtCompliancePct(data) {
       if (!data.reported) return '';
-      return Math.round((data.tbtAttended / data.reported) * 100) + '%';
+      var att = Number(data.tbtAttended || 0);
+      var rep = Number(data.reported || 1);
+      return att + ' (' + Math.round((att / rep) * 100) + '%)';
     }
 
     function whatsappNumber(raw){
@@ -1473,7 +1475,7 @@
         cells[2].textContent = data.inOT;
         cells[3].textContent = data.actual;
         if (cells.length >= 5) {
-          cells[4].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
+          cells[4].textContent = data.reported ? data.tbtAttended + ' (' + Math.round((data.tbtAttended / data.reported) * 100) + '%)' : '';
         }
       }
       fill('footerRowMasterTotal', mTotals);
@@ -1497,6 +1499,12 @@
       var reported = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
       var rowEl = actualEl.closest('tr');
+      if (planEl) planEl.setAttribute('value', plan);
+      if (actualEl) actualEl.setAttribute('value', actual);
+      if (otEl) otEl.setAttribute('value', ot);
+      if (remEl) remEl.setAttribute('value', remarks);
+      if (tbtEl) tbtEl.setAttribute('value', tbtAttended);
+
       var reportedCell = rowEl ? rowEl.querySelector('.inline-reported-cell') : null;
       if (reportedCell) reportedCell.textContent = reported;
 
@@ -1664,7 +1672,7 @@
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'' };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
-        var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
+        var tbtPct = (Number(rec.reported || 0)) ? (rec.tbtAttended || 0) + ' (' + Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%)' : '';
 
         // Added TBT input directly inside the Master Edit mode
         if (MASTER_EDIT_MODE) {
@@ -1726,7 +1734,7 @@
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
-            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
+            var childPct = childTotals.reported ? childTotals.tbtAttended + ' (' + Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%)' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1750,7 +1758,7 @@
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
-            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
+            var childPct = childTotals.reported ? childTotals.tbtAttended + ' (' + Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%)' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1808,7 +1816,7 @@
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
-        var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
+        var pct = pair[1].reported ? pair[1].tbtAttended + ' (' + Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%)' : '';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
