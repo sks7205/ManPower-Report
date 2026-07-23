@@ -243,7 +243,7 @@
     
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
-    .excel-table .tbt-cell { white-space: normal; width: 52px; max-width: 52px; font-size: 11.5px; line-height: 1.15; padding: 4px 3px; text-align: center; word-break: break-word; }
+    .excel-table .tbt-cell, .excel-table .narrow-cell { white-space: normal; width: 52px; max-width: 52px; font-size: 11.5px; line-height: 1.15; padding: 4px 3px; text-align: center; word-break: break-word; }
     
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .dash-actions button { flex: 1; min-width: 140px; }
@@ -336,9 +336,9 @@
               </tr>
               <tr>
                 <th>Plan</th>
-                <th id="thReported">Reported in Shift-X</th>
+                <th id="thReported" class="narrow-cell">Reported in Shift-X</th>
                 <th class="ot-cell">In OT</th>
-                <th>Actual on work</th>
+                <th class="narrow-cell">Actual on work</th>
                 <th>Remarks</th>
                 <th class="tbt-cell">TBT<br>Compliance %</th>
               </tr>
@@ -378,9 +378,9 @@
               </tr>
               <tr>
                 <th>Plan</th>
-                <th id="thReportedMaster">Reported in Shift-X</th>
+                <th id="thReportedMaster" class="narrow-cell">Reported in Shift-X</th>
                 <th class="ot-cell">In OT</th>
-                <th>Actual on work</th>
+                <th class="narrow-cell">Actual on work</th>
                 <th>Remarks</th>
                 <th class="tbt-cell">TBT<br>Compliance %</th>
               </tr>
@@ -1563,9 +1563,9 @@
         tr.innerHTML =
           '<td>' + label + '</td>' +
           '<td class="num">' + data.plan + '</td>' +
-          '<td class="num">' + data.reported + '</td>' +
+          '<td class="num narrow-cell">' + data.reported + '</td>' +
           '<td class="num ot-cell">' + data.inOT + '</td>' +
-          '<td class="num">' + data.actual + '</td>' +
+          '<td class="num narrow-cell">' + data.actual + '</td>' +
           '<td class="remarks-cell">' + displayRemarks + '</td>' +
           '<td class="num tbt-cell">' + tbtCompliancePct(data) + '</td>';
         if (editTarget && editTarget.rowId) tr.id = editTarget.rowId;
@@ -1657,18 +1657,18 @@
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
             '<td class="num"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="plan" value="' + (rec.plan || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
-            '<td class="num inline-reported-cell">' + (rec.reported || 0) + '</td>' +
+            '<td class="num inline-reported-cell narrow-cell">' + (rec.reported || 0) + '</td>' +
             '<td class="num ot-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="inOT" value="' + (rec.inOT || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
-            '<td class="num"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
+            '<td class="num narrow-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num tbt-cell">' + tbtPct + '</td>';
         } else {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
             '<td class="num">' + (rec.plan || 0) + '</td>' +
-            '<td class="num">' + (rec.reported || 0) + '</td>' +
+            '<td class="num narrow-cell">' + (rec.reported || 0) + '</td>' +
             '<td class="num ot-cell">' + (rec.inOT || 0) + '</td>' +
-            '<td class="num">' + (rec.actual || 0) + '</td>' +
+            '<td class="num narrow-cell">' + (rec.actual || 0) + '</td>' +
             '<td class="remarks-cell">' + (rec.remarks || '') + '</td>' +
             '<td class="num tbt-cell">' + tbtPct + '</td>';
         }
@@ -1713,9 +1713,9 @@
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
-              '<td class="num" style="font-weight:bold;">' + childTotals.reported + '</td>' +
+              '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.reported + '</td>' +
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
-              '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
+              '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td></td>' +
               '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
@@ -1737,9 +1737,9 @@
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
-              '<td class="num" style="font-weight:bold;">' + childTotals.reported + '</td>' +
+              '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.reported + '</td>' +
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
-              '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
+              '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td></td>' +
               '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
@@ -1801,9 +1801,9 @@
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
-          '<td class="num">' + pair[1].reported + '</td>' +
+          '<td class="num narrow-cell">' + pair[1].reported + '</td>' +
           '<td class="num ot-cell">' + pair[1].inOT + '</td>' +
-          '<td class="num">' + pair[1].actual + '</td>' +
+          '<td class="num narrow-cell">' + pair[1].actual + '</td>' +
           '<td></td>' +
           '<td class="num tbt-cell">' + pct + '</td>';
         masterBody.appendChild(tr);
