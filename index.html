@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -243,7 +244,9 @@
     
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
-    .excel-table .tbt-cell, .excel-table .narrow-cell { white-space: normal; width: 52px; max-width: 52px; font-size: 11.5px; line-height: 1.15; padding: 4px 3px; text-align: center; word-break: break-word; }
+    
+    /* UPDATED: Increased min-width and changed word-break to normal to prevent mid-word splitting */
+    .excel-table .tbt-cell, .excel-table .narrow-cell { white-space: normal; min-width: 75px; font-size: 11.5px; line-height: 1.2; padding: 4px 6px; text-align: center; word-break: normal; overflow-wrap: normal; }
     
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .dash-actions button { flex: 1; min-width: 140px; }
@@ -1224,7 +1227,7 @@
 
       loadEntryData();
 
-      var rec = shiftData[areaId];
+      var rec = shiftData[currentLeaf];
       var alreadyFilled = LINK_MODE && !!rec;
       var alreadyUpdatedOnce = alreadyFilled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1;
       
