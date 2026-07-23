@@ -243,6 +243,7 @@
     
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
+    .excel-table .tbt-cell { white-space: normal; width: 52px; max-width: 52px; font-size: 11.5px; line-height: 1.15; padding: 4px 3px; text-align: center; word-break: break-word; }
     
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .dash-actions button { flex: 1; min-width: 140px; }
@@ -330,8 +331,7 @@
               <tr>
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTop">Shift-X</th>
-                <th colspan="3" id="thDate">Date Time</th>
-                <th rowspan="2">TBT Compliance %</th>
+                <th colspan="4" id="thDate">Date Time</th>
                 
               </tr>
               <tr>
@@ -340,6 +340,7 @@
                 <th class="ot-cell">In OT</th>
                 <th>Actual on work</th>
                 <th>Remarks</th>
+                <th class="tbt-cell">TBT<br>Compliance %</th>
               </tr>
             </thead>
             <tbody id="dashBody"></tbody>
@@ -372,8 +373,7 @@
               <tr>
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTopMaster">Shift-X</th>
-                <th colspan="3" id="thDateMaster">Date Time</th>
-                <th rowspan="2">TBT Compliance %</th>
+                <th colspan="4" id="thDateMaster">Date Time</th>
                 
               </tr>
               <tr>
@@ -382,6 +382,7 @@
                 <th class="ot-cell">In OT</th>
                 <th>Actual on work</th>
                 <th>Remarks</th>
+                <th class="tbt-cell">TBT<br>Compliance %</th>
               </tr>
             </thead>
             <tbody id="masterDashBody"></tbody>
@@ -1398,8 +1399,8 @@
       });
       var thDate = document.getElementById('thDate');
       var thDateMaster = document.getElementById('thDateMaster');
-      if (thDate) thDate.setAttribute('colspan', hideOT ? '3' : '4');
-      if (thDateMaster) thDateMaster.setAttribute('colspan', hideOT ? '3' : '4');
+      if (thDate) thDate.setAttribute('colspan', hideOT ? '4' : '5');
+      if (thDateMaster) thDateMaster.setAttribute('colspan', hideOT ? '4' : '5');
       
       const now = new Date();
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -1566,7 +1567,7 @@
           '<td class="num ot-cell">' + data.inOT + '</td>' +
           '<td class="num">' + data.actual + '</td>' +
           '<td class="remarks-cell">' + displayRemarks + '</td>' +
-          '<td class="num">' + tbtCompliancePct(data) + '</td>';
+          '<td class="num tbt-cell">' + tbtCompliancePct(data) + '</td>';
         if (editTarget && editTarget.rowId) tr.id = editTarget.rowId;
         body.appendChild(tr);
       }
@@ -1660,7 +1661,7 @@
             '<td class="num ot-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="inOT" value="' + (rec.inOT || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
-            '<td class="num">' + tbtPct + '</td>';
+            '<td class="num tbt-cell">' + tbtPct + '</td>';
         } else {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
@@ -1669,7 +1670,7 @@
             '<td class="num ot-cell">' + (rec.inOT || 0) + '</td>' +
             '<td class="num">' + (rec.actual || 0) + '</td>' +
             '<td class="remarks-cell">' + (rec.remarks || '') + '</td>' +
-            '<td class="num">' + tbtPct + '</td>';
+            '<td class="num tbt-cell">' + tbtPct + '</td>';
         }
         masterBody.appendChild(tr);
         
@@ -1716,7 +1717,7 @@
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td></td>' +
-              '<td class="num" style="font-weight:bold;">' + childPct + '</td>';
+              '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
 
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
@@ -1740,7 +1741,7 @@
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td></td>' +
-              '<td class="num" style="font-weight:bold;">' + childPct + '</td>';
+              '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
 
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
@@ -1804,7 +1805,7 @@
           '<td class="num ot-cell">' + pair[1].inOT + '</td>' +
           '<td class="num">' + pair[1].actual + '</td>' +
           '<td></td>' +
-          '<td class="num">' + pct + '</td>';
+          '<td class="num tbt-cell">' + pct + '</td>';
         masterBody.appendChild(tr);
       });
 
