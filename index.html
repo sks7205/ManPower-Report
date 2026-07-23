@@ -168,7 +168,6 @@
     .grid3 { display: flex; flex-direction: column; gap: 16px; }
     @media (min-width: 520px){ .grid3 { flex-direction: row; } .grid3 > .field { flex: 1; align-items: flex-start; } .grid3 > .field input { width: 100%; } }
     
-    /* Updated Background Color for Reported Block */
     .actual-readout { 
       margin-top: 20px; background: rgba(20, 184, 166, 0.12); border: 1px solid rgba(20, 184, 166, 0.4); 
       border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; 
@@ -215,9 +214,8 @@
     .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
     
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
-    .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; font-size: 14.5px; }
-    
-    .excel-edit-cell { width: 100%; max-width: 70px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 14.5px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
+    .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
+    .excel-edit-cell { width: 100%; max-width: 70px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
     .excel-edit-cell:hover { border-color: #cbd5e1; }
     .excel-edit-cell:focus { outline: none; border-color: #2563eb; background: rgba(37,99,235,0.06); }
     .excel-edit-cell-text { max-width: none; text-align: left; }
@@ -243,23 +241,11 @@
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
     
-    /* TH (Headers): Smaller text, wrapped nicely */
-    .excel-table th.tbt-cell, .excel-table th.narrow-cell, .excel-table th.ot-cell, .excel-table th:nth-child(2) { 
+    /* Prevent letter splitting and wrap full words naturally */
+    .excel-table .tbt-cell, .excel-table .narrow-cell { 
       white-space: normal; 
       min-width: 75px; 
       font-size: 11.5px; 
-      line-height: 1.2; 
-      padding: 4px 6px; 
-      text-align: center; 
-      word-break: normal; 
-      overflow-wrap: normal; 
-    }
-    
-    /* TD (Data): Standard larger text matching the rest of the numbers */
-    .excel-table td.tbt-cell, .excel-table td.narrow-cell, .excel-table td.ot-cell, .excel-table td:nth-child(2) { 
-      white-space: normal; 
-      min-width: 75px; 
-      font-size: 14.5px; 
       line-height: 1.2; 
       padding: 4px 6px; 
       text-align: center; 
@@ -326,8 +312,8 @@
       </div>
     </div>
 
-    <!-- CUSTOM DASHBOARD VIEW -->
     <div id="customDashboardView" style="display:none;">
+      
       <div class="top-nav-buttons">
         <button class="btn-primary" onclick="showPicker()">✏️ Data Entry</button>
         <button class="btn-secondary" onclick="showMasterDashboard()">📊 Master Report</button>
@@ -361,7 +347,7 @@
                 <th class="ot-cell">In OT</th>
                 <th class="narrow-cell">Actual<br>on work</th>
                 <th>Remarks</th>
-                <th class="tbt-cell">TBT Attd<br>& Comp. %</th>
+                <th class="tbt-cell">TBT<br>Compliance</th>
               </tr>
             </thead>
             <tbody id="dashBody"></tbody>
@@ -373,7 +359,6 @@
         </div>
         <div class="status-line" id="dashStatusCustom"></div>
       </div>
-      
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
         <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency. Add each contact's name + WhatsApp number below, section-wise — tick who's in shift and notify them.</span>
@@ -382,7 +367,6 @@
       </div>
     </div>
 
-    <!-- MASTER DASHBOARD VIEW -->
     <div id="masterDashboardView" style="display:none;">
       <div style="margin-bottom: 16px;">
         <button class="back-btn" onclick="showCustomDashboard()" style="margin:0;">&#8592; Back to Home</button>
@@ -404,7 +388,7 @@
                 <th class="ot-cell">In OT</th>
                 <th class="narrow-cell">Actual<br>on work</th>
                 <th>Remarks</th>
-                <th class="tbt-cell">TBT Attd<br>& Comp. %</th>
+                <th class="tbt-cell">TBT<br>Compliance</th>
               </tr>
             </thead>
             <tbody id="masterDashBody"></tbody>
@@ -419,7 +403,6 @@
       </div>
     </div>
 
-    <!-- ENTRY PICKER -->
     <div id="pickerView" style="display:none;">
       <div style="margin-bottom: 16px;">
         <button class="back-btn" onclick="showCustomDashboard()" style="margin:0;">&#8592; Back to Home</button>
@@ -431,7 +414,6 @@
       </div>
     </div>
 
-    <!-- NAME GATE -->
     <div id="nameGateView" style="display:none;">
       <div class="card" style="text-align:center; padding:56px 24px;">
         <div style="font-size:48px; margin-bottom:16px;">👤</div>
@@ -442,14 +424,12 @@
       </div>
     </div>
 
-    <!-- BUNDLE TILE VIEW -->
     <div id="bundleTileView" style="display:none;">
       <div class="card">
         <div class="tile-grid" id="bundleTileGrid"></div>
       </div>
     </div>
 
-    <!-- SINGLE ENTRY VIEW -->
     <div id="entryView" style="display:none;">
       <div class="card">
         <div id="entryBackBtnWrap">
@@ -491,7 +471,6 @@
       </div>
     </div>
 
-    <!-- MULTI ENTRY VIEW -->
     <div id="multiEntryView" style="display:none;">
       <div class="card" style="background:transparent; border:none; padding:0; margin-bottom:20px; box-shadow:none;">
         <div id="multiBackBtnWrap">
@@ -515,7 +494,7 @@
 
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPlgEEoaqcfX1BMP1rszcZu-EATDQ34AKMAsJyxm2rvKj6akrJRKGnQN0EYM3FM3dN/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycHAoi-K6Vmvb_XO15rMCGcDJRYRIvFf0vk4dG8FrIrptgCOi8qvtOS_jFZMRRqWXi/exec";
 
     var AREAS = [];
     var AREAS_BY_ID = {};
@@ -557,12 +536,11 @@
       return { filled: filled, total: bundle.areaIds.length };
     }
 
-    /* TBT formatting function returning "Attended (Comp%)" */
     function tbtCompliancePct(data) {
       if (!data.reported) return '';
       var att = Number(data.tbtAttended || 0);
       var rep = Number(data.reported || 1);
-      return att + ' (' + Math.round((att / rep) * 100) + '%)';
+      return Math.round((att / rep) * 100) + '%';
     }
 
     function whatsappNumber(raw){
@@ -1134,6 +1112,7 @@
         var checkId = currentMultiNode.areaIds[i];
         var planVal = document.getElementById('m_plan_' + checkId).value;
         var actualVal = document.getElementById('m_actual_' + checkId).value;
+        // Only enforce mandatory fields for agencies
         if (LINK_MODE && (planVal !== '' && actualVal === '') || (planVal === '' && actualVal !== '') ) {
           showToast('Plan & Actual are mandatory' + cardLabel(AREAS_BY_ID[checkId]));
           return;
@@ -1337,6 +1316,7 @@
       var ot = isOTHidden() ? 0 : document.getElementById('otInput').value;
       var tbtAttended = document.getElementById('tbtInput').value;
 
+      // Only agencies are forced to fill plan and actual; master user is exempt
       if (LINK_MODE && (plan !== '' && actual === '') || (plan === '' && actual !== '')) {
         showToast('Plan & Actual are mandatory');
         return;
@@ -1409,6 +1389,7 @@
       const shift = currentShift();
       document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
       
+      /* Explicit innerHTML line break to ensure proper word wrapping in both view and export image */
       document.getElementById('thReported').innerHTML = 'Reported in<br>Shift-' + shift;
       document.getElementById('thShiftTopMaster').textContent = 'Shift-' + shift;
       document.getElementById('thReportedMaster').innerHTML = 'Reported in<br>Shift-' + shift;
@@ -1494,7 +1475,7 @@
         cells[2].textContent = data.inOT;
         cells[3].textContent = data.actual;
         if (cells.length >= 5) {
-          cells[4].textContent = data.reported ? data.tbtAttended + ' (' + Math.round((data.tbtAttended / data.reported) * 100) + '%)' : '';
+          cells[4].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
         }
       }
       fill('footerRowMasterTotal', mTotals);
@@ -1529,7 +1510,7 @@
 
       var tbtPctCell = rowEl ? rowEl.querySelector('.inline-tbt-pct') : null;
       if (tbtPctCell) {
-        tbtPctCell.textContent = reported > 0 ? tbtAttended + ' (' + Math.round((Number(tbtAttended || 0) / reported) * 100) + '%)' : '';
+        tbtPctCell.textContent = reported > 0 ? Math.round((Number(tbtAttended || 0) / reported) * 100) + '%' : '';
       }
 
       var existing = shiftData[areaId] || {};
@@ -1553,7 +1534,7 @@
             date: currentDate(), shift: currentShift(),
             areaId: areaId, areaName: area.fullName,
             plan: plan, actual: actual, inOT: ot,
-            tbtAttended: tbtAttended,
+            tbtAttended: tbtAttended, // We now properly include TBT when saving from master dashboard!
             remarks: shiftData[areaId].remarks, enteredBy: 'you'
           }})
         }).then(function(res){ return res.json(); }).then(function(data){
@@ -1691,8 +1672,9 @@
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'' };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
-        var tbtPct = (Number(rec.reported || 0)) ? (rec.tbtAttended || 0) + ' (' + Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%)' : '';
+        var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
 
+        // Added TBT input directly inside the Master Edit mode
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
@@ -1752,7 +1734,7 @@
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
-            var childPct = childTotals.reported ? childTotals.tbtAttended + ' (' + Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%)' : '';
+            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1776,7 +1758,7 @@
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
-            var childPct = childTotals.reported ? childTotals.tbtAttended + ' (' + Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%)' : '';
+            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1834,7 +1816,7 @@
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
-        var pct = pair[1].reported ? pair[1].tbtAttended + ' (' + Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%)' : '';
+        var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
