@@ -168,7 +168,6 @@
     .grid3 { display: flex; flex-direction: column; gap: 16px; }
     @media (min-width: 520px){ .grid3 { flex-direction: row; } .grid3 > .field { flex: 1; align-items: flex-start; } .grid3 > .field input { width: 100%; } }
     
-    /* Updated Background Color for Reported Block */
     .actual-readout { 
       margin-top: 20px; background: rgba(20, 184, 166, 0.12); border: 1px solid rgba(20, 184, 166, 0.4); 
       border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; 
@@ -987,7 +986,7 @@
             <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}" autocomplete="off" required ${isCardLocked ? 'disabled' : ''}></div>
             <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')" autocomplete="off" required ${isCardLocked ? 'disabled' : ''}></div>
             <div class="field ot-field-wrap" style="${isOTHidden() ? 'display:none;' : ''}"><label>In OT</label><input type="number" id="m_ot_${id}" value="${rec.inOT}" oninput="updateMultiReported('${id}')" autocomplete="off" ${isCardLocked ? 'disabled' : ''}></div>
-            <div class="field"><label>TBT Attended No.</label><input type="number" id="m_tbt_${id}" value="${rec.tbtAttended}" autocomplete="off" ${isCardLocked ? 'disabled' : ''}></div>
+            <div class="field"><label>TBT Attended No.</label><input type="number" id="m_tbt_${id}" value="${rec.tbtAttended || ''}" autocomplete="off" ${isCardLocked ? 'disabled' : ''}></div>
           </div>
           <div class="actual-readout">
             <span class="sub">Reported in Current<br/>Shift</span>
@@ -1488,20 +1487,28 @@
       var actualEl = document.querySelector('input.excel-edit-cell[data-areaid="' + areaId + '"][data-field="actual"]');
       var otEl = document.querySelector('input.excel-edit-cell[data-areaid="' + areaId + '"][data-field="inOT"]');
       var remEl = document.querySelector('input.excel-edit-cell[data-areaid="' + areaId + '"][data-field="remarks"]');
+      var tbtEl = document.querySelector('input.excel-edit-cell[data-areaid="' + areaId + '"][data-field="tbtAttended"]');
+      
       if (!planEl || !actualEl) return;
       var plan = planEl.value, actual = actualEl.value;
       var ot = (otEl && !isOTHidden()) ? otEl.value : 0;
       var remarks = remEl ? remEl.value : (shiftData[areaId] ? shiftData[areaId].remarks : '');
+      var tbtAttended = tbtEl ? tbtEl.value : (shiftData[areaId] ? shiftData[areaId].tbtAttended : 0);
       var reported = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
       var rowEl = actualEl.closest('tr');
       var reportedCell = rowEl ? rowEl.querySelector('.inline-reported-cell') : null;
       if (reportedCell) reportedCell.textContent = reported;
 
+      var tbtPctCell = rowEl ? rowEl.querySelector('.inline-tbt-pct') : null;
+      if (tbtPctCell) {
+        tbtPctCell.textContent = reported > 0 ? Math.round((Number(tbtAttended || 0) / reported) * 100) + '%' : '';
+      }
+
       var existing = shiftData[areaId] || {};
       shiftData[areaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0), inOT: Number(ot || 0), reported: reported,
-        tbtAttended: Number(existing.tbtAttended || 0),
+        tbtAttended: Number(tbtAttended || 0),
         remarks: remarks || '', updatedBy: existing.updatedBy || 'you',
         timestamp: existing.timestamp || new Date().toLocaleString()
       };
@@ -1519,6 +1526,7 @@
             date: currentDate(), shift: currentShift(),
             areaId: areaId, areaName: area.fullName,
             plan: plan, actual: actual, inOT: ot,
+            tbtAttended: tbtAttended, // We now properly include TBT when saving from master dashboard!
             remarks: shiftData[areaId].remarks, enteredBy: 'you'
           }})
         }).then(function(res){ return res.json(); }).then(function(data){
@@ -1658,6 +1666,7 @@
         if (blockClass) tr.className = blockClass;
         var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
 
+        // Added TBT input directly inside the Master Edit mode
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
@@ -1666,7 +1675,10 @@
             '<td class="num ot-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="inOT" value="' + (rec.inOT || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num narrow-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
-            '<td class="num tbt-cell">' + tbtPct + '</td>';
+            '<td class="num tbt-cell">' +
+              '<input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="tbtAttended" value="' + (rec.tbtAttended || '') + '" oninput="onMasterInlineEdit(\'' + areaId + '\')" placeholder="TBT" style="width:100%; max-width:55px; text-align:center; margin-bottom:4px;">' +
+              '<br><span class="inline-tbt-pct" style="font-size:12px; font-weight:bold; color:#2563eb;">' + tbtPct + '</span>' +
+            '</td>';
         } else {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
