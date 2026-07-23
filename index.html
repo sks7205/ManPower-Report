@@ -211,12 +211,13 @@
     .section-title { font-size: 18px; font-weight: 800; color: var(--primary); margin: 0 0 16px 0; border-bottom: 2px solid var(--line); padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
     
     .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 20px; box-shadow: inset 0 0 0 4px var(--surface-2); }
-    .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; table-layout: fixed; }
-    .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; overflow: hidden; }
+    .excel-table { width: 100%; border-collapse: collapse; font-family: 'Calibri', Arial, sans-serif; font-size: 14.5px; color: #000; }
+    .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
     
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
-    .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; }
-    .excel-edit-cell { width: 100%; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
+    .excel-table td.num { text-align: center; font-family: 'Inter', sans-serif; font-size: 14.5px; }
+    
+    .excel-edit-cell { width: 100%; max-width: 70px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 14.5px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
     .excel-edit-cell:hover { border-color: #cbd5e1; }
     .excel-edit-cell:focus { outline: none; border-color: #2563eb; background: rgba(37,99,235,0.06); }
     .excel-edit-cell-text { max-width: none; text-align: left; }
@@ -240,14 +241,25 @@
     .bg-nataraj td { background-color: #FCE4EC !important; } /* Light Pink */
     
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
-    .excel-table .remarks-cell { white-space: normal; text-align: left; font-size: 13px; width: 140px; }
-    .excel-table th:first-child { width: 180px; }
+    .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
     
-    /* Ensure uniform width and text wrapping for numeric columns */
-    .excel-table .tbt-cell, .excel-table .narrow-cell, .excel-table th.ot-cell, .excel-table td.ot-cell, .excel-table th:nth-child(2), .excel-table td:nth-child(2) { 
+    /* TH (Headers): Smaller text, wrapped nicely */
+    .excel-table th.tbt-cell, .excel-table th.narrow-cell, .excel-table th.ot-cell, .excel-table th:nth-child(2) { 
       white-space: normal; 
-      width: 75px; 
+      min-width: 75px; 
       font-size: 11.5px; 
+      line-height: 1.2; 
+      padding: 4px 6px; 
+      text-align: center; 
+      word-break: normal; 
+      overflow-wrap: normal; 
+    }
+    
+    /* TD (Data): Standard larger text matching the rest of the numbers */
+    .excel-table td.tbt-cell, .excel-table td.narrow-cell, .excel-table td.ot-cell, .excel-table td:nth-child(2) { 
+      white-space: normal; 
+      min-width: 75px; 
+      font-size: 14.5px; 
       line-height: 1.2; 
       padding: 4px 6px; 
       text-align: center; 
@@ -314,8 +326,8 @@
       </div>
     </div>
 
+    <!-- CUSTOM DASHBOARD VIEW -->
     <div id="customDashboardView" style="display:none;">
-      
       <div class="top-nav-buttons">
         <button class="btn-primary" onclick="showPicker()">✏️ Data Entry</button>
         <button class="btn-secondary" onclick="showMasterDashboard()">📊 Master Report</button>
@@ -361,6 +373,7 @@
         </div>
         <div class="status-line" id="dashStatusCustom"></div>
       </div>
+      
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
         <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency. Add each contact's name + WhatsApp number below, section-wise — tick who's in shift and notify them.</span>
@@ -369,6 +382,7 @@
       </div>
     </div>
 
+    <!-- MASTER DASHBOARD VIEW -->
     <div id="masterDashboardView" style="display:none;">
       <div style="margin-bottom: 16px;">
         <button class="back-btn" onclick="showCustomDashboard()" style="margin:0;">&#8592; Back to Home</button>
@@ -405,6 +419,7 @@
       </div>
     </div>
 
+    <!-- ENTRY PICKER -->
     <div id="pickerView" style="display:none;">
       <div style="margin-bottom: 16px;">
         <button class="back-btn" onclick="showCustomDashboard()" style="margin:0;">&#8592; Back to Home</button>
@@ -416,6 +431,7 @@
       </div>
     </div>
 
+    <!-- NAME GATE -->
     <div id="nameGateView" style="display:none;">
       <div class="card" style="text-align:center; padding:56px 24px;">
         <div style="font-size:48px; margin-bottom:16px;">👤</div>
@@ -426,12 +442,14 @@
       </div>
     </div>
 
+    <!-- BUNDLE TILE VIEW -->
     <div id="bundleTileView" style="display:none;">
       <div class="card">
         <div class="tile-grid" id="bundleTileGrid"></div>
       </div>
     </div>
 
+    <!-- SINGLE ENTRY VIEW -->
     <div id="entryView" style="display:none;">
       <div class="card">
         <div id="entryBackBtnWrap">
@@ -473,6 +491,7 @@
       </div>
     </div>
 
+    <!-- MULTI ENTRY VIEW -->
     <div id="multiEntryView" style="display:none;">
       <div class="card" style="background:transparent; border:none; padding:0; margin-bottom:20px; box-shadow:none;">
         <div id="multiBackBtnWrap">
@@ -538,9 +557,12 @@
       return { filled: filled, total: bundle.areaIds.length };
     }
 
+    /* TBT formatting function returning "Attended (Comp%)" */
     function tbtCompliancePct(data) {
       if (!data.reported) return '';
-      return Math.round((data.tbtAttended / data.reported) * 100) + '%';
+      var att = Number(data.tbtAttended || 0);
+      var rep = Number(data.reported || 1);
+      return att + ' (' + Math.round((att / rep) * 100) + '%)';
     }
 
     function whatsappNumber(raw){
@@ -1112,7 +1134,6 @@
         var checkId = currentMultiNode.areaIds[i];
         var planVal = document.getElementById('m_plan_' + checkId).value;
         var actualVal = document.getElementById('m_actual_' + checkId).value;
-        // Only enforce mandatory fields for agencies
         if (LINK_MODE && (planVal !== '' && actualVal === '') || (planVal === '' && actualVal !== '') ) {
           showToast('Plan & Actual are mandatory' + cardLabel(AREAS_BY_ID[checkId]));
           return;
@@ -1316,7 +1337,6 @@
       var ot = isOTHidden() ? 0 : document.getElementById('otInput').value;
       var tbtAttended = document.getElementById('tbtInput').value;
 
-      // Only agencies are forced to fill plan and actual; master user is exempt
       if (LINK_MODE && (plan !== '' && actual === '') || (plan === '' && actual !== '')) {
         showToast('Plan & Actual are mandatory');
         return;
@@ -1389,7 +1409,6 @@
       const shift = currentShift();
       document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
       
-      /* Explicit innerHTML line break to ensure proper word wrapping in both view and export image */
       document.getElementById('thReported').innerHTML = 'Reported in<br>Shift-' + shift;
       document.getElementById('thShiftTopMaster').textContent = 'Shift-' + shift;
       document.getElementById('thReportedMaster').innerHTML = 'Reported in<br>Shift-' + shift;
@@ -1475,7 +1494,7 @@
         cells[2].textContent = data.inOT;
         cells[3].textContent = data.actual;
         if (cells.length >= 5) {
-          cells[4].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
+          cells[4].textContent = data.reported ? data.tbtAttended + ' (' + Math.round((data.tbtAttended / data.reported) * 100) + '%)' : '';
         }
       }
       fill('footerRowMasterTotal', mTotals);
@@ -1510,7 +1529,7 @@
 
       var tbtPctCell = rowEl ? rowEl.querySelector('.inline-tbt-pct') : null;
       if (tbtPctCell) {
-        tbtPctCell.textContent = reported > 0 ? Math.round((Number(tbtAttended || 0) / reported) * 100) + '%' : '';
+        tbtPctCell.textContent = reported > 0 ? tbtAttended + ' (' + Math.round((Number(tbtAttended || 0) / reported) * 100) + '%)' : '';
       }
 
       var existing = shiftData[areaId] || {};
@@ -1534,7 +1553,7 @@
             date: currentDate(), shift: currentShift(),
             areaId: areaId, areaName: area.fullName,
             plan: plan, actual: actual, inOT: ot,
-            tbtAttended: tbtAttended, // We now properly include TBT when saving from master dashboard!
+            tbtAttended: tbtAttended,
             remarks: shiftData[areaId].remarks, enteredBy: 'you'
           }})
         }).then(function(res){ return res.json(); }).then(function(data){
@@ -1672,7 +1691,7 @@
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'' };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
-        var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
+        var tbtPct = (Number(rec.reported || 0)) ? (rec.tbtAttended || 0) + ' (' + Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%)' : '';
 
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
@@ -1683,7 +1702,7 @@
             '<td class="num narrow-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num tbt-cell">' +
-              '<input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="tbtAttended" value="' + (rec.tbtAttended || '') + '" oninput="onMasterInlineEdit(\'' + areaId + '\')" placeholder="TBT" style="width:100%; text-align:center; margin-bottom:4px;">' +
+              '<input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="tbtAttended" value="' + (rec.tbtAttended || '') + '" oninput="onMasterInlineEdit(\'' + areaId + '\')" placeholder="TBT" style="width:100%; max-width:55px; text-align:center; margin-bottom:4px;">' +
               '<br><span class="inline-tbt-pct" style="font-size:12px; font-weight:bold; color:#2563eb;">' + tbtPct + '</span>' +
             '</td>';
         } else {
@@ -1733,7 +1752,7 @@
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
-            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
+            var childPct = childTotals.reported ? childTotals.tbtAttended + ' (' + Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%)' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1757,7 +1776,7 @@
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
-            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
+            var childPct = childTotals.reported ? childTotals.tbtAttended + ' (' + Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%)' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1815,7 +1834,7 @@
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
-        var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
+        var pct = pair[1].reported ? pair[1].tbtAttended + ' (' + Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%)' : '';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
