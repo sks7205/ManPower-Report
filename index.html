@@ -331,6 +331,7 @@
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTop">Shift-X</th>
                 <th colspan="3" id="thDate">Date Time</th>
+                <th rowspan="2">TBT Compliance %</th>
                 
               </tr>
               <tr>
@@ -352,9 +353,9 @@
       </div>
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
-        <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency. Everyone who has ever opened the link and enabled notifications shows up below, section-wise — tick who's in shift and notify them.</span>
-        <div id="agencyLinksList">Loading registered people…</div>
-        <button class="btn-primary" id="notifySelectedBtn" style="margin-top:16px;">🔔 Notify Selected</button>
+        <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency. Add each contact's name + WhatsApp number below, section-wise — tick who's in shift and notify them.</span>
+        <div id="agencyLinksList"></div>
+        <button class="btn-primary" id="notifySelectedBtn" style="margin-top:16px;">💬 Notify Selected (WhatsApp)</button>
       </div>
     </div>
 
@@ -372,6 +373,7 @@
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTopMaster">Shift-X</th>
                 <th colspan="3" id="thDateMaster">Date Time</th>
+                <th rowspan="2">TBT Compliance %</th>
                 
               </tr>
               <tr>
@@ -444,6 +446,10 @@
             <label for="otInput">In OT</label>
             <input type="number" id="otInput" min="0" inputmode="numeric" autocomplete="off">
           </div>
+          <div class="field">
+            <label for="tbtInput">TBT Attended No.</label>
+            <input type="number" id="tbtInput" min="0" inputmode="numeric" autocomplete="off">
+          </div>
         </div>
 
         <div class="actual-readout">
@@ -499,17 +505,24 @@
     var AGENCY_NAME = ''; 
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
-    var REGISTERED_NAMES = {};
-    try { REGISTERED_NAMES = JSON.parse(localStorage.getItem('registeredNames') || '{}'); } catch(e){ REGISTERED_NAMES = {}; }
+    var CONTACT_DIRECTORY = {};
+    try { CONTACT_DIRECTORY = JSON.parse(localStorage.getItem('contactDirectory') || '{}'); } catch(e){ CONTACT_DIRECTORY = {}; }
 
-    function mergeRegisteredNames(key, freshNames){
-      if (!REGISTERED_NAMES[key]) REGISTERED_NAMES[key] = [];
-      var changed = false;
-      freshNames.forEach(function(n){
-        if (REGISTERED_NAMES[key].indexOf(n) === -1) { REGISTERED_NAMES[key].push(n); changed = true; }
-      });
-      if (changed) { try { localStorage.setItem('registeredNames', JSON.stringify(REGISTERED_NAMES)); } catch(e){} }
-      return REGISTERED_NAMES[key];
+    function saveContactDirectory(){
+      try { localStorage.setItem('contactDirectory', JSON.stringify(CONTACT_DIRECTORY)); } catch(e){}
+    }
+
+    function addContact(key, name, phone){
+      if (!name || !phone) return;
+      if (!CONTACT_DIRECTORY[key]) CONTACT_DIRECTORY[key] = [];
+      CONTACT_DIRECTORY[key].push({ name: name, phone: phone });
+      saveContactDirectory();
+    }
+
+    function removeContact(key, idx){
+      if (!CONTACT_DIRECTORY[key]) return;
+      CONTACT_DIRECTORY[key].splice(idx, 1);
+      saveContactDirectory();
     }
 
     function bundleFillState(bundle){
@@ -518,70 +531,24 @@
       return { filled: filled, total: bundle.areaIds.length };
     }
 
-    // Every section/agency link gets one fixed topic — no manual setup needed.
-    function slugify(str){
-      return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24) || 'anon';
-    }
-    function bundleTopic(key){ return 'ars2mp-' + key; }
-    function registryTopic(key){ return 'ars2mpreg-' + key; }
-    function personalTopic(key, name){ return 'ars2mp-' + key + '-' + slugify(name); }
-
-    function openPushStream(topic){
-      if (window._pushES) { try { window._pushES.close(); } catch(e){} }
-      try {
-        var es = new EventSource('https://ntfy.sh/' + topic + '/sse');
-        es.onmessage = function(ev){
-          try {
-            var data = JSON.parse(ev.data);
-            if (data.event === 'message') {
-              new Notification(data.title || 'Reminder', { body: data.message || '' });
-            }
-          } catch(e){}
-        };
-        window._pushES = es;
-      } catch(e){}
+    function whatsappNumber(raw){
+      var digits = String(raw || '').replace(/\D/g, '');
+      if (!digits) return '';
+      if (digits.length === 10) digits = '91' + digits; // assume India, add country code
+      return digits;
     }
 
-    async function publishRegistration(key, name){
-      try {
-        await fetch('https://ntfy.sh/' + registryTopic(key), {
-          method: 'POST',
-          body: name,
-          headers: { 'Title': 'registration', 'Priority': 'min' }
-        });
-      } catch(e){}
-    }
-
-    async function fetchRegisteredNames(key){
-      try {
-        var res = await fetch('https://ntfy.sh/' + registryTopic(key) + '/json?poll=1&since=all');
-        var text = await res.text();
-        var names = [];
-        text.split('\n').forEach(function(line){
-          if (!line.trim()) return;
-          try {
-            var obj = JSON.parse(line);
-            if (obj.event === 'message' && obj.message && names.indexOf(obj.message) === -1) names.push(obj.message);
-          } catch(e){}
-        });
-        return names;
-      } catch(e){ return []; }
-    }
-
-    async function pushNotifyPerson(key, name){
+    function notifyContactWhatsApp(key, idx){
       var bundle = BUNDLES[key];
+      var contact = (CONTACT_DIRECTORY[key] || [])[idx];
+      if (!contact) return;
+      var phone = whatsappNumber(contact.phone);
+      if (!phone) { showToast('Invalid WhatsApp number'); return; }
       var base = window.location.href.split('?')[0];
       var link = base + '?link=' + key;
-      var msg = 'Hi ' + name + ', please fill your shift entry for ' + bundle.title +
+      var msg = 'Hi ' + contact.name + ', please fill your shift entry for ' + bundle.title +
         ' (' + currentDate() + ', Shift ' + currentShift() + '). Link: ' + link;
-      try {
-        await fetch('https://ntfy.sh/' + personalTopic(key, name), {
-          method: 'POST',
-          body: msg,
-          headers: { 'Title': bundle.title + ' — Fill Reminder', 'Priority': 'high', 'Tags': 'bell' }
-        });
-        return true;
-      } catch (err) { return false; }
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
     var MASTER_EDIT_MODE = false; 
 
@@ -992,7 +959,7 @@
 
       node.areaIds.forEach(id => {
         var area = AREAS_BY_ID[id];
-        var rec = shiftData[id] || { plan:'', actual:'', inOT:'', remarks:'', reported:0 };
+        var rec = shiftData[id] || { plan:'', actual:'', inOT:'', tbtAttended:'', remarks:'', reported:0 };
         var isFilled = !!shiftData[id];
         var badge = isFilled
           ? '<span style="color:var(--ok); font-size:12px; font-weight:700;">✓ Filled' + (rec.updatedBy ? ' by ' + rec.updatedBy : '') + '</span>'
@@ -1009,6 +976,7 @@
             <div class="field"><label>Plan</label><input type="number" id="m_plan_${id}" value="${rec.plan}" autocomplete="off" required ${isCardLocked ? 'disabled' : ''}></div>
             <div class="field"><label>Actual</label><input type="number" id="m_actual_${id}" value="${rec.actual}" oninput="updateMultiReported('${id}')" autocomplete="off" required ${isCardLocked ? 'disabled' : ''}></div>
             <div class="field ot-field-wrap" style="${isOTHidden() ? 'display:none;' : ''}"><label>In OT</label><input type="number" id="m_ot_${id}" value="${rec.inOT}" oninput="updateMultiReported('${id}')" autocomplete="off" ${isCardLocked ? 'disabled' : ''}></div>
+            <div class="field"><label>TBT Attended No.</label><input type="number" id="m_tbt_${id}" value="${rec.tbtAttended}" autocomplete="off" ${isCardLocked ? 'disabled' : ''}></div>
           </div>
           <div class="actual-readout">
             <span class="sub">Reported in Current<br/>Shift</span>
@@ -1056,17 +1024,6 @@
           PENDING_BUNDLE_KEY = key;
           showNameGate();
           return;
-        }
-      }
-
-      publishRegistration(key, AGENCY_NAME);
-      if ('Notification' in window) {
-        if (Notification.permission === 'granted') {
-          openPushStream(personalTopic(key, AGENCY_NAME));
-        } else if (Notification.permission === 'default') {
-          Notification.requestPermission().then(function(perm){
-            if (perm === 'granted') openPushStream(personalTopic(key, AGENCY_NAME));
-          }).catch(function(){});
         }
       }
 
@@ -1167,20 +1124,21 @@
         var plan = document.getElementById('m_plan_' + id).value;
         var actual = document.getElementById('m_actual_' + id).value;
         var ot = isOTHidden() ? 0 : document.getElementById('m_ot_' + id).value;
+        var tbtAttended = document.getElementById('m_tbt_' + id).value;
 
         var finalRem = commonRem;
         var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
         localUpdates[id] = {
           plan: Number(plan || 0), actual: Number(actual || 0),
-          inOT: Number(ot || 0), reported: reportedGuess,
+          inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
           remarks: finalRem, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
         };
 
         payloads.push({
           date: currentDate(), shift: currentShift(),
           areaId: id, areaName: area.fullName,
-          plan: plan, actual: actual, inOT: ot, remarks: finalRem
+          plan: plan, actual: actual, inOT: ot, tbtAttended: tbtAttended, remarks: finalRem
         });
       });
 
@@ -1267,7 +1225,7 @@
       var locked = alreadyFilled; 
 
       function applyLockState(isLocked) {
-        ['planInput','actualInput','otInput'].forEach(function(id){
+        ['planInput','actualInput','otInput','tbtInput'].forEach(function(id){
           document.getElementById(id).disabled = isLocked;
         });
         var flagEl = document.getElementById('remarkFlag');
@@ -1318,6 +1276,7 @@
       document.getElementById('planInput').value = rec ? rec.plan : '';
       document.getElementById('actualInput').value = rec ? rec.actual : '';
       document.getElementById('otInput').value = rec ? rec.inOT : '';
+      document.getElementById('tbtInput').value = rec ? (rec.tbtAttended || '') : '';
       updateReported();
 
       var area = AREAS_BY_ID[currentLeaf];
@@ -1343,6 +1302,7 @@
       var plan = document.getElementById('planInput').value;
       var actual = document.getElementById('actualInput').value;
       var ot = isOTHidden() ? 0 : document.getElementById('otInput').value;
+      var tbtAttended = document.getElementById('tbtInput').value;
 
       // Only agencies are forced to fill plan and actual; master user is exempt
       if (LINK_MODE && (plan !== '' && actual === '') || (plan === '' && actual !== '')) {
@@ -1373,14 +1333,14 @@
       var payload = {
         date: currentDate(), shift: currentShift(),
         areaId: area.id, areaName: area.fullName,
-        plan: plan, actual: actual, inOT: ot,
+        plan: plan, actual: actual, inOT: ot, tbtAttended: tbtAttended,
         remarks: finalRemarks, enteredBy: enteredByName
       };
 
       var savedAreaId = currentLeaf;
       shiftData[savedAreaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0),
-        inOT: Number(ot || 0), reported: reportedGuess,
+        inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
         remarks: finalRemarks, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
       };
       
@@ -1473,17 +1433,19 @@
     function isOTHidden(){ return currentShift() === 'A'; }
 
     function getMetricsGlobal(id) {
-      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0 };
+      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
       return {
         plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
-        inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0)
+        inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
+        tbtAttended: Number(entry.tbtAttended || 0)
       };
     }
     function sumMetricsGlobal(arr) {
-      var res = { plan:0, actual:0, inOT:0, reported:0 };
+      var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
       arr.forEach(function(id){
         var m = getMetricsGlobal(id);
         res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
+        res.tbtAttended += m.tbtAttended;
       });
       return res;
     }
@@ -1500,6 +1462,9 @@
         cells[1].textContent = data.reported;
         cells[2].textContent = data.inOT;
         cells[3].textContent = data.actual;
+        if (cells.length >= 5) {
+          cells[4].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
+        }
       }
       fill('footerRowMasterTotal', mTotals);
       fill('footerRowMasterDirect', mDirectTotals);
@@ -1525,6 +1490,7 @@
       var existing = shiftData[areaId] || {};
       shiftData[areaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0), inOT: Number(ot || 0), reported: reported,
+        tbtAttended: Number(existing.tbtAttended || 0),
         remarks: remarks || '', updatedBy: existing.updatedBy || 'you',
         timestamp: existing.timestamp || new Date().toLocaleString()
       };
@@ -1559,19 +1525,21 @@
       body.innerHTML = '';
       
       function getMetrics(id) {
-        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
+        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'' };
         return {
           plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
           inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
+          tbtAttended: Number(entry.tbtAttended || 0),
           remarks: entry.remarks || ''
         };
       }
 
       function sumMetrics(arr) {
-        var res = { plan:0, actual:0, inOT:0, reported:0, remarks:[] };
+        var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:[] };
         arr.forEach(function(id) {
           var m = getMetrics(id);
           res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
+          res.tbtAttended += m.tbtAttended;
           if (m.remarks) {
             var parts = m.remarks.split('; ');
             parts.forEach(function(p){ if(res.remarks.indexOf(p) === -1) res.remarks.push(p); });
@@ -1592,7 +1560,8 @@
           '<td class="num">' + data.reported + '</td>' +
           '<td class="num ot-cell">' + data.inOT + '</td>' +
           '<td class="num">' + data.actual + '</td>' +
-          '<td class="remarks-cell">' + displayRemarks + '</td>';
+          '<td class="remarks-cell">' + displayRemarks + '</td>' +
+          '<td class="num">' + tbtCompliancePct(data) + '</td>';
         if (editTarget && editTarget.rowId) tr.id = editTarget.rowId;
         body.appendChild(tr);
       }
@@ -1633,6 +1602,7 @@
       var sseSkeSum = {
         plan: sseMetrics.plan + skeAtvMetrics.plan, reported: sseMetrics.reported + skeAtvMetrics.reported,
         inOT: sseMetrics.inOT + skeAtvMetrics.inOT, actual: sseMetrics.actual + skeAtvMetrics.actual,
+        tbtAttended: sseMetrics.tbtAttended + skeAtvMetrics.tbtAttended,
         remarks: "SKE - " + skeAtvMetrics.actual
       };
       if (sseMetrics.remarks) sseSkeSum.remarks += "; " + sseMetrics.remarks;
@@ -1646,7 +1616,7 @@
       var dTot = sumMetrics(AREA_DIRECT_IDS);
       var iTot = sumMetrics(AREA_INDIRECT_IDS);
       
-      var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual };
+      var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual, tbtAttended: dTot.tbtAttended + iTot.tbtAttended };
       
       appendRow('TOTAL:-', gTot, 'grand-total-row', true, {rowId: 'footerRowTotal'});
       appendRow('DIRECT:-', dTot, 'grand-total-row', true, {rowId: 'footerRowDirect'});
@@ -1661,8 +1631,8 @@
       var masterBody = document.getElementById('masterDashBody');
       masterBody.innerHTML = '';
       
-      var mTotals = { plan:0, actual:0, inOT:0, reported:0 };
-      var mDirectTotals = { plan:0, actual:0, inOT:0, reported:0 };
+      var mTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
+      var mDirectTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
 
       function escAttr(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1670,11 +1640,12 @@
 
       function addMasterLeafRow(areaId, indent, blockClass){
         var area = AREAS_BY_ID[areaId];
-        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0 };
+        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0, tbtAttended: 0 };
         
-        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, remarks:'' };
+        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'' };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
+        var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
 
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
@@ -1683,7 +1654,8 @@
             '<td class="num inline-reported-cell">' + (rec.reported || 0) + '</td>' +
             '<td class="num ot-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="inOT" value="' + (rec.inOT || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
-            '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>';
+            '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
+            '<td class="num">' + tbtPct + '</td>';
         } else {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
@@ -1691,21 +1663,22 @@
             '<td class="num">' + (rec.reported || 0) + '</td>' +
             '<td class="num ot-cell">' + (rec.inOT || 0) + '</td>' +
             '<td class="num">' + (rec.actual || 0) + '</td>' +
-            '<td class="remarks-cell">' + (rec.remarks || '') + '</td>';
+            '<td class="remarks-cell">' + (rec.remarks || '') + '</td>' +
+            '<td class="num">' + tbtPct + '</td>';
         }
         masterBody.appendChild(tr);
         
-        var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0);
-        mTotals.plan += p; mTotals.actual += a; mTotals.inOT += o; mTotals.reported += r;
+        var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0), t = Number(rec.tbtAttended || 0);
+        mTotals.plan += p; mTotals.actual += a; mTotals.inOT += o; mTotals.reported += r; mTotals.tbtAttended += t;
         
         if (area.type === 'Direct'){
-          mDirectTotals.plan += p; mDirectTotals.actual += a; mDirectTotals.inOT += o; mDirectTotals.reported += r;
+          mDirectTotals.plan += p; mDirectTotals.actual += a; mDirectTotals.inOT += o; mDirectTotals.reported += r; mDirectTotals.tbtAttended += t;
         }
-        return { plan: p, actual: a, inOT: o, reported: r };
+        return { plan: p, actual: a, inOT: o, reported: r, tbtAttended: t };
       }
 
       function walkMaster(nodes, depth, blockClass){
-        var groupTotal = { plan:0, actual:0, inOT:0, reported:0 };
+        var groupTotal = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
         if (!nodes) return groupTotal; 
         
         nodes.forEach(function(node){
@@ -1713,53 +1686,61 @@
             var leafVals = addMasterLeafRow(node.areaId, depth > 0, blockClass);
             groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
             groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
+            groupTotal.tbtAttended += leafVals.tbtAttended;
           } else if (node.type === 'multi') {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
-            tr.innerHTML = '<td colspan="6" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            tr.innerHTML = '<td colspan="7" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
-            var childTotals = { plan:0, actual:0, inOT:0, reported:0 };
+            var childTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
             node.areaIds.forEach(function(id){
                var leafVals = addMasterLeafRow(id, depth + 1, blockClass);
                childTotals.plan += leafVals.plan; childTotals.actual += leafVals.actual;
                childTotals.inOT += leafVals.inOT; childTotals.reported += leafVals.reported;
+               childTotals.tbtAttended += leafVals.tbtAttended;
             });
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
+            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.reported + '</td>' +
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
-              '<td></td>';
+              '<td></td>' +
+              '<td class="num" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
 
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
+            groupTotal.tbtAttended += childTotals.tbtAttended;
           } else {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
-            tr.innerHTML = '<td colspan="6" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            tr.innerHTML = '<td colspan="7" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
             var childTotals = walkMaster(node.children, depth + 1, blockClass);
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
+            var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.reported + '</td>' +
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.actual + '</td>' +
-              '<td></td>';
+              '<td></td>' +
+              '<td class="num" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
 
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
+            groupTotal.tbtAttended += childTotals.tbtAttended;
           }
         });
         return groupTotal;
@@ -1801,7 +1782,8 @@
 
       var mIndirectTotals = {
         plan: mTotals.plan - mDirectTotals.plan, actual: mTotals.actual - mDirectTotals.actual,
-        inOT: mTotals.inOT - mDirectTotals.inOT, reported: mTotals.reported - mDirectTotals.reported
+        inOT: mTotals.inOT - mDirectTotals.inOT, reported: mTotals.reported - mDirectTotals.reported,
+        tbtAttended: mTotals.tbtAttended - mDirectTotals.tbtAttended
       };
       
       var footerRowIds = ['footerRowMasterTotal', 'footerRowMasterDirect', 'footerRowMasterIndirect'];
@@ -1809,13 +1791,15 @@
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
+        var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
           '<td class="num">' + pair[1].reported + '</td>' +
           '<td class="num ot-cell">' + pair[1].inOT + '</td>' +
           '<td class="num">' + pair[1].actual + '</td>' +
-          '<td></td>';
+          '<td></td>' +
+          '<td class="num">' + pct + '</td>';
         masterBody.appendChild(tr);
       });
 
@@ -1902,16 +1886,14 @@
       }
     }
 
-    async function renderAgencyLinks() {
+    function renderAgencyLinks() {
       var base = window.location.href.split('?')[0];
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
       var keys = Object.keys(BUNDLES);
-      var fresh = await Promise.all(keys.map(function(key){ return fetchRegisteredNames(key); }));
-      var allTime = keys.map(function(key, idx){ return mergeRegisteredNames(key, fresh[idx]); });
 
       list.innerHTML = '';
-      keys.forEach(function(key, idx){
+      keys.forEach(function(key){
         var bundle = BUNDLES[key];
         var link = base + '?link=' + key;
         var state = bundleFillState(bundle);
@@ -1919,16 +1901,18 @@
         var badge = full
           ? '<span style="font-size:11px; font-weight:700; color:var(--ok);">FILLED</span>'
           : '<span style="font-size:11px; font-weight:700; color:var(--primary);">PENDING (' + state.filled + '/' + state.total + ')</span>';
-        var names = allTime[idx];
+        var contacts = CONTACT_DIRECTORY[key] || [];
 
-        var namesHtml = names.length
-          ? names.map(function(n){
-              var esc = n.replace(/"/g,'&quot;');
+        var contactsHtml = contacts.length
+          ? contacts.map(function(c, i){
+              var esc = c.name.replace(/"/g,'&quot;');
               return '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px;">' +
-                '<input type="checkbox" data-select-key="' + key + '" data-select-name="' + esc + '"> ' + esc +
+                '<input type="checkbox" data-select-key="' + key + '" data-select-idx="' + i + '"> ' + esc +
+                ' <span style="color:var(--muted); font-size:12px;">(' + c.phone + ')</span>' +
+                '<button data-remove-key="' + key + '" data-remove-idx="' + i + '" style="min-width:auto; padding:2px 8px; border-radius:6px; font-size:11px; margin-left:auto;">✕</button>' +
                 '</label>';
             }).join('')
-          : '<span style="font-size:12px; color:var(--muted);">No one registered yet</span>';
+          : '<span style="font-size:12px; color:var(--muted);">No contacts added yet</span>';
 
         var row = document.createElement('div');
         row.style.cssText = 'padding:14px 0; border-bottom:1px solid var(--line);';
@@ -1936,32 +1920,50 @@
           '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">' +
             '<span style="font-size:15px; font-weight:600;">' + bundle.title + '</span>' + badge +
           '</div>' +
-          '<div style="margin-bottom:10px;">' + namesHtml + '</div>' +
+          '<div style="margin-bottom:10px;">' + contactsHtml + '</div>' +
+          '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">' +
+            '<input type="text" placeholder="Name" data-newname="' + key + '" style="flex:1; min-width:100px; padding:8px 10px; font-size:13px;">' +
+            '<input type="tel" placeholder="WhatsApp number" data-newphone="' + key + '" style="flex:1; min-width:120px; padding:8px 10px; font-size:13px;">' +
+            '<button class="btn-secondary" style="min-width:auto; padding:8px 14px; border-radius:8px;" data-addcontact="' + key + '">Add</button>' +
+          '</div>' +
           '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
             '<a href="' + link + '" target="_blank" rel="noopener" class="btn-secondary" style="min-width:auto; padding:8px 14px; display:inline-flex; align-items:center; text-decoration:none; border-radius:8px;">Open</a>' +
             '<button class="btn-primary" style="min-width:auto; padding:8px 14px; border-radius:8px;" data-link="' + link + '" data-title="' + bundle.title + '">Share Link</button>' +
           '</div>';
         list.appendChild(row);
       });
+
       list.querySelectorAll('button[data-link]').forEach(function(btn){
         btn.addEventListener('click', function(){
           shareLink(btn.getAttribute('data-link'), btn.getAttribute('data-title'));
         });
       });
+      list.querySelectorAll('button[data-addcontact]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var key = btn.getAttribute('data-addcontact');
+          var nameEl = list.querySelector('input[data-newname="' + key + '"]');
+          var phoneEl = list.querySelector('input[data-newphone="' + key + '"]');
+          var name = nameEl.value.trim();
+          var phone = phoneEl.value.trim();
+          if (!name || !phone) { showToast('Enter both name and WhatsApp number'); return; }
+          addContact(key, name, phone);
+          renderAgencyLinks();
+        });
+      });
+      list.querySelectorAll('button[data-remove-key]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          removeContact(btn.getAttribute('data-remove-key'), Number(btn.getAttribute('data-remove-idx')));
+          renderAgencyLinks();
+        });
+      });
     }
 
-    async function notifySelectedPeople(){
+    function notifySelectedPeople(){
       var checked = document.querySelectorAll('#agencyLinksList input[data-select-key]:checked');
       if (!checked.length) { showToast('Select at least one person first'); return; }
-      var btn = document.getElementById('notifySelectedBtn');
-      btn.disabled = true;
-      var sent = 0;
-      for (var i = 0; i < checked.length; i++){
-        var ok = await pushNotifyPerson(checked[i].getAttribute('data-select-key'), checked[i].getAttribute('data-select-name'));
-        if (ok) sent++;
-      }
-      btn.disabled = false;
-      showToast('Notified ' + sent + ' of ' + checked.length + ' selected');
+      checked.forEach(function(cb){
+        notifyContactWhatsApp(cb.getAttribute('data-select-key'), Number(cb.getAttribute('data-select-idx')));
+      });
     }
 
     init();
