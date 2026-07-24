@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -259,6 +260,30 @@
     
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .dash-actions button { flex: 1; min-width: 140px; }
+
+    /* Contact Row Styles */
+    .contact-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .contact-row:hover { border-color: var(--muted); }
+    .contact-row.unselectable { cursor: default; }
+    .contact-row.unselectable:hover { border-color: var(--line); }
+    .contact-row.selected {
+      background: var(--primary-dim);
+      border-color: var(--primary);
+      box-shadow: inset 0 0 0 1px var(--primary);
+    }
+    .contact-row .contact-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; }
+    .contact-row.selected .contact-name::before {
+      content: '✓'; color: var(--primary); font-weight: 900; margin-right: 8px; font-size: 14px;
+    }
+    .contact-actions { display: flex; align-items: center; gap: 8px; }
+    .contact-actions input[type=tel] { max-width: 140px; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin: 0; }
+    .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; }
+    .btn-delete { background: transparent; color: var(--danger); font-size: 16px; padding: 6px; cursor: pointer; border: none; border-radius: 6px; transition: background 0.2s; }
+    .btn-delete:hover { background: rgba(239, 68, 68, 0.15); }
     
     .toast { 
       position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); 
@@ -365,7 +390,7 @@
       </div>
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
-        <span class="sub" style="display:block; margin-bottom:20px;">Names below are pulled automatically from submitted shift entries, section-wise. Map a WhatsApp number to each name once, then tick who's in shift and notify them.</span>
+        <span class="sub" style="display:block; margin-bottom:20px;">Names below are pulled automatically from submitted shift entries. Provide a WhatsApp number, then select the rows to notify them.</span>
         <div id="agencyLinksList"></div>
         <button class="btn-primary" id="notifySelectedBtn" style="margin-top:16px;">💬 Notify Selected (WhatsApp)</button>
       </div>
@@ -583,6 +608,20 @@
       NAME_PHONES[phoneKey(key, name)] = phone;
       try { localStorage.setItem('namePhones', JSON.stringify(NAME_PHONES)); } catch(e){}
     }
+    
+    function deleteUser(key, name) {
+      if (!confirm('Are you sure you want to delete "' + name + '"?')) return;
+      if (KNOWN_NAMES[key]) {
+        KNOWN_NAMES[key] = KNOWN_NAMES[key].filter(function(n) { return n !== name; });
+        try { localStorage.setItem('knownNames', JSON.stringify(KNOWN_NAMES)); } catch(e){}
+      }
+      var pk = phoneKey(key, name);
+      if (NAME_PHONES[pk]) {
+        delete NAME_PHONES[pk];
+        try { localStorage.setItem('namePhones', JSON.stringify(NAME_PHONES)); } catch(e){}
+      }
+      renderAgencyLinks(); // Refresh the list
+    }
 
     function bundleFillState(bundle){
       if (!bundle || !bundle.areaIds || !bundle.areaIds.length) return { filled: 0, total: 0 };
@@ -761,12 +800,10 @@
 
         AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
 
-        // UPDATED: Standardized prompt capitalization to match requested image format
         if (AREAS_BY_ID['SKE_OA_BUTTCLEAN'] && !AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt) {
           AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt = { kind: 'boolean', text: '1 Supervisor Included' };
         }
 
-        // GMPL: number input for Supervisor Included, mandatory before saving
         if (AREAS_BY_ID['GMPL']) {
           AREAS_BY_ID['GMPL'].remarkPrompt = { kind: 'number', text: 'Supervisor Included', required: true };
         }
@@ -1169,17 +1206,17 @@
         var otVal = isOTHidden() ? 0 : document.getElementById('m_ot_' + checkId).value;
         var tbtVal = document.getElementById('m_tbt_' + checkId).value;
         var reportedVal = Math.max(0, Number(actualVal || 0) - Number(otVal || 0));
-        // Only enforce mandatory fields for agencies
+
         if (LINK_MODE && (planVal !== '' && actualVal === '') || (planVal === '' && actualVal !== '') ) {
-          showToast('Plan & Actual are mandatory' + cardLabel(AREAS_BY_ID[checkId]));
+          showToast('Plan & Actual are mandatory ' + cardLabel(AREAS_BY_ID[checkId]));
           return;
         }
         if (LINK_MODE && (tbtVal === '' || Number(tbtVal) < 0)) {
-          showToast('TBT Attended No. is mandatory (0 or more)' + cardLabel(AREAS_BY_ID[checkId]));
+          showToast('TBT Attended No. is mandatory (0 or more) ' + cardLabel(AREAS_BY_ID[checkId]));
           return;
         }
         if (tbtVal !== '' && Number(tbtVal) > reportedVal) {
-          showToast('TBT Attended No. cannot exceed Reported (' + reportedVal + ')' + cardLabel(AREAS_BY_ID[checkId]));
+          showToast('TBT Attended No. cannot exceed Reported (' + reportedVal + ') ' + cardLabel(AREAS_BY_ID[checkId]));
           return;
         }
       }
@@ -1382,7 +1419,6 @@
       var tbtAttended = document.getElementById('tbtInput').value;
       var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
-      // Only agencies are forced to fill plan and actual; master user is exempt
       if (LINK_MODE && (plan !== '' && actual === '') || (plan === '' && actual !== '')) {
         showToast('Plan & Actual are mandatory');
         return;
@@ -1473,7 +1509,6 @@
       const shift = currentShift();
       document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
       
-      /* Explicit innerHTML line break to ensure proper word wrapping in both view and export image */
       document.getElementById('thReported').innerHTML = 'Reported in<br>Shift-' + shift;
       document.getElementById('thShiftTopMaster').textContent = 'Shift-' + shift;
       document.getElementById('thReportedMaster').innerHTML = 'Reported in<br>Shift-' + shift;
@@ -1618,7 +1653,7 @@
             date: currentDate(), shift: currentShift(),
             areaId: areaId, areaName: area.fullName,
             plan: plan, actual: actual, inOT: ot,
-            tbtAttended: tbtAttended, // We now properly include TBT when saving from master dashboard!
+            tbtAttended: tbtAttended,
             remarks: shiftData[areaId].remarks, enteredBy: 'you'
           }})
         }).then(function(res){ return res.json(); }).then(function(data){
@@ -1758,7 +1793,6 @@
         if (blockClass) tr.className = blockClass;
         var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
 
-        // Added TBT input directly inside the Master Edit mode
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
@@ -2017,12 +2051,26 @@
           ? names.map(function(n){
               var esc = n.replace(/"/g,'&quot;');
               var savedPhone = NAME_PHONES[phoneKey(key, n)] || '';
-              return '<div style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px;">' +
-                '<label style="display:flex; align-items:center; gap:8px; flex:1; min-width:100px;">' +
-                '<input type="checkbox" data-select-key="' + key + '" data-select-name="' + esc + '"> ' + esc +
-                '</label>' +
-                '<input type="tel" placeholder="WhatsApp no." value="' + savedPhone.replace(/"/g,'&quot;') + '" data-phone-key="' + key + '" data-phone-name="' + esc + '" style="width:120px; padding:6px 8px; font-size:13px;">' +
-                '</div>';
+              
+              if (savedPhone) {
+                // If a phone is saved, render a clickable selection row with a delete button only.
+                return '<div class="contact-row" data-select-key="' + key + '" data-select-name="' + esc + '">' +
+                         '<span class="contact-name">' + esc + '</span>' +
+                         '<div class="contact-actions">' +
+                           '<button class="btn-delete" data-delete-key="' + key + '" data-delete-name="' + esc + '" title="Delete User">🗑️</button>' +
+                         '</div>' +
+                       '</div>';
+              } else {
+                // Without a phone, row isn't selectable yet. Show input & save button.
+                return '<div class="contact-row unselectable">' +
+                         '<span class="contact-name">' + esc + '</span>' +
+                         '<div class="contact-actions">' +
+                           '<input type="tel" placeholder="WhatsApp no." class="phone-input" data-phone-key="' + key + '" data-phone-name="' + esc + '">' +
+                           '<button class="btn-primary btn-small save-phone-btn">Save</button>' +
+                           '<button class="btn-delete" data-delete-key="' + key + '" data-delete-name="' + esc + '" title="Delete User">🗑️</button>' +
+                         '</div>' +
+                       '</div>';
+              }
             }).join('')
           : '<span style="font-size:12px; color:var(--muted);">No one has submitted data for this section yet</span>';
 
@@ -2040,23 +2088,53 @@
         list.appendChild(row);
       });
 
+      // Bind Event Listeners for the generated HTML
       list.querySelectorAll('button[data-link]').forEach(function(btn){
         btn.addEventListener('click', function(){
           shareLink(btn.getAttribute('data-link'), btn.getAttribute('data-title'));
         });
       });
-      list.querySelectorAll('input[data-phone-key]').forEach(function(inp){
-        inp.addEventListener('change', function(){
-          saveNamePhone(inp.getAttribute('data-phone-key'), inp.getAttribute('data-phone-name'), inp.value.trim());
+
+      // Selection toggle on clickable rows
+      list.querySelectorAll('.contact-row[data-select-key]').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+          // Do not toggle selection if the user clicked the delete button
+          if (e.target.closest('.btn-delete')) return;
+          row.classList.toggle('selected');
+        });
+      });
+
+      // Handle saving phone number
+      list.querySelectorAll('.save-phone-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var row = e.target.closest('.contact-row');
+          var input = row.querySelector('.phone-input');
+          var key = input.getAttribute('data-phone-key');
+          var name = input.getAttribute('data-phone-name');
+          var phone = input.value.trim();
+          if (!phone) { showToast('Enter a number first'); return; }
+          saveNamePhone(key, name, phone);
+          renderAgencyLinks(); // Re-render to update UI
+        });
+      });
+
+      // Handle Deleting User
+      list.querySelectorAll('.btn-delete').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var key = btn.getAttribute('data-delete-key');
+          var name = btn.getAttribute('data-delete-name');
+          deleteUser(key, name);
         });
       });
     }
 
     function notifySelectedPeople(){
-      var checked = document.querySelectorAll('#agencyLinksList input[data-select-key]:checked');
-      if (!checked.length) { showToast('Select at least one person first'); return; }
-      checked.forEach(function(cb){
-        notifyContactWhatsApp(cb.getAttribute('data-select-key'), cb.getAttribute('data-select-name'));
+      var checkedRows = document.querySelectorAll('#agencyLinksList .contact-row.selected');
+      if (!checkedRows.length) { showToast('Select at least one person first'); return; }
+      checkedRows.forEach(function(row){
+        notifyContactWhatsApp(row.getAttribute('data-select-key'), row.getAttribute('data-select-name'));
       });
     }
 
@@ -2064,3 +2142,5 @@
   </script>
 </body>
 </html>
+
+```
