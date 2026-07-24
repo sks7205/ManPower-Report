@@ -766,9 +766,9 @@
           AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt = { kind: 'boolean', text: '1 Supervisor Included' };
         }
 
-        // GMPL should behave like Nataraj — plain remarks only, no checkbox/number prompt
+        // GMPL: number input for Supervisor Included, mandatory before saving
         if (AREAS_BY_ID['GMPL']) {
-          delete AREAS_BY_ID['GMPL'].remarkPrompt;
+          AREAS_BY_ID['GMPL'].remarkPrompt = { kind: 'number', text: 'Supervisor Included', required: true };
         }
 
         await refreshShiftData();
@@ -1396,6 +1396,15 @@
       if (tbtAttended !== '' && Number(tbtAttended) > reportedGuess) {
         showToast('TBT Attended No. cannot be greater than Reported in Shift (' + reportedGuess + ')');
         return;
+      }
+
+      if (LINK_MODE && area.remarkPrompt && area.remarkPrompt.kind === 'number' && area.remarkPrompt.required) {
+        var remarkFlagEl = document.getElementById('remarkFlag');
+        var remarkVal = remarkFlagEl ? remarkFlagEl.value : '';
+        if (remarkVal === '' || Number(remarkVal) < 0) {
+          showToast(area.remarkPrompt.text + ' is mandatory (enter 0 or more)');
+          return;
+        }
       }
 
       var autoText = '';
