@@ -523,6 +523,8 @@
       return String(raw || '').replace(/\s*\(updated\)\s*$/i, '').trim();
     }
 
+    var EXCLUDED_NAMES = ['', 'you', 'agency', 'unknown', 'n/a', 'na', 'test'];
+
     function mergeNamesFromDataset(dataset){
       var changed = false;
       Object.keys(BUNDLES).forEach(function(key){
@@ -532,23 +534,46 @@
           var rec = dataset[id];
           if (!rec || !rec.updatedBy) return;
           var name = cleanEnteredName(rec.updatedBy);
-          if (!name || name === 'you' || name === 'Agency') return;
+          if (!name || EXCLUDED_NAMES.indexOf(name.toLowerCase()) !== -1) return;
           if (KNOWN_NAMES[key].indexOf(name) === -1) { KNOWN_NAMES[key].push(name); changed = true; }
         });
       });
       return changed;
     }
 
-    async function mergeKnownNamesFromShiftData(){
+    function dateMinusDays(dateStr, n){
+      var d = new Date(dateStr + 'T00:00:00');
+      d.setDate(d.getDate() - n);
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    var SCANNED_SHIFT_KEYS = {};
+    try { SCANNED_SHIFT_KEYS = JSON.parse(localStorage.getItem('scannedShiftKeys') || '{}'); } catch(e){ SCANNED_SHIFT_KEYS = {}; }
+
+    var HISTORY_SWEEP_DAYS = 60; // how many past days to sweep for names, beyond today
+
+    async function mergeKnownNamesFromShiftData(onProgress){
       var changed = mergeNamesFromDataset(shiftData);
-      var shifts = ['A', 'B', 'C'].filter(function(s){ return s !== currentShift(); });
-      for (var i = 0; i < shifts.length; i++){
+      var scanKeysNeeded = [];
+      for (var d = 0; d <= HISTORY_SWEEP_DAYS; d++){
+        var dateStr = d === 0 ? currentDate() : dateMinusDays(currentDate(), d);
+        ['A','B','C'].forEach(function(sh){
+          var k = dateStr + '_' + sh;
+          if (d === 0 && sh === currentShift()) return; // already merged from live shiftData above
+          if (!SCANNED_SHIFT_KEYS[k]) scanKeysNeeded.push({ date: dateStr, shift: sh, cacheKey: k });
+        });
+      }
+      for (var i = 0; i < scanKeysNeeded.length; i++){
+        var item = scanKeysNeeded[i];
+        if (onProgress) onProgress(i + 1, scanKeysNeeded.length);
         try {
-          var res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${shifts[i]}`);
+          var res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${item.date}&shift=${item.shift}`);
           var data = await res.json();
           if (mergeNamesFromDataset(data)) changed = true;
         } catch(e){}
+        SCANNED_SHIFT_KEYS[item.cacheKey] = true;
       }
+      if (scanKeysNeeded.length) { try { localStorage.setItem('scannedShiftKeys', JSON.stringify(SCANNED_SHIFT_KEYS)); } catch(e){} }
       if (changed) { try { localStorage.setItem('knownNames', JSON.stringify(KNOWN_NAMES)); } catch(e){} }
     }
 
@@ -1952,7 +1977,9 @@
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
       var keys = Object.keys(BUNDLES);
-      await mergeKnownNamesFromShiftData();
+      await mergeKnownNamesFromShiftData(function(done, total){
+        if (total > 3) list.innerHTML = '<div style="font-size:13px; color:var(--muted); padding:10px 0;">Scanning past shifts for names… (' + done + '/' + total + ')</div>';
+      });
 
       list.innerHTML = '';
       keys.forEach(function(key){
