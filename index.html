@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -254,30 +254,56 @@
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .dash-actions button { flex: 1; min-width: 140px; }
 
-    /* Contact Row Styles */
-    .contact-row {
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-      padding: 12px 16px; background: var(--surface-2); border: 1px solid var(--line);
-      border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s ease;
+    /* AGENCY CARD SPECIFIC STYLES */
+    .agency-card {
+      background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: 12px; padding: 16px; margin-bottom: 16px;
     }
-    .contact-row:hover { border-color: var(--muted); }
-    .contact-row.unselectable { cursor: default; }
-    .contact-row.unselectable:hover { border-color: var(--line); }
-    .contact-row.selected {
-      background: var(--primary-dim);
-      border-color: var(--primary);
+    .agency-card-header {
+      display: flex; justify-content: space-between; align-items: center; 
+      border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 12px;
+      flex-wrap: wrap; gap: 10px;
+    }
+    .agency-card-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .agency-contact-row {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+      padding: 10px 14px; background: var(--bg); border: 1px solid var(--line);
+      border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .agency-contact-row:hover { border-color: var(--muted); }
+    .agency-contact-row.selected {
+      background: var(--primary-dim); border-color: var(--primary);
       box-shadow: inset 0 0 0 1px var(--primary);
     }
-    .contact-row .contact-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; }
-    .contact-row.selected .contact-name::before {
-      content: '✓'; color: var(--primary); font-weight: 900; margin-right: 8px; font-size: 14px;
-    }
-    .contact-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
-    .contact-actions input[type=tel] { max-width: 140px; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin: 0; }
-    .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; }
-    .btn-delete { background: transparent; color: var(--danger); font-size: 16px; padding: 6px; cursor: pointer; border: none; border-radius: 6px; transition: background 0.2s; }
-    .btn-delete:hover { background: rgba(239, 68, 68, 0.15); }
+    .agency-contact-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 150px; }
+    .agency-contact-name { font-size: 15px; font-weight: 600; color: var(--text); }
+    .agency-contact-phone { font-size: 13px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
     
+    /* Checkbox for custom styling */
+    .custom-checkbox {
+      width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--muted);
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    }
+    .agency-contact-row.selected .custom-checkbox {
+      background: var(--primary); border-color: var(--primary);
+    }
+    .custom-checkbox::after {
+      content: '✓'; color: #000; font-weight: 900; font-size: 12px; opacity: 0;
+    }
+    .agency-contact-row.selected .custom-checkbox::after { opacity: 1; }
+
+    .agency-actions { display: flex; align-items: center; gap: 6px; }
+    .icon-btn { 
+      background: transparent; color: var(--muted); border: none; font-size: 16px;
+      padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon-btn:hover { background: var(--surface); color: var(--text); }
+    .icon-btn.edit:hover { color: var(--primary); }
+    .icon-btn.delete:hover { color: var(--danger); background: rgba(239, 68, 68, 0.15); }
+    .icon-btn.whatsapp { color: #10b981; } /* Green for WA icon */
+    .icon-btn.whatsapp:hover { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
     .toast { 
       position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); 
       background: var(--primary); color: #000; padding: 14px 24px; border-radius: 30px; 
@@ -321,6 +347,51 @@
       <div style="font-size:56px; margin-bottom:16px;">✅</div>
       <div id="successModalMsg" style="font-size:16px; color:var(--text); font-weight:600; line-height:1.5; white-space:pre-line;"></div>
       <button id="successModalOkBtn" class="btn-primary" style="margin-top:32px;">Got it</button>
+    </div>
+  </div>
+
+  <!-- BATCH WHATSAPP MODAL -->
+  <div id="batchWhatsAppModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(8px);">
+    <div class="card" style="max-width:400px; width:90%; text-align:center; box-shadow:0 24px 48px rgba(0,0,0,0.6);">
+      <h2 style="margin-top:0; color:var(--text); font-size:22px; font-weight:800;">Sending Messages</h2>
+      <p class="sub" id="batchProgress" style="font-weight:700; color:var(--primary);">1 of 3</p>
+      
+      <div style="margin:24px 0; padding:20px; background:var(--surface-2); border-radius:12px; border:1px solid var(--line);">
+         <span style="display:block; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; font-weight:700; margin-bottom:8px;">Ready to notify:</span>
+         <strong id="batchCurrentName" style="font-size:22px; color:var(--text);">John Doe</strong>
+      </div>
+      
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button class="btn-primary" id="batchSendBtn">1. Open WhatsApp</button>
+        <button class="btn-secondary" id="batchNextBtn">2. Next Person ➔</button>
+      </div>
+      
+      <button class="btn-ghost" id="batchCancelBtn" style="margin-top:16px; border:none; color:var(--muted);">Cancel Batch Send</button>
+    </div>
+  </div>
+
+  <!-- MANUAL ADD/EDIT CONTACT MODAL -->
+  <div id="manualContactModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(8px);">
+    <div class="card" style="max-width:340px; width:90%; box-shadow:0 24px 48px rgba(0,0,0,0.6);">
+      <h2 class="section-title" id="contactModalTitle" style="margin-top:0; border:none;">Add Contact</h2>
+      
+      <input type="hidden" id="modalContactBundleKey">
+      <input type="hidden" id="modalContactId">
+      
+      <div class="field" style="align-items:flex-start; margin-bottom:16px;">
+        <label>Name</label>
+        <input type="text" id="modalContactName" placeholder="e.g. Rahul Supervisor" style="width:100%; box-sizing:border-box;">
+      </div>
+      
+      <div class="field" style="align-items:flex-start; margin-bottom:24px;">
+        <label>WhatsApp Number</label>
+        <input type="tel" id="modalContactPhone" placeholder="e.g. 9876543210" style="width:100%; box-sizing:border-box;">
+      </div>
+      
+      <div style="display:flex; gap:12px;">
+        <button class="btn-ghost" id="contactModalCancelBtn" style="flex:1;">Cancel</button>
+        <button class="btn-primary" id="contactModalSaveBtn" style="flex:1;">Save</button>
+      </div>
     </div>
   </div>
 
@@ -382,9 +453,11 @@
         <div class="status-line" id="dashStatusCustom"></div>
       </div>
       <div class="card">
-        <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
-        <span class="sub" style="display:block; margin-bottom:20px;">Names below are pulled automatically from submitted shift entries. Provide a WhatsApp number manually or pick from your contacts (if supported on your device), then select the rows to notify them.</span>
+        <h2 class="section-title" style="margin-top:0; border:none;">Agency Links</h2>
+        <span class="sub" style="display:block; margin-bottom:20px;">Manage contacts manually for each section. Add users, check the box next to them, and hit Notify.</span>
+        
         <div id="agencyLinksList"></div>
+        
         <button class="btn-primary" id="notifySelectedBtn" style="margin-top:16px;">💬 Notify Selected (WhatsApp)</button>
       </div>
     </div>
@@ -532,88 +605,19 @@
     var AGENCY_NAME = ''; 
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
-    var KNOWN_NAMES = {};
-    try { KNOWN_NAMES = JSON.parse(localStorage.getItem('knownNames') || '{}'); } catch(e){ KNOWN_NAMES = {}; }
-    var NAME_PHONES = {};
-    try { NAME_PHONES = JSON.parse(localStorage.getItem('namePhones') || '{}'); } catch(e){ NAME_PHONES = {}; }
 
-    function cleanEnteredName(raw){
-      return String(raw || '').replace(/\s*\(updated\)\s*$/i, '').trim();
-    }
+    // Manual Contacts Setup
+    // Structure: AGENCY_CONTACTS = { 'bundleKey': [ {id: 123, name: 'John', phone: '91...'} ] }
+    var AGENCY_CONTACTS = {};
+    try { AGENCY_CONTACTS = JSON.parse(localStorage.getItem('agencyContacts') || '{}'); } catch(e){ AGENCY_CONTACTS = {}; }
 
-    var EXCLUDED_NAMES = ['', 'you', 'agency', 'unknown', 'n/a', 'na', 'test'];
+    // Batch Sending Variables
+    var batchQueue = [];
+    var batchIndex = 0;
 
-    function mergeNamesFromDataset(dataset){
-      var changed = false;
-      Object.keys(BUNDLES).forEach(function(key){
-        var bundle = BUNDLES[key];
-        if (!KNOWN_NAMES[key]) KNOWN_NAMES[key] = [];
-        bundle.areaIds.forEach(function(id){
-          var rec = dataset[id];
-          if (!rec || !rec.updatedBy) return;
-          var name = cleanEnteredName(rec.updatedBy);
-          if (!name || EXCLUDED_NAMES.indexOf(name.toLowerCase()) !== -1) return;
-          if (KNOWN_NAMES[key].indexOf(name) === -1) { KNOWN_NAMES[key].push(name); changed = true; }
-        });
-      });
-      return changed;
-    }
-
-    function dateMinusDays(dateStr, n){
-      var d = new Date(dateStr + 'T00:00:00');
-      d.setDate(d.getDate() - n);
-      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-    }
-
-    var SCANNED_SHIFT_KEYS = {};
-    try { SCANNED_SHIFT_KEYS = JSON.parse(localStorage.getItem('scannedShiftKeys') || '{}'); } catch(e){ SCANNED_SHIFT_KEYS = {}; }
-
-    var HISTORY_SWEEP_DAYS = 60; 
-
-    async function mergeKnownNamesFromShiftData(onProgress){
-      var changed = mergeNamesFromDataset(shiftData);
-      var scanKeysNeeded = [];
-      for (var d = 0; d <= HISTORY_SWEEP_DAYS; d++){
-        var dateStr = d === 0 ? currentDate() : dateMinusDays(currentDate(), d);
-        ['A','B','C'].forEach(function(sh){
-          var k = dateStr + '_' + sh;
-          if (d === 0 && sh === currentShift()) return; 
-          if (!SCANNED_SHIFT_KEYS[k]) scanKeysNeeded.push({ date: dateStr, shift: sh, cacheKey: k });
-        });
-      }
-      for (var i = 0; i < scanKeysNeeded.length; i++){
-        var item = scanKeysNeeded[i];
-        if (onProgress) onProgress(i + 1, scanKeysNeeded.length);
-        try {
-          var res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${item.date}&shift=${item.shift}`);
-          var data = await res.json();
-          if (mergeNamesFromDataset(data)) changed = true;
-        } catch(e){}
-        SCANNED_SHIFT_KEYS[item.cacheKey] = true;
-      }
-      if (scanKeysNeeded.length) { try { localStorage.setItem('scannedShiftKeys', JSON.stringify(SCANNED_SHIFT_KEYS)); } catch(e){} }
-      if (changed) { try { localStorage.setItem('knownNames', JSON.stringify(KNOWN_NAMES)); } catch(e){} }
-    }
-
-    function phoneKey(key, name){ return key + '::' + name; }
-
-    function saveNamePhone(key, name, phone){
-      NAME_PHONES[phoneKey(key, name)] = phone;
-      try { localStorage.setItem('namePhones', JSON.stringify(NAME_PHONES)); } catch(e){}
-    }
-    
-    function deleteUser(key, name) {
-      if (!confirm('Are you sure you want to delete "' + name + '"?')) return;
-      if (KNOWN_NAMES[key]) {
-        KNOWN_NAMES[key] = KNOWN_NAMES[key].filter(function(n) { return n !== name; });
-        try { localStorage.setItem('knownNames', JSON.stringify(KNOWN_NAMES)); } catch(e){}
-      }
-      var pk = phoneKey(key, name);
-      if (NAME_PHONES[pk]) {
-        delete NAME_PHONES[pk];
-        try { localStorage.setItem('namePhones', JSON.stringify(NAME_PHONES)); } catch(e){}
-      }
-      renderAgencyLinks(); 
+    function saveAgencyContacts() {
+      try { localStorage.setItem('agencyContacts', JSON.stringify(AGENCY_CONTACTS)); } catch(e){}
+      renderAgencyLinks();
     }
 
     function bundleFillState(bundle){
@@ -636,18 +640,17 @@
       return digits;
     }
 
-    function notifyContactWhatsApp(key, name){
-      var bundle = BUNDLES[key];
-      var phone = whatsappNumber(NAME_PHONES[phoneKey(key, name)]);
-      if (!phone) { showToast('Add a WhatsApp number for ' + name + ' first'); return; }
+    function notifyContactWhatsApp(bundleKey, phoneStr, customName){
+      var bundle = BUNDLES[bundleKey];
       var base = window.location.href.split('?')[0];
-      var link = base + '?link=' + key;
-      var msg = 'Hi ' + name + ', please fill your shift entry for ' + bundle.title +
+      var link = base + '?link=' + bundleKey;
+      var nameDisplay = customName || 'Team';
+      var msg = 'Hi ' + nameDisplay + ', please fill your shift entry for ' + bundle.title +
         ' (' + currentDate() + ', Shift ' + currentShift() + '). Link: ' + link;
-      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+      window.open('https://wa.me/' + phoneStr + '?text=' + encodeURIComponent(msg), '_blank');
     }
+    
     var MASTER_EDIT_MODE = false; 
-
     const ADMIN_KEY = "ars2incharge2026";
 
     function cardLabel(area) {
@@ -874,8 +877,24 @@
       document.getElementById('nameGateInput').addEventListener('keydown', function(e){
         if (e.key === 'Enter') continueFromNameGate();
       });
+      
       var notifySelBtn = document.getElementById('notifySelectedBtn');
       if (notifySelBtn) notifySelBtn.addEventListener('click', notifySelectedPeople);
+
+      // Batch Send Listeners
+      document.getElementById('batchSendBtn').addEventListener('click', function() {
+        var current = batchQueue[batchIndex];
+        notifyContactWhatsApp(current.key, current.phone, current.name);
+      });
+      document.getElementById('batchNextBtn').addEventListener('click', function() {
+        batchIndex++;
+        showBatchModal();
+      });
+      document.getElementById('batchCancelBtn').addEventListener('click', closeBatchModal);
+
+      // Manual Modal listeners
+      document.getElementById('contactModalCancelBtn').addEventListener('click', closeManualContactModal);
+      document.getElementById('contactModalSaveBtn').addEventListener('click', saveManualContact);
     }
 
     async function resetShiftData(){
@@ -2002,19 +2021,130 @@
       }
     }
 
-    async function renderAgencyLinks() {
+
+    /* --- NEW MANUAL AGENCY CONTACT LOGIC --- */
+    
+    // Fallback UI Manual Contact Variables
+    var activeModalBundle = null;
+    var activeModalContactId = null;
+
+    async function handleAddContact(bundleKey) {
+      // If Contact Picker API is available, try it first
+      if ('contacts' in navigator && 'ContactsManager' in window) {
+        try {
+          const props = ['name', 'tel'];
+          const contacts = await navigator.contacts.select(props, { multiple: true });
+          
+          if (contacts && contacts.length > 0) {
+            if (!AGENCY_CONTACTS[bundleKey]) AGENCY_CONTACTS[bundleKey] = [];
+            
+            contacts.forEach(function(c) {
+              var cName = (c.name && c.name.length > 0) ? c.name[0] : 'Unknown';
+              var cPhoneRaw = (c.tel && c.tel.length > 0) ? c.tel[0] : '';
+              var formattedPhone = whatsappNumber(cPhoneRaw);
+              
+              if (formattedPhone) {
+                AGENCY_CONTACTS[bundleKey].push({
+                  id: 'c_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                  name: cName,
+                  phone: formattedPhone
+                });
+              }
+            });
+            saveAgencyContacts();
+            showToast('Contacts added successfully');
+            return; // We successfully used the picker
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.error('Contact picker error:', err);
+          }
+        }
+      }
+      // If no API, or user aborted, or no valid phone found, open manual modal
+      openManualContactModal(bundleKey);
+    }
+
+    function openManualContactModal(bundleKey, contactIdToEdit) {
+      activeModalBundle = bundleKey;
+      var titleEl = document.getElementById('contactModalTitle');
+      var nameEl = document.getElementById('modalContactName');
+      var phoneEl = document.getElementById('modalContactPhone');
+      var idEl = document.getElementById('modalContactId');
+      
+      if (contactIdToEdit && AGENCY_CONTACTS[bundleKey]) {
+        var existing = AGENCY_CONTACTS[bundleKey].find(c => c.id === contactIdToEdit);
+        if (existing) {
+          titleEl.textContent = 'Edit Contact';
+          nameEl.value = existing.name;
+          phoneEl.value = existing.phone;
+          idEl.value = existing.id;
+          activeModalContactId = existing.id;
+        }
+      } else {
+        titleEl.textContent = 'Add Contact';
+        nameEl.value = '';
+        phoneEl.value = '';
+        idEl.value = '';
+        activeModalContactId = null;
+      }
+      
+      document.getElementById('manualContactModal').style.display = 'flex';
+      setTimeout(() => nameEl.focus(), 50);
+    }
+
+    function closeManualContactModal() {
+      document.getElementById('manualContactModal').style.display = 'none';
+      activeModalBundle = null;
+      activeModalContactId = null;
+    }
+
+    function saveManualContact() {
+      if (!activeModalBundle) return;
+      var name = document.getElementById('modalContactName').value.trim();
+      var rawPhone = document.getElementById('modalContactPhone').value.trim();
+      var formattedPhone = whatsappNumber(rawPhone);
+      
+      if (!name) { showToast('Name is required'); return; }
+      if (!formattedPhone) { showToast('Valid phone number is required'); return; }
+
+      if (!AGENCY_CONTACTS[activeModalBundle]) AGENCY_CONTACTS[activeModalBundle] = [];
+      
+      if (activeModalContactId) {
+        // Edit existing
+        var idx = AGENCY_CONTACTS[activeModalBundle].findIndex(c => c.id === activeModalContactId);
+        if (idx !== -1) {
+          AGENCY_CONTACTS[activeModalBundle][idx].name = name;
+          AGENCY_CONTACTS[activeModalBundle][idx].phone = formattedPhone;
+        }
+      } else {
+        // Add new
+        AGENCY_CONTACTS[activeModalBundle].push({
+          id: 'c_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+          name: name,
+          phone: formattedPhone
+        });
+      }
+      
+      saveAgencyContacts();
+      closeManualContactModal();
+    }
+
+    function deleteAgencyContact(bundleKey, contactId) {
+      if (!confirm("Remove this contact?")) return;
+      if (AGENCY_CONTACTS[bundleKey]) {
+        AGENCY_CONTACTS[bundleKey] = AGENCY_CONTACTS[bundleKey].filter(c => c.id !== contactId);
+        saveAgencyContacts();
+      }
+    }
+
+    function renderAgencyLinks() {
       var base = window.location.href.split('?')[0];
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
       var keys = Object.keys(BUNDLES);
-      await mergeKnownNamesFromShiftData(function(done, total){
-        if (total > 3) list.innerHTML = '<div style="font-size:13px; color:var(--muted); padding:10px 0;">Scanning past shifts for names… (' + done + '/' + total + ')</div>';
-      });
 
       list.innerHTML = '';
-      
-      // Determine if native Contact Picker API is available
-      var contactsSupported = ('contacts' in navigator && 'ContactsManager' in window);
 
       keys.forEach(function(key){
         var bundle = BUNDLES[key];
@@ -2024,129 +2154,155 @@
         var badge = full
           ? '<span style="font-size:11px; font-weight:700; color:var(--ok);">FILLED</span>'
           : '<span style="font-size:11px; font-weight:700; color:var(--primary);">PENDING (' + state.filled + '/' + state.total + ')</span>';
-        var names = KNOWN_NAMES[key] || [];
+        
+        var contacts = AGENCY_CONTACTS[key] || [];
 
-        var namesHtml = names.length
-          ? names.map(function(n){
-              var esc = n.replace(/"/g,'&quot;');
-              var savedPhone = NAME_PHONES[phoneKey(key, n)] || '';
-              
-              if (savedPhone) {
-                // Number saved, render row
-                return '<div class="contact-row" data-select-key="' + key + '" data-select-name="' + esc + '">' +
-                         '<span class="contact-name">' + esc + '</span>' +
-                         '<div class="contact-actions">' +
-                           '<button class="btn-delete" data-delete-key="' + key + '" data-delete-name="' + esc + '" title="Delete User">🗑️</button>' +
-                         '</div>' +
-                       '</div>';
-              } else {
-                // Render input fields and pick contact button
-                var pickBtnHtml = contactsSupported 
-                  ? '<button class="btn-secondary btn-small pick-contact-btn" title="Pick from Contacts" style="padding:8px; font-size:16px;">📇</button>' 
-                  : '';
-                
-                return '<div class="contact-row unselectable">' +
-                         '<span class="contact-name">' + esc + '</span>' +
-                         '<div class="contact-actions" style="flex:1; flex-wrap:nowrap; gap:6px; justify-content:flex-end;">' +
-                           '<input type="tel" placeholder="WhatsApp no." class="phone-input" style="flex:1; min-width:90px;" data-phone-key="' + key + '" data-phone-name="' + esc + '">' +
-                           pickBtnHtml +
-                           '<button class="btn-primary btn-small save-phone-btn">Save</button>' +
-                           '<button class="btn-delete" data-delete-key="' + key + '" data-delete-name="' + esc + '" title="Delete User">🗑️</button>' +
-                         '</div>' +
-                       '</div>';
-              }
+        var contactsHtml = contacts.length
+          ? contacts.map(function(c){
+              var escName = c.name.replace(/"/g,'&quot;');
+              return `
+                <div class="agency-contact-row" data-select-key="${key}" data-contact-id="${c.id}" data-contact-phone="${c.phone}" data-contact-name="${escName}">
+                  <div class="agency-contact-info">
+                    <div class="custom-checkbox"></div>
+                    <div>
+                      <div class="agency-contact-name">${escName}</div>
+                      <div class="agency-contact-phone">+${c.phone}</div>
+                    </div>
+                  </div>
+                  <div class="agency-actions">
+                    <!-- Direct WhatsApp Button -->
+                    <button class="icon-btn whatsapp" data-action="whatsapp" title="Message User directly">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    </button>
+                    <!-- Edit Button -->
+                    <button class="icon-btn edit" data-action="edit" title="Edit Contact">✏️</button>
+                    <!-- Delete Button -->
+                    <button class="icon-btn delete" data-action="delete" title="Remove Contact">🗑️</button>
+                  </div>
+                </div>
+              `;
             }).join('')
-          : '<span style="font-size:12px; color:var(--muted);">No one has submitted data for this section yet</span>';
+          : '<div style="font-size:13px; color:var(--muted); margin-bottom:12px; font-style:italic;">No contacts added for this section yet.</div>';
 
-        var row = document.createElement('div');
-        row.style.cssText = 'padding:14px 0; border-bottom:1px solid var(--line);';
-        row.innerHTML =
-          '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">' +
-            '<span style="font-size:15px; font-weight:600;">' + bundle.title + '</span>' + badge +
-          '</div>' +
-          '<div style="margin-bottom:10px;">' + namesHtml + '</div>' +
-          '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
-            '<a href="' + link + '" target="_blank" rel="noopener" class="btn-secondary" style="min-width:auto; padding:8px 14px; display:inline-flex; align-items:center; text-decoration:none; border-radius:8px;">Open</a>' +
-            '<button class="btn-primary" style="min-width:auto; padding:8px 14px; border-radius:8px;" data-link="' + link + '" data-title="' + bundle.title + '">Share Link</button>' +
-          '</div>';
-        list.appendChild(row);
+        var card = document.createElement('div');
+        card.className = 'agency-card';
+        card.innerHTML = `
+          <div class="agency-card-header">
+            <div>
+              <div class="agency-card-title">${bundle.title}</div>
+              <div style="margin-top:4px;">${badge}</div>
+            </div>
+            <button class="btn-secondary btn-small add-contact-btn" data-bundle-key="${key}" style="border-radius:100px; padding:6px 14px;">+ Add Contact</button>
+          </div>
+          <div class="agency-contacts-container">
+            ${contactsHtml}
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; border-top: 1px solid var(--line); padding-top:12px;">
+            <button class="btn-ghost share-link-btn" style="min-width:auto; padding:8px 14px; border-radius:8px; flex:1;" data-link="${link}" data-title="${bundle.title}">📋 Copy Share Link</button>
+            <a href="${link}" target="_blank" rel="noopener" class="btn-secondary" style="min-width:auto; padding:8px 14px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; border-radius:8px; flex:1;">🌐 Open Form</a>
+          </div>
+        `;
+        list.appendChild(card);
       });
 
-      // Bind share link functionality
-      list.querySelectorAll('button[data-link]').forEach(function(btn){
+      // Bind actions
+      list.querySelectorAll('.share-link-btn').forEach(function(btn){
         btn.addEventListener('click', function(){
           shareLink(btn.getAttribute('data-link'), btn.getAttribute('data-title'));
         });
       });
 
-      // Bind selection toggle for valid saved contacts
-      list.querySelectorAll('.contact-row[data-select-key]').forEach(function(row) {
+      list.querySelectorAll('.add-contact-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          handleAddContact(btn.getAttribute('data-bundle-key'));
+        });
+      });
+
+      list.querySelectorAll('.agency-contact-row').forEach(function(row) {
         row.addEventListener('click', function(e) {
-          if (e.target.closest('.btn-delete')) return;
+          // Ignore if clicking action buttons
+          if (e.target.closest('.agency-actions')) return;
           row.classList.toggle('selected');
         });
       });
 
-      // Bind the manual save button
-      list.querySelectorAll('.save-phone-btn').forEach(function(btn) {
+      list.querySelectorAll('.icon-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
-          var row = e.target.closest('.contact-row');
-          var input = row.querySelector('.phone-input');
-          var key = input.getAttribute('data-phone-key');
-          var name = input.getAttribute('data-phone-name');
-          var phone = input.value.trim();
-          if (!phone) { showToast('Enter a number first'); return; }
-          saveNamePhone(key, name, phone);
-          renderAgencyLinks();
-        });
-      });
+          var action = btn.getAttribute('data-action');
+          var row = btn.closest('.agency-contact-row');
+          var bKey = row.getAttribute('data-select-key');
+          var cId = row.getAttribute('data-contact-id');
+          var cPhone = row.getAttribute('data-contact-phone');
+          var cName = row.getAttribute('data-contact-name');
 
-      // Bind Contact Picker API button (Android/Chrome only)
-      list.querySelectorAll('.pick-contact-btn').forEach(function(btn) {
-        btn.addEventListener('click', async function(e) {
-          e.stopPropagation();
-          var row = e.target.closest('.contact-row');
-          var input = row.querySelector('.phone-input');
-          
-          try {
-            const props = ['tel'];
-            const contacts = await navigator.contacts.select(props, { multiple: false });
-            if (contacts.length && contacts[0].tel && contacts[0].tel.length > 0) {
-              // Get the first phone number
-              input.value = contacts[0].tel[0];
-              // Automatically click save so the user doesn't have to
-              var saveBtn = row.querySelector('.save-phone-btn');
-              if (saveBtn) saveBtn.click();
-            } else {
-              showToast('No phone number found for this contact');
-            }
-          } catch (err) {
-            if (err.name !== 'AbortError') {
-              console.error(err);
-              showToast('Failed to access contacts');
-            }
+          if (action === 'delete') {
+            deleteAgencyContact(bKey, cId);
+          } else if (action === 'edit') {
+            openManualContactModal(bKey, cId);
+          } else if (action === 'whatsapp') {
+            notifyContactWhatsApp(bKey, cPhone, cName);
           }
-        });
-      });
-
-      // Handle user deletion
-      list.querySelectorAll('.btn-delete').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var key = btn.getAttribute('data-delete-key');
-          var name = btn.getAttribute('data-delete-name');
-          deleteUser(key, name);
         });
       });
     }
 
+    // --- BATCH SENDING LOGIC ---
     function notifySelectedPeople(){
-      var checkedRows = document.querySelectorAll('#agencyLinksList .contact-row.selected');
+      var checkedRows = document.querySelectorAll('#agencyLinksList .agency-contact-row.selected');
       if (!checkedRows.length) { showToast('Select at least one person first'); return; }
+      
+      batchQueue = [];
       checkedRows.forEach(function(row){
-        notifyContactWhatsApp(row.getAttribute('data-select-key'), row.getAttribute('data-select-name'));
+        batchQueue.push({
+          key: row.getAttribute('data-select-key'),
+          name: row.getAttribute('data-contact-name'),
+          phone: row.getAttribute('data-contact-phone')
+        });
       });
+      
+      if (batchQueue.length === 1) {
+        // Just send directly if only one is selected
+        notifyContactWhatsApp(batchQueue[0].key, batchQueue[0].phone, batchQueue[0].name);
+        checkedRows[0].classList.remove('selected');
+      } else {
+        // Start batch sender modal
+        batchIndex = 0;
+        showBatchModal();
+      }
+    }
+    
+    function showBatchModal() {
+      if (batchIndex >= batchQueue.length) {
+        closeBatchModal();
+        showToast('All selected messages processed!');
+        // Deselect all rows
+        document.querySelectorAll('#agencyLinksList .agency-contact-row.selected').forEach(function(row) {
+          row.classList.remove('selected');
+        });
+        return;
+      }
+      
+      var current = batchQueue[batchIndex];
+      var modal = document.getElementById('batchWhatsAppModal');
+      modal.style.display = 'flex';
+      
+      document.getElementById('batchProgress').textContent = 'Person ' + (batchIndex + 1) + ' of ' + batchQueue.length;
+      document.getElementById('batchCurrentName').textContent = current.name;
+      
+      // Update Next button text on the last item
+      var nextBtn = document.getElementById('batchNextBtn');
+      if (batchIndex === batchQueue.length - 1) {
+        nextBtn.textContent = 'Finish ✓';
+        nextBtn.className = 'btn-primary'; 
+      } else {
+        nextBtn.textContent = '2. Next Person ➔';
+        nextBtn.className = 'btn-secondary';
+      }
+    }
+    
+    function closeBatchModal() {
+      document.getElementById('batchWhatsAppModal').style.display = 'none';
     }
 
     init();
@@ -2154,5 +2310,3 @@
 </body>
 </html>
 
-
-```
