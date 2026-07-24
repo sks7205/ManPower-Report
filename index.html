@@ -244,7 +244,7 @@
     .bg-nataraj td { background-color: #FCE4EC !important; } /* Light Pink */
     
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
-    .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; }
+    .excel-table .remarks-cell { white-space: nowrap; text-align: left; }
     
     /* Prevent letter splitting and wrap full words naturally */
     .excel-table .tbt-cell, .excel-table .narrow-cell { 
@@ -523,19 +523,32 @@
       return String(raw || '').replace(/\s*\(updated\)\s*$/i, '').trim();
     }
 
-    function mergeKnownNamesFromShiftData(){
+    function mergeNamesFromDataset(dataset){
       var changed = false;
       Object.keys(BUNDLES).forEach(function(key){
         var bundle = BUNDLES[key];
         if (!KNOWN_NAMES[key]) KNOWN_NAMES[key] = [];
         bundle.areaIds.forEach(function(id){
-          var rec = shiftData[id];
+          var rec = dataset[id];
           if (!rec || !rec.updatedBy) return;
           var name = cleanEnteredName(rec.updatedBy);
           if (!name || name === 'you' || name === 'Agency') return;
           if (KNOWN_NAMES[key].indexOf(name) === -1) { KNOWN_NAMES[key].push(name); changed = true; }
         });
       });
+      return changed;
+    }
+
+    async function mergeKnownNamesFromShiftData(){
+      var changed = mergeNamesFromDataset(shiftData);
+      var shifts = ['A', 'B', 'C'].filter(function(s){ return s !== currentShift(); });
+      for (var i = 0; i < shifts.length; i++){
+        try {
+          var res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${shifts[i]}`);
+          var data = await res.json();
+          if (mergeNamesFromDataset(data)) changed = true;
+        } catch(e){}
+      }
       if (changed) { try { localStorage.setItem('knownNames', JSON.stringify(KNOWN_NAMES)); } catch(e){} }
     }
 
@@ -729,7 +742,7 @@
         }
 
         if (AREAS_BY_ID['GMPL']) {
-          AREAS_BY_ID['GMPL'].remarkPrompt = { kind: 'number', text: 'Supervisor Included' };
+          AREAS_BY_ID['GMPL'].remarkPrompt = { kind: 'boolean', text: '1 Supervisor Included' };
         }
         
         await refreshShiftData();
@@ -1934,12 +1947,12 @@
       }
     }
 
-    function renderAgencyLinks() {
+    async function renderAgencyLinks() {
       var base = window.location.href.split('?')[0];
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
       var keys = Object.keys(BUNDLES);
-      mergeKnownNamesFromShiftData();
+      await mergeKnownNamesFromShiftData();
 
       list.innerHTML = '';
       keys.forEach(function(key){
