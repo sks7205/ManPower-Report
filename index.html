@@ -766,10 +766,11 @@
           AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt = { kind: 'boolean', text: '1 Supervisor Included' };
         }
 
+        // GMPL should behave like Nataraj — plain remarks only, no checkbox/number prompt
         if (AREAS_BY_ID['GMPL']) {
-          AREAS_BY_ID['GMPL'].remarkPrompt = { kind: 'boolean', text: '1 Supervisor Included' };
+          delete AREAS_BY_ID['GMPL'].remarkPrompt;
         }
-        
+
         await refreshShiftData();
 
         var urlParams = new URLSearchParams(window.location.search);
@@ -1165,7 +1166,9 @@
         var checkId = currentMultiNode.areaIds[i];
         var planVal = document.getElementById('m_plan_' + checkId).value;
         var actualVal = document.getElementById('m_actual_' + checkId).value;
+        var otVal = isOTHidden() ? 0 : document.getElementById('m_ot_' + checkId).value;
         var tbtVal = document.getElementById('m_tbt_' + checkId).value;
+        var reportedVal = Math.max(0, Number(actualVal || 0) - Number(otVal || 0));
         // Only enforce mandatory fields for agencies
         if (LINK_MODE && (planVal !== '' && actualVal === '') || (planVal === '' && actualVal !== '') ) {
           showToast('Plan & Actual are mandatory' + cardLabel(AREAS_BY_ID[checkId]));
@@ -1173,6 +1176,10 @@
         }
         if (LINK_MODE && (tbtVal === '' || Number(tbtVal) < 0)) {
           showToast('TBT Attended No. is mandatory (0 or more)' + cardLabel(AREAS_BY_ID[checkId]));
+          return;
+        }
+        if (tbtVal !== '' && Number(tbtVal) > reportedVal) {
+          showToast('TBT Attended No. cannot exceed Reported (' + reportedVal + ')' + cardLabel(AREAS_BY_ID[checkId]));
           return;
         }
       }
@@ -1373,6 +1380,7 @@
       var actual = document.getElementById('actualInput').value;
       var ot = isOTHidden() ? 0 : document.getElementById('otInput').value;
       var tbtAttended = document.getElementById('tbtInput').value;
+      var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
       // Only agencies are forced to fill plan and actual; master user is exempt
       if (LINK_MODE && (plan !== '' && actual === '') || (plan === '' && actual !== '')) {
@@ -1382,6 +1390,11 @@
 
       if (LINK_MODE && (tbtAttended === '' || Number(tbtAttended) < 0)) {
         showToast('TBT Attended No. is mandatory (enter 0 or more)');
+        return;
+      }
+
+      if (tbtAttended !== '' && Number(tbtAttended) > reportedGuess) {
+        showToast('TBT Attended No. cannot be greater than Reported in Shift (' + reportedGuess + ')');
         return;
       }
 
@@ -1398,7 +1411,6 @@
       }
       
       var finalRemarks = autoText;
-      var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
       var enteredByName = LINK_MODE ? (AGENCY_NAME || 'Agency') : 'you';
       if (LINK_MODE && IS_UPDATE_SAVE) {
         enteredByName = enteredByName + ' (updated)';
