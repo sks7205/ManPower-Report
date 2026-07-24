@@ -212,7 +212,7 @@
     .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 20px; box-shadow: inset 0 0 0 4px var(--surface-2); }
     
     /* MODIFIED: Font family strictly set to Inter for consistency across ALL cells (names, numbers, remarks) */
-    .excel-table { width: 100%; border-collapse: collapse; font-family: 'Inter', system-ui, sans-serif; font-size: 14.5px; color: #000; }
+    .excel-table { width: 100%; border-collapse: collapse; font-family: 'Inter', system-ui, sans-serif; font-size: 13px; color: #000; }
     
     .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
@@ -220,7 +220,7 @@
     /* MODIFIED: Removed strict font override since main table class forces Inter */
     .excel-table td.num { text-align: center; }
     
-    .excel-edit-cell { width: 100%; max-width: 70px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
+    .excel-edit-cell { width: 100%; max-width: 70px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
     .excel-edit-cell:hover { border-color: #cbd5e1; }
     .excel-edit-cell:focus { outline: none; border-color: #2563eb; background: rgba(37,99,235,0.06); }
     .excel-edit-cell-text { max-width: none; text-align: left; }
@@ -244,13 +244,12 @@
     .bg-nataraj td { background-color: #FCE4EC !important; } /* Light Pink */
     
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
-    .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; font-size: 13px; }
+    .excel-table .remarks-cell { white-space: normal; min-width: 140px; text-align: left; }
     
     /* Prevent letter splitting and wrap full words naturally */
     .excel-table .tbt-cell, .excel-table .narrow-cell { 
       white-space: normal; 
       min-width: 75px; 
-      font-size: 11.5px; 
       line-height: 1.2; 
       padding: 4px 6px; 
       text-align: center; 
@@ -366,7 +365,7 @@
       </div>
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Agency Links</h2>
-        <span class="sub" style="display:block; margin-bottom:20px;">Share a dedicated link with each agency. Add each contact's name + WhatsApp number below, section-wise — tick who's in shift and notify them.</span>
+        <span class="sub" style="display:block; margin-bottom:20px;">Names below are pulled automatically from submitted shift entries, section-wise. Map a WhatsApp number to each name once, then tick who's in shift and notify them.</span>
         <div id="agencyLinksList"></div>
         <button class="btn-primary" id="notifySelectedBtn" style="margin-top:16px;">💬 Notify Selected (WhatsApp)</button>
       </div>
@@ -515,24 +514,36 @@
     var AGENCY_NAME = ''; 
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
-    var CONTACT_DIRECTORY = {};
-    try { CONTACT_DIRECTORY = JSON.parse(localStorage.getItem('contactDirectory') || '{}'); } catch(e){ CONTACT_DIRECTORY = {}; }
+    var KNOWN_NAMES = {};
+    try { KNOWN_NAMES = JSON.parse(localStorage.getItem('knownNames') || '{}'); } catch(e){ KNOWN_NAMES = {}; }
+    var NAME_PHONES = {};
+    try { NAME_PHONES = JSON.parse(localStorage.getItem('namePhones') || '{}'); } catch(e){ NAME_PHONES = {}; }
 
-    function saveContactDirectory(){
-      try { localStorage.setItem('contactDirectory', JSON.stringify(CONTACT_DIRECTORY)); } catch(e){}
+    function cleanEnteredName(raw){
+      return String(raw || '').replace(/\s*\(updated\)\s*$/i, '').trim();
     }
 
-    function addContact(key, name, phone){
-      if (!name || !phone) return;
-      if (!CONTACT_DIRECTORY[key]) CONTACT_DIRECTORY[key] = [];
-      CONTACT_DIRECTORY[key].push({ name: name, phone: phone });
-      saveContactDirectory();
+    function mergeKnownNamesFromShiftData(){
+      var changed = false;
+      Object.keys(BUNDLES).forEach(function(key){
+        var bundle = BUNDLES[key];
+        if (!KNOWN_NAMES[key]) KNOWN_NAMES[key] = [];
+        bundle.areaIds.forEach(function(id){
+          var rec = shiftData[id];
+          if (!rec || !rec.updatedBy) return;
+          var name = cleanEnteredName(rec.updatedBy);
+          if (!name || name === 'you' || name === 'Agency') return;
+          if (KNOWN_NAMES[key].indexOf(name) === -1) { KNOWN_NAMES[key].push(name); changed = true; }
+        });
+      });
+      if (changed) { try { localStorage.setItem('knownNames', JSON.stringify(KNOWN_NAMES)); } catch(e){} }
     }
 
-    function removeContact(key, idx){
-      if (!CONTACT_DIRECTORY[key]) return;
-      CONTACT_DIRECTORY[key].splice(idx, 1);
-      saveContactDirectory();
+    function phoneKey(key, name){ return key + '::' + name; }
+
+    function saveNamePhone(key, name, phone){
+      NAME_PHONES[phoneKey(key, name)] = phone;
+      try { localStorage.setItem('namePhones', JSON.stringify(NAME_PHONES)); } catch(e){}
     }
 
     function bundleFillState(bundle){
@@ -555,15 +566,13 @@
       return digits;
     }
 
-    function notifyContactWhatsApp(key, idx){
+    function notifyContactWhatsApp(key, name){
       var bundle = BUNDLES[key];
-      var contact = (CONTACT_DIRECTORY[key] || [])[idx];
-      if (!contact) return;
-      var phone = whatsappNumber(contact.phone);
-      if (!phone) { showToast('Invalid WhatsApp number'); return; }
+      var phone = whatsappNumber(NAME_PHONES[phoneKey(key, name)]);
+      if (!phone) { showToast('Add a WhatsApp number for ' + name + ' first'); return; }
       var base = window.location.href.split('?')[0];
       var link = base + '?link=' + key;
-      var msg = 'Hi ' + contact.name + ', please fill your shift entry for ' + bundle.title +
+      var msg = 'Hi ' + name + ', please fill your shift entry for ' + bundle.title +
         ' (' + currentDate() + ', Shift ' + currentShift() + '). Link: ' + link;
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
@@ -1118,9 +1127,14 @@
         var checkId = currentMultiNode.areaIds[i];
         var planVal = document.getElementById('m_plan_' + checkId).value;
         var actualVal = document.getElementById('m_actual_' + checkId).value;
+        var tbtVal = document.getElementById('m_tbt_' + checkId).value;
         // Only enforce mandatory fields for agencies
         if (LINK_MODE && (planVal !== '' && actualVal === '') || (planVal === '' && actualVal !== '') ) {
           showToast('Plan & Actual are mandatory' + cardLabel(AREAS_BY_ID[checkId]));
+          return;
+        }
+        if (LINK_MODE && (tbtVal === '' || Number(tbtVal) < 0)) {
+          showToast('TBT Attended No. is mandatory (0 or more)' + cardLabel(AREAS_BY_ID[checkId]));
           return;
         }
       }
@@ -1325,6 +1339,11 @@
       // Only agencies are forced to fill plan and actual; master user is exempt
       if (LINK_MODE && (plan !== '' && actual === '') || (plan === '' && actual !== '')) {
         showToast('Plan & Actual are mandatory');
+        return;
+      }
+
+      if (LINK_MODE && (tbtAttended === '' || Number(tbtAttended) < 0)) {
+        showToast('TBT Attended No. is mandatory (enter 0 or more)');
         return;
       }
 
@@ -1691,7 +1710,7 @@
             '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num tbt-cell">' +
               '<input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="tbtAttended" value="' + (rec.tbtAttended || '') + '" oninput="onMasterInlineEdit(\'' + areaId + '\')" placeholder="TBT" style="width:100%; max-width:55px; text-align:center; margin-bottom:4px;">' +
-              '<br><span class="inline-tbt-pct" style="font-size:12px; font-weight:bold; color:#2563eb;">' + tbtPct + '</span>' +
+              '<br><span class="inline-tbt-pct" style="font-size:13px; font-weight:bold; color:#2563eb;">' + tbtPct + '</span>' +
             '</td>';
         } else {
           tr.innerHTML =
@@ -1920,6 +1939,7 @@
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
       var keys = Object.keys(BUNDLES);
+      mergeKnownNamesFromShiftData();
 
       list.innerHTML = '';
       keys.forEach(function(key){
@@ -1930,18 +1950,20 @@
         var badge = full
           ? '<span style="font-size:11px; font-weight:700; color:var(--ok);">FILLED</span>'
           : '<span style="font-size:11px; font-weight:700; color:var(--primary);">PENDING (' + state.filled + '/' + state.total + ')</span>';
-        var contacts = CONTACT_DIRECTORY[key] || [];
+        var names = KNOWN_NAMES[key] || [];
 
-        var contactsHtml = contacts.length
-          ? contacts.map(function(c, i){
-              var esc = c.name.replace(/"/g,'&quot;');
-              return '<label style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px;">' +
-                '<input type="checkbox" data-select-key="' + key + '" data-select-idx="' + i + '"> ' + esc +
-                ' <span style="color:var(--muted); font-size:12px;">(' + c.phone + ')</span>' +
-                '<button data-remove-key="' + key + '" data-remove-idx="' + i + '" style="min-width:auto; padding:2px 8px; border-radius:6px; font-size:11px; margin-left:auto;">✕</button>' +
-                '</label>';
+        var namesHtml = names.length
+          ? names.map(function(n){
+              var esc = n.replace(/"/g,'&quot;');
+              var savedPhone = NAME_PHONES[phoneKey(key, n)] || '';
+              return '<div style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:14px;">' +
+                '<label style="display:flex; align-items:center; gap:8px; flex:1; min-width:100px;">' +
+                '<input type="checkbox" data-select-key="' + key + '" data-select-name="' + esc + '"> ' + esc +
+                '</label>' +
+                '<input type="tel" placeholder="WhatsApp no." value="' + savedPhone.replace(/"/g,'&quot;') + '" data-phone-key="' + key + '" data-phone-name="' + esc + '" style="width:120px; padding:6px 8px; font-size:13px;">' +
+                '</div>';
             }).join('')
-          : '<span style="font-size:12px; color:var(--muted);">No contacts added yet</span>';
+          : '<span style="font-size:12px; color:var(--muted);">No one has submitted data for this section yet</span>';
 
         var row = document.createElement('div');
         row.style.cssText = 'padding:14px 0; border-bottom:1px solid var(--line);';
@@ -1949,12 +1971,7 @@
           '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">' +
             '<span style="font-size:15px; font-weight:600;">' + bundle.title + '</span>' + badge +
           '</div>' +
-          '<div style="margin-bottom:10px;">' + contactsHtml + '</div>' +
-          '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">' +
-            '<input type="text" placeholder="Name" data-newname="' + key + '" style="flex:1; min-width:100px; padding:8px 10px; font-size:13px;">' +
-            '<input type="tel" placeholder="WhatsApp number" data-newphone="' + key + '" style="flex:1; min-width:120px; padding:8px 10px; font-size:13px;">' +
-            '<button class="btn-secondary" style="min-width:auto; padding:8px 14px; border-radius:8px;" data-addcontact="' + key + '">Add</button>' +
-          '</div>' +
+          '<div style="margin-bottom:10px;">' + namesHtml + '</div>' +
           '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
             '<a href="' + link + '" target="_blank" rel="noopener" class="btn-secondary" style="min-width:auto; padding:8px 14px; display:inline-flex; align-items:center; text-decoration:none; border-radius:8px;">Open</a>' +
             '<button class="btn-primary" style="min-width:auto; padding:8px 14px; border-radius:8px;" data-link="' + link + '" data-title="' + bundle.title + '">Share Link</button>' +
@@ -1967,22 +1984,9 @@
           shareLink(btn.getAttribute('data-link'), btn.getAttribute('data-title'));
         });
       });
-      list.querySelectorAll('button[data-addcontact]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          var key = btn.getAttribute('data-addcontact');
-          var nameEl = list.querySelector('input[data-newname="' + key + '"]');
-          var phoneEl = list.querySelector('input[data-newphone="' + key + '"]');
-          var name = nameEl.value.trim();
-          var phone = phoneEl.value.trim();
-          if (!name || !phone) { showToast('Enter both name and WhatsApp number'); return; }
-          addContact(key, name, phone);
-          renderAgencyLinks();
-        });
-      });
-      list.querySelectorAll('button[data-remove-key]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          removeContact(btn.getAttribute('data-remove-key'), Number(btn.getAttribute('data-remove-idx')));
-          renderAgencyLinks();
+      list.querySelectorAll('input[data-phone-key]').forEach(function(inp){
+        inp.addEventListener('change', function(){
+          saveNamePhone(inp.getAttribute('data-phone-key'), inp.getAttribute('data-phone-name'), inp.value.trim());
         });
       });
     }
@@ -1991,7 +1995,7 @@
       var checked = document.querySelectorAll('#agencyLinksList input[data-select-key]:checked');
       if (!checked.length) { showToast('Select at least one person first'); return; }
       checked.forEach(function(cb){
-        notifyContactWhatsApp(cb.getAttribute('data-select-key'), Number(cb.getAttribute('data-select-idx')));
+        notifyContactWhatsApp(cb.getAttribute('data-select-key'), cb.getAttribute('data-select-name'));
       });
     }
 
