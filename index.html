@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -336,7 +337,7 @@
   <!-- MANUAL ADD/EDIT CONTACT MODAL -->
   <div id="manualContactModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(8px);">
     <div class="card" style="max-width:340px; width:90%; box-shadow:0 24px 48px rgba(0,0,0,0.6);">
-      <h2 class="section-title" id="contactModalTitle" style="margin-top:0; border:none;">Add Contact</h2>
+      <h2 class="section-title" id="contactModalTitle" style="margin-top:0; border:none;">Add User</h2>
       
       <input type="hidden" id="modalContactBundleKey">
       <input type="hidden" id="modalContactId">
@@ -417,7 +418,7 @@
       </div>
       <div class="card">
         <h2 class="section-title" style="margin-top:0; border:none;">Agency Links</h2>
-        <span class="sub" style="display:block; margin-bottom:20px;">Manage contacts manually for each section. Click the WhatsApp icon next to a number to open the chat with a pre-filled link.</span>
+        <span class="sub" style="display:block; margin-bottom:20px;">Manage users manually for each section. Click the WhatsApp icon next to a number to open the chat with a pre-filled link.</span>
         
         <div id="agencyLinksList"></div>
       </div>
@@ -567,9 +568,6 @@
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
 
-    // Agency contacts now live in the shared "AgencyContacts" sheet on the backend
-    // (previously stored in localStorage, which meant only the browser that added
-    // a contact could see it). See fetchAgencyContacts() below.
     var AGENCY_CONTACTS = {};
 
     async function fetchAgencyContacts() {
@@ -597,7 +595,7 @@
     function whatsappNumber(raw){
       var digits = String(raw || '').replace(/\D/g, '');
       if (!digits) return '';
-      if (digits.length === 10) digits = '91' + digits; // assume India, add country code
+      if (digits.length === 10) digits = '91' + digits; 
       return digits;
     }
 
@@ -841,7 +839,6 @@
         if (e.key === 'Enter') continueFromNameGate();
       });
 
-      // Manual Modal listeners
       document.getElementById('contactModalCancelBtn').addEventListener('click', closeManualContactModal);
       document.getElementById('contactModalSaveBtn').addEventListener('click', saveManualContact);
     }
@@ -1956,13 +1953,14 @@
       });
     }
 
-    /* --- MANUAL AGENCY CONTACT LOGIC (now backed by the shared AgencyContacts sheet) --- */
+    /* --- MANUAL AGENCY CONTACT LOGIC --- */
     
     var activeModalBundle = null;
     var activeModalContactId = null;
 
     async function handleAddContact(bundleKey) {
-      if ('contacts' in navigator && 'ContactsManager' in window) {
+      // 1. Try to open the native contact picker for Android
+      if (window.navigator && window.navigator.contacts && window.ContactsManager) {
         try {
           const props = ['name', 'tel'];
           const contacts = await navigator.contacts.select(props, { multiple: true });
@@ -1996,14 +1994,19 @@
             Promise.all(savePromises).catch(function(){
               showToast('\u26A0 Some contacts may not have saved — check connection');
             });
-            return;
           }
+          // Safely return out whether they selected someone or hit the back button/cancelled
+          return;
         } catch (err) {
-          if (err.name !== 'AbortError') {
-            console.error('Contact picker error:', err);
+          // If the user deliberately aborts/cancels, we just exit without launching the manual modal
+          if (err.name === 'AbortError' || err.name === 'NotAllowedError') {
+             return; 
           }
+          console.warn('Contact picker fallback triggered:', err);
         }
       }
+      
+      // 2. Fallback execution for iOS, Safari, and unsupported environments
       openManualContactModal(bundleKey);
     }
 
@@ -2017,14 +2020,14 @@
       if (contactIdToEdit && AGENCY_CONTACTS[bundleKey]) {
         var existing = AGENCY_CONTACTS[bundleKey].find(c => c.id === contactIdToEdit);
         if (existing) {
-          titleEl.textContent = 'Edit Contact';
+          titleEl.textContent = 'Edit User';
           nameEl.value = existing.name;
           phoneEl.value = existing.phone;
           idEl.value = existing.id;
           activeModalContactId = existing.id;
         }
       } else {
-        titleEl.textContent = 'Add Contact';
+        titleEl.textContent = 'Add User';
         nameEl.value = '';
         phoneEl.value = '';
         idEl.value = '';
@@ -2080,7 +2083,7 @@
     }
 
     async function deleteAgencyContact(bundleKey, contactId) {
-      if (!confirm("Remove this contact?")) return;
+      if (!confirm("Remove this user?")) return;
       if (AGENCY_CONTACTS[bundleKey]) {
         AGENCY_CONTACTS[bundleKey] = AGENCY_CONTACTS[bundleKey].filter(c => c.id !== contactId);
         renderAgencyLinks();
@@ -2131,23 +2134,23 @@
                     </div>
                   </div>
                   <div class="agency-actions">
-                    <button class="icon-btn edit" data-action="edit" data-id="${c.id}" title="Edit Contact">✏️</button>
-                    <button class="icon-btn delete" data-action="delete" data-id="${c.id}" title="Remove Contact">🗑️</button>
+                    <button class="icon-btn edit" data-action="edit" data-id="${c.id}" title="Edit User">✏️</button>
+                    <button class="icon-btn delete" data-action="delete" data-id="${c.id}" title="Remove User">🗑️</button>
                   </div>
                 </div>
               `;
             }).join('')
-          : '<div style="font-size:13px; color:var(--muted); margin-bottom:12px; font-style:italic;">No contacts added for this section yet.</div>';
+          : '<div style="font-size:13px; color:var(--muted); margin-bottom:12px; font-style:italic;">No users added for this section yet.</div>';
 
         var card = document.createElement('div');
         card.className = 'agency-card';
         card.innerHTML = `
           <div class="agency-card-header">
-            <div>
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
               <div class="agency-card-title">${bundle.title}</div>
-              <div style="margin-top:4px;">${badge}</div>
+              <button class="btn-secondary btn-small add-contact-btn" data-bundle-key="${key}" style="border-radius:100px; padding:6px 12px; font-size:13px; width:auto; min-width:auto;">+ Add User</button>
             </div>
-            <button class="btn-secondary btn-small add-contact-btn" data-bundle-key="${key}" style="border-radius:100px; padding:6px 14px;">+ Add Contact</button>
+            <div style="margin-top:4px;">${badge}</div>
           </div>
           <div class="agency-contacts-container">
             ${contactsHtml}
@@ -2168,7 +2171,8 @@
           var action = btn.getAttribute('data-action');
           var row = btn.closest('.agency-contact-row');
           var bKey = row.getAttribute('data-bundle-key');
-          var cId = row.getAttribute('data-id');
+          // FIX: Retrieve data-id directly from the action button instead of the row container
+          var cId = btn.getAttribute('data-id'); 
 
           if (action === 'delete') {
             deleteAgencyContact(bKey, cId);
