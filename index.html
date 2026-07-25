@@ -567,13 +567,18 @@
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
 
-    // Manual Contacts Setup
+    // Agency contacts now live in the shared "AgencyContacts" sheet on the backend
+    // (previously stored in localStorage, which meant only the browser that added
+    // a contact could see it). See fetchAgencyContacts() below.
     var AGENCY_CONTACTS = {};
-    try { AGENCY_CONTACTS = JSON.parse(localStorage.getItem('agencyContacts') || '{}'); } catch(e){ AGENCY_CONTACTS = {}; }
 
-    function saveAgencyContacts() {
-      try { localStorage.setItem('agencyContacts', JSON.stringify(AGENCY_CONTACTS)); } catch(e){}
-      renderAgencyLinks();
+    async function fetchAgencyContacts() {
+      try {
+        const res = await fetch(SCRIPT_URL + '?action=getContacts');
+        AGENCY_CONTACTS = await res.json();
+      } catch (err) {
+        console.error('Could not load agency contacts', err);
+      }
     }
 
     function bundleFillState(bundle){
@@ -755,6 +760,7 @@
         }
 
         await refreshShiftData();
+        await fetchAgencyContacts();
 
         var urlParams = new URLSearchParams(window.location.search);
         var linkKey = urlParams.get('link');
@@ -786,6 +792,7 @@
     async function syncData(silent) {
       if (CURRENT_VIEW === 'entry' || CURRENT_VIEW === 'multi') return;
       await refreshShiftData();
+      await fetchAgencyContacts();
       if (CURRENT_VIEW === 'custom') { buildCustomTable(); renderAgencyLinks(); }
       else if (CURRENT_VIEW === 'master') { buildMasterTable(); }
       else if (CURRENT_VIEW === 'picker') { renderPicker(); }
@@ -1949,7 +1956,7 @@
       });
     }
 
-    /* --- NEW MANUAL AGENCY CONTACT LOGIC --- */
+    /* --- MANUAL AGENCY CONTACT LOGIC (now backed by the shared AgencyContacts sheet) --- */
     
     var activeModalBundle = null;
     var activeModalContactId = null;
@@ -1962,22 +1969,33 @@
           
           if (contacts && contacts.length > 0) {
             if (!AGENCY_CONTACTS[bundleKey]) AGENCY_CONTACTS[bundleKey] = [];
-            
+            var savePromises = [];
+            var addedByName = (LINK_MODE ? AGENCY_NAME : 'admin') || 'unknown';
+
             contacts.forEach(function(c) {
               var cName = (c.name && c.name.length > 0) ? c.name[0] : 'Unknown';
               var cPhoneRaw = (c.tel && c.tel.length > 0) ? c.tel[0] : '';
               var formattedPhone = whatsappNumber(cPhoneRaw);
               
               if (formattedPhone) {
-                AGENCY_CONTACTS[bundleKey].push({
-                  id: 'c_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-                  name: cName,
-                  phone: formattedPhone
-                });
+                var contactId = 'c_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                AGENCY_CONTACTS[bundleKey].push({ id: contactId, name: cName, phone: formattedPhone });
+                savePromises.push(
+                  fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'saveContact', data: {
+                      bundleKey: bundleKey, id: contactId, name: cName, phone: formattedPhone, addedBy: addedByName
+                    }})
+                  })
+                );
               }
             });
-            saveAgencyContacts();
+            renderAgencyLinks();
             showToast('Contacts added successfully');
+            Promise.all(savePromises).catch(function(){
+              showToast('\u26A0 Some contacts may not have saved — check connection');
+            });
             return;
           }
         } catch (err) {
@@ -2023,7 +2041,7 @@
       activeModalContactId = null;
     }
 
-    function saveManualContact() {
+    async function saveManualContact() {
       if (!activeModalBundle) return;
       var name = document.getElementById('modalContactName').value.trim();
       var rawPhone = document.getElementById('modalContactPhone').value.trim();
@@ -2032,31 +2050,49 @@
       if (!name) { showToast('Name is required'); return; }
       if (!formattedPhone) { showToast('Valid phone number is required'); return; }
 
-      if (!AGENCY_CONTACTS[activeModalBundle]) AGENCY_CONTACTS[activeModalBundle] = [];
-      
-      if (activeModalContactId) {
-        var idx = AGENCY_CONTACTS[activeModalBundle].findIndex(c => c.id === activeModalContactId);
-        if (idx !== -1) {
-          AGENCY_CONTACTS[activeModalBundle][idx].name = name;
-          AGENCY_CONTACTS[activeModalBundle][idx].phone = formattedPhone;
-        }
+      var bundleKey = activeModalBundle;
+      var contactId = activeModalContactId || ('c_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
+
+      if (!AGENCY_CONTACTS[bundleKey]) AGENCY_CONTACTS[bundleKey] = [];
+      var idx = AGENCY_CONTACTS[bundleKey].findIndex(c => c.id === contactId);
+      var newContact = { id: contactId, name: name, phone: formattedPhone };
+      if (idx !== -1) {
+        AGENCY_CONTACTS[bundleKey][idx] = newContact;
       } else {
-        AGENCY_CONTACTS[activeModalBundle].push({
-          id: 'c_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-          name: name,
-          phone: formattedPhone
-        });
+        AGENCY_CONTACTS[bundleKey].push(newContact);
       }
-      
-      saveAgencyContacts();
+
+      renderAgencyLinks();
       closeManualContactModal();
+
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveContact', data: {
+            bundleKey: bundleKey, id: contactId, name: name, phone: formattedPhone,
+            addedBy: (LINK_MODE ? AGENCY_NAME : 'admin') || 'unknown'
+          }})
+        });
+      } catch (err) {
+        showToast('\u26A0 Could not save contact — check connection and retry');
+      }
     }
 
-    function deleteAgencyContact(bundleKey, contactId) {
+    async function deleteAgencyContact(bundleKey, contactId) {
       if (!confirm("Remove this contact?")) return;
       if (AGENCY_CONTACTS[bundleKey]) {
         AGENCY_CONTACTS[bundleKey] = AGENCY_CONTACTS[bundleKey].filter(c => c.id !== contactId);
-        saveAgencyContacts();
+        renderAgencyLinks();
+      }
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'deleteContact', data: { id: contactId } })
+        });
+      } catch (err) {
+        showToast('\u26A0 Could not delete contact — check connection and retry');
       }
     }
 
