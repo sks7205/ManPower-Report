@@ -294,7 +294,6 @@
     .icon-btn.delete:hover { color: var(--danger); background: rgba(239, 68, 68, 0.15); }
     .icon-btn.whatsapp { color: #10b981; } 
     .icon-btn.whatsapp:hover { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-    .icon-btn.native-share:hover { background: var(--primary-dim); color: var(--primary); }
 
     .toast { 
       position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); 
@@ -2107,8 +2106,14 @@
       var base = window.location.href.split('?')[0];
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
+
+      var expandedBundles = {};
+      list.querySelectorAll('.agency-contacts-container.expanded').forEach(function(el) {
+        var key = el.getAttribute('data-bundle-key');
+        if (key) expandedBundles[key] = true;
+      });
+
       var keys = Object.keys(BUNDLES);
-      
       var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
 
       list.innerHTML = '';
@@ -2149,12 +2154,15 @@
             }).join('')
           : '<div style="font-size:13px; color:var(--muted); margin-bottom:12px; font-style:italic;">No users added for this section yet.</div>';
 
+        var isExpanded = expandedBundles[key] ? 'expanded' : '';
+        var chevronRot = expandedBundles[key] ? 'transform:rotate(180deg);' : '';
+
         var card = document.createElement('div');
         card.className = 'agency-card';
         card.innerHTML = `
           <div class="agency-card-header toggle-header">
             <div style="display:flex; align-items:center; gap:8px;">
-              <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted); transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted); transition:transform 0.2s; ${chevronRot}"><polyline points="6 9 12 15 18 9"></polyline></svg>
               <div>
                 <div class="agency-card-title">${bundle.title}</div>
                 <div style="margin-top:4px;">${badge}</div>
@@ -2162,7 +2170,7 @@
             </div>
             <button class="btn-secondary btn-small add-contact-btn" data-bundle-key="${key}" style="border-radius:100px; padding:6px 12px; font-size:13px; width:auto; min-width:auto;">+ Add User</button>
           </div>
-          <div class="agency-contacts-container">
+          <div class="agency-contacts-container ${isExpanded}" data-bundle-key="${key}">
             ${contactsHtml}
           </div>
         `;
