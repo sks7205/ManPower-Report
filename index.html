@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manpower Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
@@ -232,7 +232,6 @@
     .bg-taron td { background-color: #F3E5F5 !important; }   
     .bg-tenon td { background-color: #E0F7FA !important; }   
     .bg-uil td { background-color: #FFEBEE !important; }     
-    .bg-sse td { background-color: #FFFDE7 !important; }     
     .bg-lloyd td { background-color: #EDE7F6 !important; }   
     .bg-gmpl td { background-color: #F1F8E9 !important; }    
     .bg-nataraj td { background-color: #FCE4EC !important; } 
@@ -558,7 +557,7 @@
 
   <script>
     // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOlIvI_6Kkxx52dSZ244K-8QBV5CCxaRf0Y8lsTDl9A7M1lXgItKxfQXePGHtoXioN/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPlgEEoaqcfX1BMP1rszcZu-EATDQ34AKMAsJyxm2rvKj6akrJRKGnQN0EYM3FM3dN/exec";
 
     var AREAS = [];
     var AREAS_BY_ID = {};
@@ -634,7 +633,7 @@
       'mech':       { title: 'TKIL Mech',           areaIds: ['TKIL_MECH_ARS2','TKIL_MECH_ARS3','TKIL_MECH_OTHERS'] },
       'ele':        { title: 'TKIL Ele',            areaIds: ['TKIL_ELE_ARS2','TKIL_ELE_ARS3','TKIL_ELE_OTHERS'] },
       'ars3':       { title: 'ARS3 — All Sections', areaIds: ['VL_ARS3','SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
-      'warehouse':  { title: 'Warehouse',           areaIds: ['TARON_10T_WAREHOUSE','TARON_3T_WAREHOUSE','SSE','SKE_OP_ATV'] },
+      'warehouse':  { title: 'Warehouse',           areaIds: ['TARON_10T_WAREHOUSE','TARON_3T_WAREHOUSE','SKE_OP_ATV'] },
       'gmpl':       { title: 'GMPL',                areaIds: ['GMPL'] },
       'taron_ars2': { title: 'TARON ARS2',          areaIds: ['TARON_3T_ARS2','TARON_10T_ARS2'] }
     };
@@ -733,9 +732,11 @@
       try {
         const res = await fetch(SCRIPT_URL + '?action=getInitData');
         const data = await res.json();
-        AREAS = data.areas;
-        TREE = data.tree;
         
+        // Filter out SSE if it comes from backend to ensure frontend removes it
+        AREAS = data.areas.filter(a => a.id !== 'SSE');
+        TREE = data.tree.filter(t => (t.id || t.areaId) !== 'SSE');
+
         var tkilGroup = TREE.find(n => n.id === 'TKIL');
         if (tkilGroup) {
           tkilGroup.children.forEach(c => {
@@ -1505,7 +1506,7 @@
       'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2', 'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR',
       'SKE_OA_BUTTCLEAN', 'SKE_OA_BELTHK', 'SKE_OA_LADIES', 'TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE',
       'TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH', 'TENON_HK', 'TENON_DULEVO',
-      'SSE', 'SKE_OP_ATV', 'LLOYD', 'UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA', 'GMPL', 'NATARAJ'
+      'SKE_OP_ATV', 'LLOYD', 'UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA', 'GMPL', 'NATARAJ'
     ];
 
     function isOTHidden(){ return currentShift() === 'A'; }
@@ -1527,6 +1528,7 @@
       });
       return res;
     }
+
     function recalcMasterFooter() {
       var mTotals = sumMetricsGlobal(AREA_DIRECT_IDS.concat(AREA_INDIRECT_IDS));
       var mDirectTotals = sumMetricsGlobal(AREA_DIRECT_IDS);
@@ -1691,15 +1693,8 @@
       appendRow('Tenon hk', getMetrics('TENON_HK'), '', false, {type: 'leaf', id: 'TENON_HK'});
       appendRow('Tenon dulevo', getMetrics('TENON_DULEVO'), '', false, {type: 'leaf', id: 'TENON_DULEVO'});
 
-      var sseMetrics = getMetrics('SSE'), skeAtvMetrics = getMetrics('SKE_OP_ATV');
-      var sseSkeSum = {
-        plan: sseMetrics.plan + skeAtvMetrics.plan, reported: sseMetrics.reported + skeAtvMetrics.reported,
-        inOT: sseMetrics.inOT + skeAtvMetrics.inOT, actual: sseMetrics.actual + skeAtvMetrics.actual,
-        tbtAttended: sseMetrics.tbtAttended + skeAtvMetrics.tbtAttended,
-        remarks: "SKE - " + skeAtvMetrics.actual
-      };
-      if (sseMetrics.remarks) sseSkeSum.remarks += "; " + sseMetrics.remarks;
-      appendRow('SSE + SKE', sseSkeSum, 'depth-2', false, {type: 'group', path: []}); 
+      // Added ATV Operator Row to replace SSE + SKE grouping
+      appendRow('ATV Operator', getMetrics('SKE_OP_ATV'), '', false, {type: 'leaf', id: 'SKE_OP_ATV'}); 
 
       appendRow('LLOYD', getMetrics('LLOYD'), '', false, {type: 'leaf', id: 'LLOYD'});
       appendRow('UIL', sumMetrics(['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA']), 'depth-1', false, {type: 'group', path: ['UIL']});
@@ -1842,7 +1837,7 @@
         return groupTotal;
       }
       
-      var singleIds = ['SSE', 'LLOYD', 'GMPL', 'NATARAJ'];
+      var singleIds = ['LLOYD', 'GMPL', 'NATARAJ'];
       var mainTree = TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) === -1; });
       var bottomTree = TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) !== -1; });
 
@@ -1854,7 +1849,6 @@
         if (id === 'TENON') return 'bg-tenon';
         if (id === 'UIL') return 'bg-uil';
         
-        if (id === 'SSE') return 'bg-sse';
         if (id === 'LLOYD') return 'bg-lloyd';
         if (id === 'GMPL') return 'bg-gmpl';
         if (id === 'NATARAJ') return 'bg-nataraj';
