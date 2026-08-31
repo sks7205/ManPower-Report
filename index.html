@@ -598,25 +598,30 @@
       return Math.round((att / rep) * 100) + '%';
     }
 
-    function calculateMtdPct(areaIds) {
-      if (!Array.isArray(areaIds)) areaIds = [areaIds];
-      var totalPlan = 0, totalActual = 0;
-      areaIds.forEach(function(id){
-        var m = mtdData[id];
-        if (m) {
-          totalPlan += Number(m.plan || 0);
-          totalActual += Number(m.actual || 0);
-        } else {
-          var cur = shiftData[id];
-          if (cur) {
-            totalPlan += Number(cur.plan || 0);
-            totalActual += Number(cur.actual || 0);
-          }
-        }
-      });
-      if (!totalPlan) return '';
-      return Math.round((totalActual / totalPlan) * 100) + '%';
+    // Function to compute MTD Attendance % across daily records
+function calculateMtdPct(areaIds) {
+  if (!Array.isArray(areaIds)) areaIds = [areaIds];
+  var totalPlan = 0;
+  var totalActual = 0;
+
+  areaIds.forEach(function(id) {
+    // 1. If backend MTD cumulative summary exists
+    if (mtdData && mtdData[id]) {
+      totalPlan += Number(mtdData[id].plan || 0);
+      totalActual += Number(mtdData[id].actual || 0);
+    } 
+    // 2. Fallback to current shift data if MTD record is not yet aggregated
+    else if (shiftData && shiftData[id]) {
+      totalPlan += Number(shiftData[id].plan || 0);
+      totalActual += Number(shiftData[id].actual || 0);
     }
+  });
+
+  if (totalPlan === 0) return '0%';
+  
+  var mtdPercent = Math.round((totalActual / totalPlan) * 100);
+  return mtdPercent + '%';
+}
 
     function whatsappNumber(raw){
       var digits = String(raw || '').replace(/\D/g, '');
