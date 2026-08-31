@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
+    /* Premium Industrial Dark Theme */
     :root {
       --bg: #090e17;
       --surface: #131b27;
@@ -15,10 +16,10 @@
       --line: #2d3748;
       --text: #f8fafc;
       --muted: #94a3b8;
-      --primary: #f59e0b;
+      --primary: #f59e0b; /* Amber */
       --primary-hover: #fbbf24;
       --primary-dim: rgba(245, 158, 11, 0.15);
-      --accent: #14b8a6;
+      --accent: #14b8a6; /* Teal */
       --accent-dim: rgba(20, 184, 166, 0.15);
       --danger: #ef4444;
       --danger-dim: #fee2e2;
@@ -40,6 +41,7 @@
       padding-bottom: 80px; 
     }
     
+    /* Animated Top Glow */
     .top-glow {
       height: 4px; 
       width: 100%; 
@@ -52,6 +54,7 @@
     }
     @keyframes flow { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
+    /* Centered Header & Controls */
     header { 
       padding: 32px 20px 20px; 
       display: flex; 
@@ -114,13 +117,14 @@
       font-weight: 500;
     }
     
-    main { padding: 0 18px; max-width: 980px; margin: 0 auto; }
+    main { padding: 0 18px; max-width: 940px; margin: 0 auto; }
     .card { 
       background: var(--surface); border: 1px solid var(--line); 
       border-radius: var(--radius); padding: 24px; margin-bottom: 20px; 
       box-shadow: var(--shadow-md);
     }
     
+    /* Top Navigation Buttons */
     .top-nav-buttons { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
     .top-nav-buttons button { flex: 1; padding: 14px; font-size: 15px; min-width: 140px; }
     
@@ -244,9 +248,9 @@
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: nowrap; text-align: left; }
     
-    .excel-table .tbt-cell, .excel-table .narrow-cell, .excel-table .mtd-cell { 
+    .excel-table .tbt-cell, .excel-table .narrow-cell { 
       white-space: normal; 
-      min-width: 65px; 
+      min-width: 70px; 
       line-height: 1.2; 
       padding: 4px 6px; 
       text-align: center; 
@@ -257,6 +261,7 @@
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .dash-actions button { flex: 1; min-width: 140px; }
 
+    /* AGENCY CARD SPECIFIC STYLES */
     .agency-card {
       background: var(--surface-2); border: 1px solid var(--line);
       border-radius: 12px; padding: 16px; margin-bottom: 16px;
@@ -266,7 +271,7 @@
       flex-wrap: wrap; gap: 10px; cursor: pointer;
     }
     .agency-contacts-container {
-      display: none;
+      display: none; /* Collapsed by default */
       border-top: 1px solid var(--line);
       padding-top: 12px;
       margin-top: 12px;
@@ -344,19 +349,24 @@
     </div>
   </div>
 
+  <!-- MANUAL ADD/EDIT CONTACT MODAL -->
   <div id="manualContactModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(8px);">
     <div class="card" style="max-width:340px; width:90%; box-shadow:0 24px 48px rgba(0,0,0,0.6);">
       <h2 class="section-title" id="contactModalTitle" style="margin-top:0; border:none;">Add User</h2>
+      
       <input type="hidden" id="modalContactBundleKey">
       <input type="hidden" id="modalContactId">
+      
       <div class="field" style="align-items:flex-start; margin-bottom:16px;">
         <label>Name</label>
         <input type="text" id="modalContactName" placeholder="e.g. Rahul Supervisor" style="width:100%; box-sizing:border-box;">
       </div>
+      
       <div class="field" style="align-items:flex-start; margin-bottom:24px;">
         <label>WhatsApp Number</label>
         <input type="tel" id="modalContactPhone" placeholder="e.g. 9876543210" style="width:100%; box-sizing:border-box;">
       </div>
+      
       <div style="display:flex; gap:12px;">
         <button class="btn-ghost" id="contactModalCancelBtn" style="flex:1;">Cancel</button>
         <button class="btn-primary" id="contactModalSaveBtn" style="flex:1;">Save</button>
@@ -365,6 +375,7 @@
   </div>
 
   <main>
+    
     <div id="restrictedView" style="display:none;">
       <div class="card" style="text-align:center; padding:64px 20px;">
         <div style="font-size:48px; margin-bottom:16px;">🔒</div>
@@ -374,6 +385,7 @@
     </div>
 
     <div id="customDashboardView" style="display:none;">
+      
       <div class="top-nav-buttons">
         <button class="btn-primary" onclick="showPicker()">✏️ Data Entry</button>
         <button class="btn-secondary" onclick="showMasterDashboard()">📊 Master Report</button>
@@ -399,7 +411,7 @@
               <tr>
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTop">Shift-X</th>
-                <th colspan="6" id="thDate">Date Time</th>
+                <th colspan="5" id="thDate">Date Time</th>
               </tr>
               <tr>
                 <th>Plan</th>
@@ -409,7 +421,6 @@
                 <th class="narrow-cell">Shortage</th>
                 <th>Remarks</th>
                 <th class="tbt-cell">TBT<br>Compliance</th>
-                <th class="mtd-cell">MTD<br>Attd %</th>
               </tr>
             </thead>
             <tbody id="dashBody"></tbody>
@@ -424,6 +435,7 @@
       <div class="card">
         <h2 class="section-title" style="margin-top:0; border:none;">Agency Links</h2>
         <span class="sub" style="display:block; margin-bottom:20px;">Manage users manually for each section. Tap a row to expand/collapse. Click the WhatsApp icon next to a number to message the user.</span>
+        
         <div id="agencyLinksList"></div>
       </div>
     </div>
@@ -441,7 +453,7 @@
               <tr>
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTopMaster">Shift-X</th>
-                <th colspan="6" id="thDateMaster">Date Time</th>
+                <th colspan="5" id="thDateMaster">Date Time</th>
               </tr>
               <tr>
                 <th>Plan</th>
@@ -451,7 +463,6 @@
                 <th class="narrow-cell">Shortage</th>
                 <th>Remarks</th>
                 <th class="tbt-cell">TBT<br>Compliance</th>
-                <th class="mtd-cell">MTD<br>Attd %</th>
               </tr>
             </thead>
             <tbody id="masterDashBody"></tbody>
@@ -498,8 +509,10 @@
         <div id="entryBackBtnWrap">
           <button class="back-btn" onclick="showPicker()">&#8592; Back</button>
         </div>
+        
         <div id="areaTagWrap"></div>
         <p class="area-title" id="areaTitle"></p>
+
         <div class="grid3" style="margin-top: 24px;">
           <div class="field">
             <label for="planInput">Plan</label>
@@ -518,11 +531,14 @@
             <input type="number" id="tbtInput" min="0" inputmode="numeric" autocomplete="off">
           </div>
         </div>
+
         <div class="actual-readout">
           <span class="sub">Reported in Current<br/>Shift</span>
           <span class="num" id="reportedBig">0</span>
         </div>
+
         <div id="remarkPromptWrap"></div>
+
         <button class="btn-primary" style="margin-top:24px;" id="saveBtn">Save Entry</button>
         <button class="btn-secondary" style="margin-top:24px; display:none;" id="updateBtn">✏️ Update My Entry</button>
         <div class="status-line" id="areaStatus"></div>
@@ -537,12 +553,15 @@
         <h2 class="area-title" id="multiEntryTitle" style="color:var(--primary); margin-top:12px; font-size:26px;"></h2>
         <span class="sub" style="margin-bottom:8px; display:block;">Enter numbers for all sections below, then save once.</span>
       </div>
+      
       <div id="multiEntryForms"></div>
+      
       <div class="card" style="margin-top:24px;">
         <button class="btn-primary" id="multiSaveBtn">Save All Sections</button>
         <div class="status-line" id="multiAreaStatus"></div>
       </div>
     </div>
+
   </main>
 
   <div class="toast" id="toast"></div>
@@ -554,7 +573,6 @@
     var AREAS_BY_ID = {};
     var TREE = [];
     var shiftData = {};
-    var mtdData = {};
     var currentPath = [];
     var currentLeaf = null;
     var currentMultiNode = null;
@@ -576,15 +594,6 @@
       }
     }
 
-    async function fetchMtdData() {
-      try {
-        const res = await fetch(SCRIPT_URL + '?action=getMtdData&date=' + currentDate());
-        mtdData = await res.json();
-      } catch (err) {
-        console.error('Could not load MTD data', err);
-      }
-    }
-
     function bundleFillState(bundle){
       if (!bundle || !bundle.areaIds || !bundle.areaIds.length) return { filled: 0, total: 0 };
       var filled = bundle.areaIds.filter(function(id){ return !!shiftData[id]; }).length;
@@ -597,31 +606,6 @@
       var rep = Number(data.reported || 1);
       return Math.round((att / rep) * 100) + '%';
     }
-
-    // Function to compute MTD Attendance % across daily records
-function calculateMtdPct(areaIds) {
-  if (!Array.isArray(areaIds)) areaIds = [areaIds];
-  var totalPlan = 0;
-  var totalActual = 0;
-
-  areaIds.forEach(function(id) {
-    // 1. If backend MTD cumulative summary exists
-    if (mtdData && mtdData[id]) {
-      totalPlan += Number(mtdData[id].plan || 0);
-      totalActual += Number(mtdData[id].actual || 0);
-    } 
-    // 2. Fallback to current shift data if MTD record is not yet aggregated
-    else if (shiftData && shiftData[id]) {
-      totalPlan += Number(shiftData[id].plan || 0);
-      totalActual += Number(shiftData[id].actual || 0);
-    }
-  });
-
-  if (totalPlan === 0) return '0%';
-  
-  var mtdPercent = Math.round((totalActual / totalPlan) * 100);
-  return mtdPercent + '%';
-}
 
     function whatsappNumber(raw){
       var digits = String(raw || '').replace(/\D/g, '');
@@ -650,15 +634,16 @@ function calculateMtdPct(areaIds) {
       return area.fullName;
     }
 
+    // Updated Bundles with TKIL_JCB added to scoopbath, warehouse, and rmt
     const BUNDLES = {
-      'scoopbath':  { title: 'Scoopbath',           areaIds: ['SKE_OA_SCOOPBATH', 'TARON_10T_SCOOPBATH', 'UIL_JCB_BATHPLANT'] },
-      'rmt':        { title: 'RMT',                 areaIds: ['UIL_JCB_RMT', 'UIL_HYWA'] },
+      'scoopbath':  { title: 'Scoopbath',           areaIds: ['SKE_OA_SCOOPBATH', 'TARON_10T_SCOOPBATH', 'UIL_JCB_BATHPLANT', 'TKIL_JCB'] },
+      'rmt':        { title: 'RMT',                 areaIds: ['UIL_JCB_RMT', 'UIL_HYWA', 'TKIL_JCB'] },
       'ske':        { title: 'SKE Supervisor',      areaIds: ['SKE_OA_ARS2','SKE_OA_ARS3','SKE_OA_SCOOPBATH','SKE_OA_RODREPAIR','SKE_OA_BUTTCLEAN','SKE_OA_BELTHK','SKE_OA_LADIES','SKE_OP_ARS2','SKE_OP_ARS3','SKE_OP_ATV'] },
       'nataraj':    { title: 'Nataraj Eng',         areaIds: ['NATARAJ'] },
       'mech':       { title: 'TKIL Mech',           areaIds: ['TKIL_MECH_ARS2','TKIL_MECH_ARS3','TKIL_MECH_OTHERS'] },
       'ele':        { title: 'TKIL Ele',            areaIds: ['TKIL_ELE_ARS2','TKIL_ELE_ARS3','TKIL_ELE_OTHERS'] },
       'ars3':       { title: 'ARS3 — All Sections', areaIds: ['VL_ARS3','SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
-      'warehouse':  { title: 'Warehouse',           areaIds: ['TARON_10T_WAREHOUSE','TARON_3T_WAREHOUSE','SKE_OP_ATV'] },
+      'warehouse':  { title: 'Warehouse',           areaIds: ['TARON_10T_WAREHOUSE','TARON_3T_WAREHOUSE','SKE_OP_ATV', 'TKIL_JCB'] },
       'gmpl':       { title: 'GMPL',                areaIds: ['GMPL'] },
       'taron_ars2': { title: 'TARON ARS2',          areaIds: ['TARON_3T_ARS2','TARON_10T_ARS2'] }
     };
@@ -790,7 +775,6 @@ function calculateMtdPct(areaIds) {
         }
 
         await refreshShiftData();
-        await fetchMtdData();
         await fetchAgencyContacts();
 
         var urlParams = new URLSearchParams(window.location.search);
@@ -823,7 +807,6 @@ function calculateMtdPct(areaIds) {
     async function syncData(silent) {
       if (CURRENT_VIEW === 'entry' || CURRENT_VIEW === 'multi') return;
       await refreshShiftData();
-      await fetchMtdData();
       await fetchAgencyContacts();
       if (CURRENT_VIEW === 'custom') { buildCustomTable(); renderAgencyLinks(); }
       else if (CURRENT_VIEW === 'master') { buildMasterTable(); }
@@ -907,7 +890,6 @@ function calculateMtdPct(areaIds) {
 
     async function onDateShiftChange(){
       await refreshShiftData();
-      await fetchMtdData();
       if (CURRENT_VIEW === 'custom') { buildCustomTable(); }
       else if (CURRENT_VIEW === 'master') { buildMasterTable(); }
       else if (CURRENT_VIEW === 'picker') { renderPicker(); }
@@ -1499,8 +1481,8 @@ function calculateMtdPct(areaIds) {
       });
       var thDate = document.getElementById('thDate');
       var thDateMaster = document.getElementById('thDateMaster');
-      if (thDate) thDate.setAttribute('colspan', hideOT ? '6' : '7');
-      if (thDateMaster) thDateMaster.setAttribute('colspan', hideOT ? '6' : '7');
+      if (thDate) thDate.setAttribute('colspan', hideOT ? '5' : '6');
+      if (thDateMaster) thDateMaster.setAttribute('colspan', hideOT ? '5' : '6');
       
       const now = new Date();
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -1529,7 +1511,7 @@ function calculateMtdPct(areaIds) {
 
     const AREA_DIRECT_IDS = ['VL_ARS2', 'VL_ARS3'];
     const AREA_INDIRECT_IDS = [
-      'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS', 'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS',
+      'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS', 'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS', 'TKIL_JCB',
       'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2', 'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR',
       'SKE_OA_BUTTCLEAN', 'SKE_OA_BELTHK', 'SKE_OA_LADIES', 'TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE',
       'TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH', 'TENON_HK', 'TENON_DULEVO',
@@ -1560,7 +1542,7 @@ function calculateMtdPct(areaIds) {
       var mTotals = sumMetricsGlobal(AREA_DIRECT_IDS.concat(AREA_INDIRECT_IDS));
       var mDirectTotals = sumMetricsGlobal(AREA_DIRECT_IDS);
       var mIndirectTotals = sumMetricsGlobal(AREA_INDIRECT_IDS);
-      function fill(rowId, data, arr) {
+      function fill(rowId, data) {
         var row = document.getElementById(rowId);
         if (!row) return;
         var cells = row.querySelectorAll('td.num');
@@ -1576,13 +1558,10 @@ function calculateMtdPct(areaIds) {
         if (cells.length >= 6) {
           cells[5].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
         }
-        if (cells.length >= 7) {
-          cells[6].textContent = calculateMtdPct(arr);
-        }
       }
-      fill('footerRowMasterTotal', mTotals, AREA_DIRECT_IDS.concat(AREA_INDIRECT_IDS));
-      fill('footerRowMasterDirect', mDirectTotals, AREA_DIRECT_IDS);
-      fill('footerRowMasterIndirect', mIndirectTotals, AREA_INDIRECT_IDS);
+      fill('footerRowMasterTotal', mTotals);
+      fill('footerRowMasterDirect', mDirectTotals);
+      fill('footerRowMasterIndirect', mIndirectTotals);
     }
 
     var inlineEditSaveTimers = {};
@@ -1686,13 +1665,12 @@ function calculateMtdPct(areaIds) {
         return res;
       }
 
-      function appendRow(label, data, className, forceNoRemarks, editTarget, areaIds) {
+      function appendRow(label, data, className, forceNoRemarks, editTarget) {
         var tr = document.createElement('tr');
         if (className) tr.className = className;
         var displayRemarks = forceNoRemarks ? '' : (data.remarks || '');
         var shortage = Math.max(0, data.plan - data.actual);
         var shortageClass = shortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
-        var mtdPct = calculateMtdPct(areaIds || []);
 
         tr.innerHTML =
           '<td>' + label + '</td>' +
@@ -1702,8 +1680,7 @@ function calculateMtdPct(areaIds) {
           '<td class="num narrow-cell">' + data.actual + '</td>' +
           '<td class="' + shortageClass + '">' + shortage + '</td>' +
           '<td class="remarks-cell">' + displayRemarks + '</td>' +
-          '<td class="num tbt-cell">' + tbtCompliancePct(data) + '</td>' +
-          '<td class="num mtd-cell">' + mtdPct + '</td>';
+          '<td class="num tbt-cell">' + tbtCompliancePct(data) + '</td>';
         if (editTarget && editTarget.rowId) tr.id = editTarget.rowId;
         body.appendChild(tr);
       }
@@ -1712,48 +1689,51 @@ function calculateMtdPct(areaIds) {
       if (getMetrics('VL_ARS3').reported > 0 && vlSum.remarks.indexOf('Including ARS3') === -1) {
         vlSum.remarks = ['Including ARS3', vlSum.remarks].filter(Boolean).join('; ');
       }
-      appendRow('VL', vlSum, '', false, {type: 'multi', id: 'VL'}, ['VL_ARS2', 'VL_ARS3']);
+      appendRow('VL', vlSum, '', false, {type: 'multi', id: 'VL'});
 
       var tkilMechSum = sumMetrics(['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS']);
       if (getMetrics('TKIL_MECH_ARS3').reported > 0 && tkilMechSum.remarks.indexOf('Including ARS3') === -1) {
         tkilMechSum.remarks = ['Including ARS3', tkilMechSum.remarks].filter(Boolean).join('; ');
       }
-      appendRow('TKII(mech)', tkilMechSum, 'depth-0', false, {type: 'multi', id: 'TKIL_MECH'}, ['TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS']);
+      appendRow('TKII(mech)', tkilMechSum, 'depth-0', false, {type: 'multi', id: 'TKIL_MECH'});
 
       var tkilElecSum = sumMetrics(['TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS']);
       if (getMetrics('TKIL_ELE_ARS3').reported > 0 && tkilElecSum.remarks.indexOf('Including ARS3') === -1) {
         tkilElecSum.remarks = ['Including ARS3', tkilElecSum.remarks].filter(Boolean).join('; ');
       }
-      appendRow('TKII(elec)', tkilElecSum, 'depth-0', false, {type: 'multi', id: 'TKIL_ELE'}, ['TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS']);
+      appendRow('TKII(elec)', tkilElecSum, 'depth-0', false, {type: 'multi', id: 'TKIL_ELE'});
 
-      appendRow('SKE OA', getMetrics('SKE_OA_ARS2'), '', false, {type: 'leaf', id: 'SKE_OA_ARS2'}, ['SKE_OA_ARS2']);
-      appendRow('SKE OA(scoop bath)', getMetrics('SKE_OA_SCOOPBATH'), '', false, {type: 'leaf', id: 'SKE_OA_SCOOPBATH'}, ['SKE_OA_SCOOPBATH']);
-      appendRow('SKE operator', getMetrics('SKE_OP_ARS2'), '', false, {type: 'leaf', id: 'SKE_OP_ARS2'}, ['SKE_OP_ARS2']);
-      appendRow('SKE OA(ARS3)', getMetrics('SKE_OA_ARS3'), '', false, {type: 'leaf', id: 'SKE_OA_ARS3'}, ['SKE_OA_ARS3']);
-      appendRow('SKE operator(ARS3)', getMetrics('SKE_OP_ARS3'), '', false, {type: 'leaf', id: 'SKE_OP_ARS3'}, ['SKE_OP_ARS3']);
-      appendRow('SKE Rod Repair', getMetrics('SKE_OA_RODREPAIR'), '', false, {type: 'leaf', id: 'SKE_OA_RODREPAIR'}, ['SKE_OA_RODREPAIR']);
-      appendRow('SKE Butt Clean', getMetrics('SKE_OA_BUTTCLEAN'), '', false, {type: 'leaf', id: 'SKE_OA_BUTTCLEAN'}, ['SKE_OA_BUTTCLEAN']);
-      appendRow('SKE HK(Belt)', getMetrics('SKE_OA_BELTHK'), '', false, {type: 'leaf', id: 'SKE_OA_BELTHK'}, ['SKE_OA_BELTHK']);
-      appendRow('SKE FHK', getMetrics('SKE_OA_LADIES'), '', false, {type: 'leaf', id: 'SKE_OA_LADIES'}, ['SKE_OA_LADIES']);
+      // Added TKIL JCB Row
+      appendRow('TKIL JCB', getMetrics('TKIL_JCB'), '', false, {type: 'leaf', id: 'TKIL_JCB'});
 
-      appendRow('TARON', sumMetrics(['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH']), 'depth-1', false, {type: 'group', path: ['TARON']}, ['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH']);
-      appendRow('Tenon hk', getMetrics('TENON_HK'), '', false, {type: 'leaf', id: 'TENON_HK'}, ['TENON_HK']);
-      appendRow('Tenon dulevo', getMetrics('TENON_DULEVO'), '', false, {type: 'leaf', id: 'TENON_DULEVO'}, ['TENON_DULEVO']);
-      appendRow('ATV Operator', getMetrics('SKE_OP_ATV'), '', false, {type: 'leaf', id: 'SKE_OP_ATV'}, ['SKE_OP_ATV']); 
+      appendRow('SKE OA', getMetrics('SKE_OA_ARS2'), '', false, {type: 'leaf', id: 'SKE_OA_ARS2'});
+      appendRow('SKE OA(scoop bath)', getMetrics('SKE_OA_SCOOPBATH'), '', false, {type: 'leaf', id: 'SKE_OA_SCOOPBATH'});
+      appendRow('SKE operator', getMetrics('SKE_OP_ARS2'), '', false, {type: 'leaf', id: 'SKE_OP_ARS2'});
+      appendRow('SKE OA(ARS3)', getMetrics('SKE_OA_ARS3'), '', false, {type: 'leaf', id: 'SKE_OA_ARS3'});
+      appendRow('SKE operator(ARS3)', getMetrics('SKE_OP_ARS3'), '', false, {type: 'leaf', id: 'SKE_OP_ARS3'});
+      appendRow('SKE Rod Repair', getMetrics('SKE_OA_RODREPAIR'), '', false, {type: 'leaf', id: 'SKE_OA_RODREPAIR'});
+      appendRow('SKE Butt Clean', getMetrics('SKE_OA_BUTTCLEAN'), '', false, {type: 'leaf', id: 'SKE_OA_BUTTCLEAN'});
+      appendRow('SKE HK(Belt)', getMetrics('SKE_OA_BELTHK'), '', false, {type: 'leaf', id: 'SKE_OA_BELTHK'});
+      appendRow('SKE FHK', getMetrics('SKE_OA_LADIES'), '', false, {type: 'leaf', id: 'SKE_OA_LADIES'});
 
-      appendRow('LLOYD', getMetrics('LLOYD'), '', false, {type: 'leaf', id: 'LLOYD'}, ['LLOYD']);
-      appendRow('UIL', sumMetrics(['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA']), 'depth-1', false, {type: 'group', path: ['UIL']}, ['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA']);
-      appendRow('GMPL', getMetrics('GMPL'), '', false, {type: 'leaf', id: 'GMPL'}, ['GMPL']);
-      appendRow('Nataraj Eng', getMetrics('NATARAJ'), '', false, {type: 'leaf', id: 'NATARAJ'}, ['NATARAJ']);
+      appendRow('TARON', sumMetrics(['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH']), 'depth-1', false, {type: 'group', path: ['TARON']});
+      appendRow('Tenon hk', getMetrics('TENON_HK'), '', false, {type: 'leaf', id: 'TENON_HK'});
+      appendRow('Tenon dulevo', getMetrics('TENON_DULEVO'), '', false, {type: 'leaf', id: 'TENON_DULEVO'});
+      appendRow('ATV Operator', getMetrics('SKE_OP_ATV'), '', false, {type: 'leaf', id: 'SKE_OP_ATV'}); 
+
+      appendRow('LLOYD', getMetrics('LLOYD'), '', false, {type: 'leaf', id: 'LLOYD'});
+      appendRow('UIL', sumMetrics(['UIL_JCB_RMT', 'UIL_JCB_BATHPLANT', 'UIL_HYWA']), 'depth-1', false, {type: 'group', path: ['UIL']});
+      appendRow('GMPL', getMetrics('GMPL'), '', false, {type: 'leaf', id: 'GMPL'});
+      appendRow('Nataraj Eng', getMetrics('NATARAJ'), '', false, {type: 'leaf', id: 'NATARAJ'});
 
       var dTot = sumMetrics(AREA_DIRECT_IDS);
       var iTot = sumMetrics(AREA_INDIRECT_IDS);
       
       var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual, tbtAttended: dTot.tbtAttended + iTot.tbtAttended };
       
-      appendRow('TOTAL:-', gTot, 'grand-total-row', true, {rowId: 'footerRowTotal'}, AREA_DIRECT_IDS.concat(AREA_INDIRECT_IDS));
-      appendRow('DIRECT:-', dTot, 'grand-total-row', true, {rowId: 'footerRowDirect'}, AREA_DIRECT_IDS);
-      appendRow('INDIRECT:-', iTot, 'grand-total-row', true, {rowId: 'footerRowIndirect'}, AREA_INDIRECT_IDS);
+      appendRow('TOTAL:-', gTot, 'grand-total-row', true, {rowId: 'footerRowTotal'});
+      appendRow('DIRECT:-', dTot, 'grand-total-row', true, {rowId: 'footerRowDirect'});
+      appendRow('INDIRECT:-', iTot, 'grand-total-row', true, {rowId: 'footerRowIndirect'});
     }
 
     function buildMasterTable(){
@@ -1781,7 +1761,6 @@ function calculateMtdPct(areaIds) {
         var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
         var shortage = Math.max(0, Number(rec.plan || 0) - Number(rec.actual || 0));
         var shortageClass = shortage > 0 ? 'num narrow-cell inline-shortage-cell shortage-flag' : 'num narrow-cell inline-shortage-cell';
-        var mtdPct = calculateMtdPct([areaId]);
 
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
@@ -1795,8 +1774,7 @@ function calculateMtdPct(areaIds) {
             '<td class="num tbt-cell">' +
               '<input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="tbtAttended" value="' + (rec.tbtAttended || '') + '" oninput="onMasterInlineEdit(\'' + areaId + '\')" placeholder="TBT" style="width:100%; max-width:55px; text-align:center; margin-bottom:4px;">' +
               '<br><span class="inline-tbt-pct" style="font-size:13px; font-weight:bold; color:#2563eb;">' + tbtPct + '</span>' +
-            '</td>' +
-            '<td class="num mtd-cell">' + mtdPct + '</td>';
+            '</td>';
         } else {
           tr.innerHTML =
             '<td>' + (indent ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '') + area.name + '</td>' +
@@ -1806,8 +1784,7 @@ function calculateMtdPct(areaIds) {
             '<td class="num narrow-cell">' + (rec.actual || 0) + '</td>' +
             '<td class="' + shortageClass + '">' + shortage + '</td>' +
             '<td class="remarks-cell">' + (rec.remarks || '') + '</td>' +
-            '<td class="num tbt-cell">' + tbtPct + '</td>' +
-            '<td class="num mtd-cell">' + mtdPct + '</td>';
+            '<td class="num tbt-cell">' + tbtPct + '</td>';
         }
         masterBody.appendChild(tr);
         
@@ -1833,7 +1810,7 @@ function calculateMtdPct(areaIds) {
           } else if (node.type === 'multi') {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
-            tr.innerHTML = '<td colspan="9" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            tr.innerHTML = '<td colspan="8" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
             var childTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
@@ -1849,7 +1826,6 @@ function calculateMtdPct(areaIds) {
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
             var childShortage = Math.max(0, childTotals.plan - childTotals.actual);
             var childShortageClass = childShortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
-            var childMtdPct = calculateMtdPct(node.areaIds);
 
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
@@ -1859,8 +1835,7 @@ function calculateMtdPct(areaIds) {
               '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td class="' + childShortageClass + '" style="font-weight:bold;">' + childShortage + '</td>' +
               '<td></td>' +
-              '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>' +
-              '<td class="num mtd-cell" style="font-weight:bold;">' + childMtdPct + '</td>';
+              '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
 
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
@@ -1869,18 +1844,16 @@ function calculateMtdPct(areaIds) {
           } else {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
-            tr.innerHTML = '<td colspan="9" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            tr.innerHTML = '<td colspan="8" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
             var childTotals = walkMaster(node.children, depth + 1, blockClass);
-            var leavesInGroup = collectLeafIds(node);
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
             var childShortage = Math.max(0, childTotals.plan - childTotals.actual);
             var childShortageClass = childShortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
-            var childMtdPct = calculateMtdPct(leavesInGroup);
 
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
@@ -1890,8 +1863,7 @@ function calculateMtdPct(areaIds) {
               '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.actual + '</td>' +
               '<td class="' + childShortageClass + '" style="font-weight:bold;">' + childShortage + '</td>' +
               '<td></td>' +
-              '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>' +
-              '<td class="num mtd-cell" style="font-weight:bold;">' + childMtdPct + '</td>';
+              '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
 
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
@@ -1934,7 +1906,6 @@ function calculateMtdPct(areaIds) {
       };
       
       var footerRowIds = ['footerRowMasterTotal', 'footerRowMasterDirect', 'footerRowMasterIndirect'];
-      var idGroups = [AREA_DIRECT_IDS.concat(AREA_INDIRECT_IDS), AREA_DIRECT_IDS, AREA_INDIRECT_IDS];
 
       [['TOTAL:-', mTotals], ['DIRECT:-', mDirectTotals], ['INDIRECT:-', mIndirectTotals]].forEach(function(pair, idx){
         var tr = document.createElement('tr');
@@ -1943,7 +1914,6 @@ function calculateMtdPct(areaIds) {
         var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
         var shortage = Math.max(0, pair[1].plan - pair[1].actual);
         var shortageClass = shortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
-        var mtdPct = calculateMtdPct(idGroups[idx]);
 
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
@@ -1953,8 +1923,7 @@ function calculateMtdPct(areaIds) {
           '<td class="num narrow-cell">' + pair[1].actual + '</td>' +
           '<td class="' + shortageClass + '">' + shortage + '</td>' +
           '<td></td>' +
-          '<td class="num tbt-cell">' + pct + '</td>' +
-          '<td class="num mtd-cell">' + mtdPct + '</td>';
+          '<td class="num tbt-cell">' + pct + '</td>';
         masterBody.appendChild(tr);
       });
 
@@ -2025,6 +1994,7 @@ function calculateMtdPct(areaIds) {
       });
     }
 
+    /* --- MANUAL AGENCY CONTACT LOGIC --- */
     var activeModalBundle = null;
     var activeModalContactId = null;
 
