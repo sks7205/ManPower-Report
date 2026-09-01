@@ -22,6 +22,8 @@
       --accent: #14b8a6; /* Teal */
       --accent-dim: rgba(20, 184, 166, 0.15);
       --danger: #ef4444;
+      --danger-dim: #fee2e2;
+      --danger-text: #991b1b;
       --ok: #10b981;
       --radius: 16px;
       --shadow-sm: 0 2px 4px rgba(0,0,0,0.2);
@@ -115,7 +117,7 @@
       font-weight: 500;
     }
     
-    main { padding: 0 18px; max-width: 920px; margin: 0 auto; }
+    main { padding: 0 18px; max-width: 940px; margin: 0 auto; }
     .card { 
       background: var(--surface); border: 1px solid var(--line); 
       border-radius: var(--radius); padding: 24px; margin-bottom: 20px; 
@@ -218,6 +220,13 @@
     
     .excel-table td.num { text-align: center; }
     
+    /* Shortage Highlight Style */
+    .shortage-flag {
+      background-color: var(--danger-dim) !important;
+      color: var(--danger-text) !important;
+      font-weight: 800 !important;
+    }
+    
     .excel-edit-cell { width: 100%; max-width: 70px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
     .excel-edit-cell:hover { border-color: #cbd5e1; }
     .excel-edit-cell:focus { outline: none; border-color: #2563eb; background: rgba(37,99,235,0.06); }
@@ -241,7 +250,7 @@
     
     .excel-table .tbt-cell, .excel-table .narrow-cell { 
       white-space: normal; 
-      min-width: 75px; 
+      min-width: 70px; 
       line-height: 1.2; 
       padding: 4px 6px; 
       text-align: center; 
@@ -262,7 +271,7 @@
       flex-wrap: wrap; gap: 10px; cursor: pointer;
     }
     .agency-contacts-container {
-      display: none; /* Collapsed by default */
+      display: none;
       border-top: 1px solid var(--line);
       padding-top: 12px;
       margin-top: 12px;
@@ -402,13 +411,14 @@
               <tr>
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTop">Shift-X</th>
-                <th colspan="4" id="thDate">Date Time</th>
+                <th colspan="5" id="thDate">Date Time</th>
               </tr>
               <tr>
                 <th>Plan</th>
                 <th id="thReported" class="narrow-cell">Reported in<br>Shift-X</th>
                 <th class="ot-cell">In OT</th>
                 <th class="narrow-cell">Actual<br>on work</th>
+                <th class="narrow-cell">Shortage</th>
                 <th>Remarks</th>
                 <th class="tbt-cell">TBT<br>Compliance</th>
               </tr>
@@ -443,13 +453,14 @@
               <tr>
                 <th rowspan="2">MANPOWER</th>
                 <th id="thShiftTopMaster">Shift-X</th>
-                <th colspan="4" id="thDateMaster">Date Time</th>
+                <th colspan="5" id="thDateMaster">Date Time</th>
               </tr>
               <tr>
                 <th>Plan</th>
                 <th id="thReportedMaster" class="narrow-cell">Reported in<br>Shift-X</th>
                 <th class="ot-cell">In OT</th>
                 <th class="narrow-cell">Actual<br>on work</th>
+                <th class="narrow-cell">Shortage</th>
                 <th>Remarks</th>
                 <th class="tbt-cell">TBT<br>Compliance</th>
               </tr>
@@ -556,7 +567,6 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // ⚠️ IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ⚠️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOlIvI_6Kkxx52dSZ244K-8QBV5CCxaRf0Y8lsTDl9A7M1lXgItKxfQXePGHtoXioN/exec";
 
     var AREAS = [];
@@ -573,7 +583,6 @@
     var AGENCY_NAME = ''; 
     var PENDING_BUNDLE_KEY = null; 
     var IS_UPDATE_SAVE = false; 
-
     var AGENCY_CONTACTS = {};
 
     async function fetchAgencyContacts() {
@@ -626,14 +635,26 @@
     }
 
     const BUNDLES = {
-      'scoopbath':  { title: 'Scoopbath',           areaIds: ['SKE_OA_SCOOPBATH', 'TARON_10T_SCOOPBATH', 'UIL_JCB_BATHPLANT'] },
-      'rmt':        { title: 'RMT',                 areaIds: ['UIL_JCB_RMT', 'UIL_HYWA'] },
-      'ske':        { title: 'SKE Supervisor',      areaIds: ['SKE_OA_ARS2','SKE_OA_ARS3','SKE_OA_SCOOPBATH','SKE_OA_RODREPAIR','SKE_OA_BUTTCLEAN','SKE_OA_BELTHK','SKE_OA_LADIES','SKE_OP_ARS2','SKE_OP_ARS3','SKE_OP_ATV'] },
+      'scoopbath':  { 
+        title: 'Scoopbath',           
+        areaIds: ['SKE_OA_SCOOPBATH', 'TARON_10T_SCOOPBATH', 'UIL_JCB_BATHPLANT', 'TKIL_JCB'] 
+      },
+      'rmt':        { 
+        title: 'RMT',                 
+        areaIds: ['UIL_JCB_RMT', 'UIL_HYWA', 'TKIL_JCB'] 
+      },
+      'warehouse':  { 
+        title: 'Warehouse',           
+        areaIds: ['TARON_10T_WAREHOUSE', 'TARON_3T_WAREHOUSE', 'SKE_OP_ATV', 'TKIL_JCB'] 
+      },
+      'ske':        { 
+        title: 'SKE Supervisor',      
+        areaIds: ['SKE_OA_ARS2','SKE_OA_ARS3','SKE_OA_SCOOPBATH','SKE_OA_RODREPAIR','SKE_OA_BUTTCLEAN','SKE_OA_BELTHK','SKE_OA_LADIES','SKE_OP_ARS2','SKE_OP_ARS3','SKE_OP_ATV'] 
+      },
       'nataraj':    { title: 'Nataraj Eng',         areaIds: ['NATARAJ'] },
       'mech':       { title: 'TKIL Mech',           areaIds: ['TKIL_MECH_ARS2','TKIL_MECH_ARS3','TKIL_MECH_OTHERS'] },
       'ele':        { title: 'TKIL Ele',            areaIds: ['TKIL_ELE_ARS2','TKIL_ELE_ARS3','TKIL_ELE_OTHERS'] },
       'ars3':       { title: 'ARS3 — All Sections', areaIds: ['VL_ARS3','SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
-      'warehouse':  { title: 'Warehouse',           areaIds: ['TARON_10T_WAREHOUSE','TARON_3T_WAREHOUSE','SKE_OP_ATV'] },
       'gmpl':       { title: 'GMPL',                areaIds: ['GMPL'] },
       'taron_ars2': { title: 'TARON ARS2',          areaIds: ['TARON_3T_ARS2','TARON_10T_ARS2'] }
     };
@@ -733,7 +754,6 @@
         const res = await fetch(SCRIPT_URL + '?action=getInitData');
         const data = await res.json();
         
-        // Filter out SSE if it comes from backend to ensure frontend removes it
         AREAS = data.areas.filter(a => a.id !== 'SSE');
         TREE = data.tree.filter(t => (t.id || t.areaId) !== 'SSE');
 
@@ -1006,7 +1026,7 @@
       var container = document.getElementById('multiEntryForms');
       container.innerHTML = '';
       
-      var isMultiFilledAtAll = node.areaIds.some(id => !!shiftData[id]);
+      var isMultiFilledAtAll = node.areaIds.some(id => !shiftData[id]);
       var alreadyUpdatedOnce = node.areaIds.some(id => {
          var r = shiftData[id];
          return r && r.updatedBy && r.updatedBy.indexOf('(updated)') !== -1;
@@ -1017,7 +1037,7 @@
       node.areaIds.forEach(id => {
         var area = AREAS_BY_ID[id];
         var rec = shiftData[id] || { plan:'', actual:'', inOT:'', tbtAttended:'', remarks:'', reported:0 };
-        var isFilled = !!shiftData[id];
+        var isFilled = !shiftData[id];
         var badge = isFilled
           ? '<span style="color:var(--ok); font-size:12px; font-weight:700;">✓ Filled' + (rec.updatedBy ? ' by ' + rec.updatedBy : '') + '</span>'
           : '<span style="color:var(--muted); font-size:12px;">Not filled yet</span>';
@@ -1133,7 +1153,7 @@
       bundle.areaIds.forEach(function(id){
         var area = AREAS_BY_ID[id];
         var rec = shiftData[id];
-        var filled = !!rec;
+        var filled = !rec;
         
         var tile = document.createElement('div');
         tile.className = 'tile state-' + (filled ? 'full' : 'empty');
@@ -1178,7 +1198,7 @@
       var localUpdates = {};
       var payloads = [];
       
-      var isMultiFilledAtAll = currentMultiNode.areaIds.some(id => !!shiftData[id]);
+      var isMultiFilledAtAll = currentMultiNode.areaIds.some(id => !shiftData[id]);
       var enteredByName = LINK_MODE ? (AGENCY_NAME || 'Agency') : 'you';
       
       if (LINK_MODE && isMultiFilledAtAll) {
@@ -1284,7 +1304,7 @@
       loadEntryData();
 
       var rec = shiftData[currentLeaf];
-      var alreadyFilled = LINK_MODE && !!rec;
+      var alreadyFilled = LINK_MODE && !rec;
       var alreadyUpdatedOnce = alreadyFilled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1;
       
       var locked = alreadyFilled; 
@@ -1472,8 +1492,8 @@
       });
       var thDate = document.getElementById('thDate');
       var thDateMaster = document.getElementById('thDateMaster');
-      if (thDate) thDate.setAttribute('colspan', hideOT ? '4' : '5');
-      if (thDateMaster) thDateMaster.setAttribute('colspan', hideOT ? '4' : '5');
+      if (thDate) thDate.setAttribute('colspan', hideOT ? '5' : '6');
+      if (thDateMaster) thDateMaster.setAttribute('colspan', hideOT ? '5' : '6');
       
       const now = new Date();
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -1494,7 +1514,7 @@
       var label = document.getElementById('progressBarLabel');
       if (!bar || !label || !AREAS.length) return;
       var total = AREAS.length;
-      var filled = AREAS.filter(function(a){ return !!shiftData[a.id]; }).length;
+      var filled = AREAS.filter(function(a){ return !shiftData[a.id]; }).length;
       var pct = total ? Math.round((filled / total) * 100) : 0;
       bar.style.width = pct + '%';
       label.textContent = filled + ' / ' + total + ' filled (' + pct + '%)';
@@ -1502,7 +1522,7 @@
 
     const AREA_DIRECT_IDS = ['VL_ARS2', 'VL_ARS3'];
     const AREA_INDIRECT_IDS = [
-      'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS', 'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS',
+      'TKIL_MECH_ARS2', 'TKIL_MECH_ARS3', 'TKIL_MECH_OTHERS', 'TKIL_ELE_ARS2', 'TKIL_ELE_ARS3', 'TKIL_ELE_OTHERS', 'TKIL_JCB',
       'SKE_OA_ARS2', 'SKE_OA_SCOOPBATH', 'SKE_OP_ARS2', 'SKE_OA_ARS3', 'SKE_OP_ARS3', 'SKE_OA_RODREPAIR',
       'SKE_OA_BUTTCLEAN', 'SKE_OA_BELTHK', 'SKE_OA_LADIES', 'TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE',
       'TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH', 'TENON_HK', 'TENON_DULEVO',
@@ -1537,13 +1557,17 @@
         var row = document.getElementById(rowId);
         if (!row) return;
         var cells = row.querySelectorAll('td.num');
-        if (cells.length < 4) return;
+        if (cells.length < 5) return;
+        var shortage = Math.max(0, data.plan - data.actual);
         cells[0].textContent = data.plan;
         cells[1].textContent = data.reported;
         cells[2].textContent = data.inOT;
         cells[3].textContent = data.actual;
-        if (cells.length >= 5) {
-          cells[4].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
+        cells[4].textContent = shortage;
+        if (shortage > 0) cells[4].classList.add('shortage-flag');
+        else cells[4].classList.remove('shortage-flag');
+        if (cells.length >= 6) {
+          cells[5].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
         }
       }
       fill('footerRowMasterTotal', mTotals);
@@ -1565,6 +1589,7 @@
       var remarks = remEl ? remEl.value : (shiftData[areaId] ? shiftData[areaId].remarks : '');
       var tbtAttended = tbtEl ? tbtEl.value : (shiftData[areaId] ? shiftData[areaId].tbtAttended : 0);
       var reported = Math.max(0, Number(actual || 0) - Number(ot || 0));
+      var shortage = Math.max(0, Number(plan || 0) - Number(actual || 0));
 
       var rowEl = actualEl.closest('tr');
       if (planEl) planEl.setAttribute('value', plan);
@@ -1575,6 +1600,13 @@
 
       var reportedCell = rowEl ? rowEl.querySelector('.inline-reported-cell') : null;
       if (reportedCell) reportedCell.textContent = reported;
+
+      var shortageCell = rowEl ? rowEl.querySelector('.inline-shortage-cell') : null;
+      if (shortageCell) {
+        shortageCell.textContent = shortage;
+        if (shortage > 0) shortageCell.classList.add('shortage-flag');
+        else shortageCell.classList.remove('shortage-flag');
+      }
 
       var tbtPctCell = rowEl ? rowEl.querySelector('.inline-tbt-pct') : null;
       if (tbtPctCell) {
@@ -1648,6 +1680,8 @@
         var tr = document.createElement('tr');
         if (className) tr.className = className;
         var displayRemarks = forceNoRemarks ? '' : (data.remarks || '');
+        var shortage = Math.max(0, data.plan - data.actual);
+        var shortageClass = shortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
 
         tr.innerHTML =
           '<td>' + label + '</td>' +
@@ -1655,6 +1689,7 @@
           '<td class="num narrow-cell">' + data.reported + '</td>' +
           '<td class="num ot-cell">' + data.inOT + '</td>' +
           '<td class="num narrow-cell">' + data.actual + '</td>' +
+          '<td class="' + shortageClass + '">' + shortage + '</td>' +
           '<td class="remarks-cell">' + displayRemarks + '</td>' +
           '<td class="num tbt-cell">' + tbtCompliancePct(data) + '</td>';
         if (editTarget && editTarget.rowId) tr.id = editTarget.rowId;
@@ -1679,6 +1714,7 @@
       }
       appendRow('TKII(elec)', tkilElecSum, 'depth-0', false, {type: 'multi', id: 'TKIL_ELE'});
 
+      appendRow('TKIL JCB', getMetrics('TKIL_JCB'), '', false, {type: 'leaf', id: 'TKIL_JCB'});
       appendRow('SKE OA', getMetrics('SKE_OA_ARS2'), '', false, {type: 'leaf', id: 'SKE_OA_ARS2'});
       appendRow('SKE OA(scoop bath)', getMetrics('SKE_OA_SCOOPBATH'), '', false, {type: 'leaf', id: 'SKE_OA_SCOOPBATH'});
       appendRow('SKE operator', getMetrics('SKE_OP_ARS2'), '', false, {type: 'leaf', id: 'SKE_OP_ARS2'});
@@ -1687,13 +1723,11 @@
       appendRow('SKE Rod Repair', getMetrics('SKE_OA_RODREPAIR'), '', false, {type: 'leaf', id: 'SKE_OA_RODREPAIR'});
       appendRow('SKE Butt Clean', getMetrics('SKE_OA_BUTTCLEAN'), '', false, {type: 'leaf', id: 'SKE_OA_BUTTCLEAN'});
       appendRow('SKE HK(Belt)', getMetrics('SKE_OA_BELTHK'), '', false, {type: 'leaf', id: 'SKE_OA_BELTHK'});
-      appendRow('SKE OA(Ladies)', getMetrics('SKE_OA_LADIES'), '', false, {type: 'leaf', id: 'SKE_OA_LADIES'});
+      appendRow('SKE FHK', getMetrics('SKE_OA_LADIES'), '', false, {type: 'leaf', id: 'SKE_OA_LADIES'});
 
       appendRow('TARON', sumMetrics(['TARON_3T_ARS2','TARON_3T_ARS3','TARON_3T_WAREHOUSE','TARON_10T_ARS2','TARON_10T_ARS3','TARON_10T_WAREHOUSE','TARON_10T_SCOOPBATH']), 'depth-1', false, {type: 'group', path: ['TARON']});
       appendRow('Tenon hk', getMetrics('TENON_HK'), '', false, {type: 'leaf', id: 'TENON_HK'});
       appendRow('Tenon dulevo', getMetrics('TENON_DULEVO'), '', false, {type: 'leaf', id: 'TENON_DULEVO'});
-
-      // Added ATV Operator Row to replace SSE + SKE grouping
       appendRow('ATV Operator', getMetrics('SKE_OP_ATV'), '', false, {type: 'leaf', id: 'SKE_OP_ATV'}); 
 
       appendRow('LLOYD', getMetrics('LLOYD'), '', false, {type: 'leaf', id: 'LLOYD'});
@@ -1734,6 +1768,8 @@
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
         var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
+        var shortage = Math.max(0, Number(rec.plan || 0) - Number(rec.actual || 0));
+        var shortageClass = shortage > 0 ? 'num narrow-cell inline-shortage-cell shortage-flag' : 'num narrow-cell inline-shortage-cell';
 
         if (MASTER_EDIT_MODE) {
           tr.innerHTML =
@@ -1742,6 +1778,7 @@
             '<td class="num inline-reported-cell narrow-cell">' + (rec.reported || 0) + '</td>' +
             '<td class="num ot-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="inOT" value="' + (rec.inOT || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num narrow-cell"><input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="actual" value="' + (rec.actual || 0) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
+            '<td class="' + shortageClass + '">' + shortage + '</td>' +
             '<td class="remarks-cell"><input type="text" class="excel-edit-cell excel-edit-cell-text" data-areaid="' + areaId + '" data-field="remarks" value="' + escAttr(rec.remarks) + '" oninput="onMasterInlineEdit(\'' + areaId + '\')"></td>' +
             '<td class="num tbt-cell">' +
               '<input type="number" class="excel-edit-cell" data-areaid="' + areaId + '" data-field="tbtAttended" value="' + (rec.tbtAttended || '') + '" oninput="onMasterInlineEdit(\'' + areaId + '\')" placeholder="TBT" style="width:100%; max-width:55px; text-align:center; margin-bottom:4px;">' +
@@ -1754,6 +1791,7 @@
             '<td class="num narrow-cell">' + (rec.reported || 0) + '</td>' +
             '<td class="num ot-cell">' + (rec.inOT || 0) + '</td>' +
             '<td class="num narrow-cell">' + (rec.actual || 0) + '</td>' +
+            '<td class="' + shortageClass + '">' + shortage + '</td>' +
             '<td class="remarks-cell">' + (rec.remarks || '') + '</td>' +
             '<td class="num tbt-cell">' + tbtPct + '</td>';
         }
@@ -1781,7 +1819,7 @@
           } else if (node.type === 'multi') {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
-            tr.innerHTML = '<td colspan="7" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            tr.innerHTML = '<td colspan="8" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
             var childTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
@@ -1795,12 +1833,16 @@
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
+            var childShortage = Math.max(0, childTotals.plan - childTotals.actual);
+            var childShortageClass = childShortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
+
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
               '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.reported + '</td>' +
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
               '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.actual + '</td>' +
+              '<td class="' + childShortageClass + '" style="font-weight:bold;">' + childShortage + '</td>' +
               '<td></td>' +
               '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
@@ -1811,7 +1853,7 @@
           } else {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
-            tr.innerHTML = '<td colspan="7" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
+            tr.innerHTML = '<td colspan="8" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
             var childTotals = walkMaster(node.children, depth + 1, blockClass);
@@ -1819,12 +1861,16 @@
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
+            var childShortage = Math.max(0, childTotals.plan - childTotals.actual);
+            var childShortageClass = childShortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
+
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
               '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.reported + '</td>' +
               '<td class="num ot-cell" style="font-weight:bold;">' + childTotals.inOT + '</td>' +
               '<td class="num narrow-cell" style="font-weight:bold;">' + childTotals.actual + '</td>' +
+              '<td class="' + childShortageClass + '" style="font-weight:bold;">' + childShortage + '</td>' +
               '<td></td>' +
               '<td class="num tbt-cell" style="font-weight:bold;">' + childPct + '</td>';
             masterBody.appendChild(subTr);
@@ -1848,11 +1894,9 @@
         if (id === 'TARON') return 'bg-taron';
         if (id === 'TENON') return 'bg-tenon';
         if (id === 'UIL') return 'bg-uil';
-        
         if (id === 'LLOYD') return 'bg-lloyd';
         if (id === 'GMPL') return 'bg-gmpl';
         if (id === 'NATARAJ') return 'bg-nataraj';
-        
         return 'bg-default';
       }
 
@@ -1871,17 +1915,22 @@
       };
       
       var footerRowIds = ['footerRowMasterTotal', 'footerRowMasterDirect', 'footerRowMasterIndirect'];
+
       [['TOTAL:-', mTotals], ['DIRECT:-', mDirectTotals], ['INDIRECT:-', mIndirectTotals]].forEach(function(pair, idx){
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
         var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
+        var shortage = Math.max(0, pair[1].plan - pair[1].actual);
+        var shortageClass = shortage > 0 ? 'num narrow-cell shortage-flag' : 'num narrow-cell';
+
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
           '<td class="num narrow-cell">' + pair[1].reported + '</td>' +
           '<td class="num ot-cell">' + pair[1].inOT + '</td>' +
           '<td class="num narrow-cell">' + pair[1].actual + '</td>' +
+          '<td class="' + shortageClass + '">' + shortage + '</td>' +
           '<td></td>' +
           '<td class="num tbt-cell">' + pct + '</td>';
         masterBody.appendChild(tr);
@@ -1955,7 +2004,6 @@
     }
 
     /* --- MANUAL AGENCY CONTACT LOGIC --- */
-    
     var activeModalBundle = null;
     var activeModalContactId = null;
 
@@ -2171,10 +2219,9 @@
         list.appendChild(card);
       });
 
-      // Attach Toggle Action
       list.querySelectorAll('.toggle-header').forEach(function(hdr){
         hdr.addEventListener('click', function(e){
-          if (e.target.closest('.add-contact-btn')) return; // Ignore if they clicked Add User
+          if (e.target.closest('.add-contact-btn')) return;
           var container = hdr.nextElementSibling;
           var chevron = hdr.querySelector('.chevron');
           container.classList.toggle('expanded');
