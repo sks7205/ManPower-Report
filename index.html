@@ -594,9 +594,9 @@
 
     function mtdAttendanceDisplay(data) {
       if (data.mtdAttPct !== undefined) return data.mtdAttPct + '%';
-      if (!data.reported) return '100%';
+      var rep = Number(data.reported || 0);
       var tbt = Number(data.tbtAttended || 0);
-      var rep = Number(data.reported || 1);
+      if (rep === 0) return '0%';
       return Math.round((tbt / rep) * 100) + '%';
     }
 
@@ -1550,7 +1550,7 @@
           cells[5].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
         }
         if (cells.length >= 7) {
-          cells[6].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '100%';
+          cells[6].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '0%';
         }
       }
       fill('footerRowMasterTotal', mTotals);
@@ -1817,7 +1817,7 @@
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
-            var childMtdPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '100%';
+            var childMtdPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '0%';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1844,7 +1844,7 @@
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
-            var childMtdPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '100%';
+            var childMtdPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '0%';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1902,7 +1902,7 @@
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
         var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
-        var mtdPct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '100%';
+        var mtdPct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '0%';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
