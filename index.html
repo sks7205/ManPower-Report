@@ -378,10 +378,9 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // ⚠️ REPLACE THIS WITH YOUR NEW APPS SCRIPT DEPLOYMENT URL ⚠️
+    // ⚠️ PASTE YOUR APPS SCRIPT WEB APP URL HERE ⚠️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOlIvI_6Kkxx52dSZ244K-8QBV5CCxaRf0Y8lsTDl9A7M1lXgItKxfQXePGHtoXioN/exec";
 
-    // Embedded Schema Guarantee: Allows UI to build and display TKIL JCB immediately
     const DEFAULT_AREAS = [
       { id: 'VL_ARS2', name: 'ARS2', fullName: 'VL ARS2', type: 'Direct', path: ['VL', 'VL_ARS2'], remarkPrompt: { kind: 'boolean', text: 'Including ARS3' } },
       { id: 'VL_ARS3', name: 'ARS3', fullName: 'VL ARS3', type: 'Direct', path: ['VL', 'VL_ARS3'], remarkPrompt: null },
@@ -449,9 +448,15 @@
       'taron_ars2': { title: 'TARON ARS2', areaIds: ['TARON_3T_ARS2','TARON_10T_ARS2'] }
     };
 
+    function safeFetch(url, options) {
+      options = options || {};
+      options.redirect = 'follow';
+      return fetch(url, options);
+    }
+
     async function fetchAgencyContacts() {
       try {
-        const res = await fetch(SCRIPT_URL + '?action=getContacts');
+        const res = await safeFetch(SCRIPT_URL + '?action=getContacts');
         AGENCY_CONTACTS = await res.json();
       } catch (err) {}
     }
@@ -592,7 +597,7 @@
       var linkKey = urlParams.get('link');
       var adminKey = urlParams.get('key');
 
-      // Immediate Route Handling
+      // Immediately route user without waiting for external API handshake
       if (linkKey && BUNDLES[linkKey]) {
         openBundleEntry(linkKey);
       } else if (adminKey === ADMIN_KEY) {
@@ -602,7 +607,7 @@
       }
 
       try {
-        const res = await fetch(SCRIPT_URL + '?action=getInitData');
+        const res = await safeFetch(SCRIPT_URL + '?action=getInitData');
         const data = await res.json();
         
         if (data.areas && data.areas.length) {
@@ -645,7 +650,7 @@
     async function refreshShiftData() {
       checkAndResetShiftState();
       try {
-        const res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${currentShift()}`);
+        const res = await safeFetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${currentShift()}`);
         shiftData = await res.json();
       } catch (err) {}
     }
@@ -709,7 +714,7 @@
       if (!window.confirm('Clear ALL data for ' + dateStr + ' Shift ' + shiftStr + '?')) return;
       showToast('Clearing data\u2026');
       try {
-        const res = await fetch(SCRIPT_URL, {
+        const res = await safeFetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'resetShiftData', data: { date: dateStr, shift: shiftStr } })
@@ -842,6 +847,7 @@
       currentMultiNode = node;
       hideAllViews();
       document.getElementById('multiEntryView').style.display = 'block';
+      
       document.getElementById('pageTitle').textContent = (node.displayName || node.name) + " Data Entry";
       document.getElementById('pageSub').textContent = "Grouped multi-entry form";
       document.getElementById('multiEntryTitle').textContent = node.displayName || node.name;
@@ -859,7 +865,7 @@
       var isCardLocked = LINK_MODE && alreadyUpdatedOnce;
 
       node.areaIds.forEach(id => {
-        var area = AREAS_BY_ID[id];
+        var area = AREAS_BY_ID[id] || { name: id, fullName: id };
         var rec = shiftData[id] || { plan:'', actual:'', inOT:'', tbtAttended:'', remarks:'', reported:0 };
         var isFilled = !shiftData[id];
         var badge = isFilled
@@ -1051,7 +1057,7 @@
       else showPicker();
 
       payloads.forEach(payload => {
-        fetch(SCRIPT_URL, {
+        safeFetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'saveAreaRow', data: payload })
@@ -1243,7 +1249,7 @@
         showPicker();
       }
 
-      fetch(SCRIPT_URL, {
+      safeFetch(SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'saveAreaRow', data: payload })
@@ -1403,7 +1409,7 @@
       clearTimeout(inlineEditSaveTimers[areaId]);
       inlineEditSaveTimers[areaId] = setTimeout(function(){
         var area = AREAS_BY_ID[areaId] || { fullName: areaId };
-        fetch(SCRIPT_URL, {
+        safeFetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'saveAreaRow', data: {
@@ -1804,7 +1810,7 @@
       renderAgencyLinks();
       closeManualContactModal();
 
-      fetch(SCRIPT_URL, {
+      safeFetch(SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'saveContact', data: {
@@ -1820,7 +1826,7 @@
         AGENCY_CONTACTS[bundleKey] = AGENCY_CONTACTS[bundleKey].filter(c => c.id !== contactId);
         renderAgencyLinks();
       }
-      fetch(SCRIPT_URL, {
+      safeFetch(SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'deleteContact', data: { id: contactId } })
