@@ -378,7 +378,6 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // ⚠️ PASTE YOUR APPS SCRIPT WEB APP URL HERE ⚠️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOlIvI_6Kkxx52dSZ244K-8QBV5CCxaRf0Y8lsTDl9A7M1lXgItKxfQXePGHtoXioN/exec";
 
     const DEFAULT_AREAS = [
@@ -592,12 +591,7 @@
       renderPicker();
     }
 
-    async function fetchInitData() {
-      var urlParams = new URLSearchParams(window.location.search);
-      var linkKey = urlParams.get('link');
-      var adminKey = urlParams.get('key');
-
-      // Immediately route user without waiting for external API handshake
+    function applyRoute(linkKey, adminKey) {
       if (linkKey && BUNDLES[linkKey]) {
         openBundleEntry(linkKey);
       } else if (adminKey === ADMIN_KEY) {
@@ -605,7 +599,31 @@
       } else {
         showRestrictedView();
       }
+    }
 
+    async function fetchInitData() {
+      // 1. Resolve URL parameters supporting both standalone iframe and direct window context
+      var linkKey = null, adminKey = null;
+
+      if (window.location && window.location.search) {
+        var urlParams = new URLSearchParams(window.location.search);
+        linkKey = urlParams.get('link');
+        adminKey = urlParams.get('key');
+      }
+
+      if (window.google && google.script && google.script.url) {
+        google.script.url.getLocation(function(loc) {
+          if (loc && loc.parameter) {
+            linkKey = loc.parameter.link || linkKey;
+            adminKey = loc.parameter.key || adminKey;
+          }
+          applyRoute(linkKey, adminKey);
+        });
+      } else {
+        applyRoute(linkKey, adminKey);
+      }
+
+      // 2. Fetch remote schema & shift records asynchronously
       try {
         const res = await safeFetch(SCRIPT_URL + '?action=getInitData');
         const data = await res.json();
@@ -643,7 +661,7 @@
 
         startAutoSync();
       } catch (err) {
-        console.warn("Operating with local schema fallback:", err);
+        console.warn("Using local schema guarantee:", err);
       }
     }
 
