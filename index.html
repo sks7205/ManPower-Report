@@ -8,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    /* Premium Industrial Dark Theme */
     :root {
       --bg: #090e17;
       --surface: #131b27;
@@ -16,10 +15,10 @@
       --line: #2d3748;
       --text: #f8fafc;
       --muted: #94a3b8;
-      --primary: #f59e0b; /* Amber */
+      --primary: #f59e0b;
       --primary-hover: #fbbf24;
       --primary-dim: rgba(245, 158, 11, 0.15);
-      --accent: #14b8a6; /* Teal */
+      --accent: #14b8a6;
       --accent-dim: rgba(20, 184, 166, 0.15);
       --danger: #ef4444;
       --danger-dim: #fee2e2;
@@ -30,211 +29,85 @@
       --shadow-md: 0 8px 16px rgba(0,0,0,0.4);
       --glow: 0 0 12px var(--primary-dim);
     }
-
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
-    body { 
-      background: var(--bg); 
-      color: var(--text); 
-      font-family: 'Inter', system-ui, sans-serif; 
-      min-height: 100vh; 
-      padding-bottom: 80px; 
-    }
-    
-    /* Animated Top Glow */
-    .top-glow {
-      height: 4px; 
-      width: 100%; 
-      background: linear-gradient(90deg, var(--bg) 0%, var(--primary) 25%, #fff 50%, var(--primary) 75%, var(--bg) 100%);
-      background-size: 200% 100%; 
-      animation: flow 4s linear infinite;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; padding-bottom: 80px; }
+    .top-glow { height: 4px; width: 100%; background: linear-gradient(90deg, var(--bg) 0%, var(--primary) 25%, #fff 50%, var(--primary) 75%, var(--bg) 100%); background-size: 200% 100%; animation: flow 4s linear infinite; position: sticky; top: 0; z-index: 50; }
     @keyframes flow { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-
-    /* Centered Header & Controls */
-    header { 
-      padding: 32px 20px 20px; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center;
-      text-align: center;
-      gap: 8px; 
-    }
-    .eyebrow { 
-      font-family: 'JetBrains Mono', monospace; 
-      font-size: 11px; 
-      letter-spacing: 0.15em; 
-      color: var(--primary); 
-      text-transform: uppercase; 
-      font-weight: 800;
-    }
+    header { padding: 32px 20px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+    .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.15em; color: var(--primary); text-transform: uppercase; font-weight: 800; }
     h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); }
     .sub { color: var(--muted); font-size: 14px; line-height: 1.5; }
-    
-    .controls-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0 20px 24px;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 24px;
-      background: linear-gradient(180deg, rgba(19, 27, 39, 0) 0%, rgba(19, 27, 39, 0.5) 100%);
-    }
-    .controls { 
-      display: flex; 
-      gap: 16px; 
-      justify-content: center;
-      flex-wrap: wrap; 
-      margin-bottom: 12px;
-    }
+    .controls-wrapper { display: flex; flex-direction: column; align-items: center; padding: 0 20px 24px; border-bottom: 1px solid var(--line); margin-bottom: 24px; background: linear-gradient(180deg, rgba(19, 27, 39, 0) 0%, rgba(19, 27, 39, 0.5) 100%); }
+    .controls { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
     .field { display: flex; flex-direction: column; gap: 6px; align-items: center; }
     label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-    
-    input[type=date], select, input[type=number], input[type=text], textarea {
-      background: var(--surface-2); border: 1px solid var(--line); color: var(--text);
-      border-radius: 12px; padding: 12px 16px; font-size: 15px; font-family: 'Inter', sans-serif; 
-      min-width: 0; transition: all 0.2s ease;
-    }
+    input[type=date], select, input[type=number], input[type=text], textarea { background: var(--surface-2); border: 1px solid var(--line); color: var(--text); border-radius: 12px; padding: 12px 16px; font-size: 15px; font-family: 'Inter', sans-serif; min-width: 0; transition: all 0.2s ease; }
     input[type=date], select { text-align: center; font-weight: 600; cursor: pointer; }
     input[type=number] { text-align: center; font-weight: 700; color: var(--primary); font-size: 18px; font-family: 'JetBrains Mono', monospace; } 
-    
-    input:focus, select:focus, textarea:focus { 
-      outline: none; 
-      border-color: var(--primary); 
-      box-shadow: 0 0 0 3px var(--primary-dim); 
-      background: var(--surface);
-    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-dim); background: var(--surface); }
     input:disabled, textarea:disabled { opacity: 0.5; cursor: not-allowed; }
-    
-    .auto-badge { 
-      font-family: 'JetBrains Mono', monospace; 
-      font-size: 11px; 
-      color: var(--accent); 
-      text-align: center;
-      font-weight: 500;
-    }
-    
+    .auto-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); text-align: center; font-weight: 500; }
     main { padding: 0 18px; max-width: 940px; margin: 0 auto; }
-    .card { 
-      background: var(--surface); border: 1px solid var(--line); 
-      border-radius: var(--radius); padding: 24px; margin-bottom: 20px; 
-      box-shadow: var(--shadow-md);
-    }
-    
-    /* Top Navigation Buttons */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow-md); }
     .top-nav-buttons { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
     .top-nav-buttons button { flex: 1; padding: 14px; font-size: 15px; min-width: 140px; }
-    
     .breadcrumb { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; font-size: 14px; color: var(--muted); }
     .breadcrumb .crumb { cursor: pointer; color: var(--accent); font-weight: 600; transition: color 0.2s; }
     .breadcrumb .crumb:hover { color: #fff; }
     .breadcrumb .crumb.current { color: var(--text); cursor: default; }
-    
-    .back-btn {
-      display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--muted);
-      border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font-size: 14px; 
-      margin-bottom: 20px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;
-    }
+    .back-btn { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font-size: 14px; margin-bottom: 20px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
     .back-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--muted); }
-    
     .tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
     @media (min-width: 520px){ .tile-grid { grid-template-columns: repeat(3, 1fr); } }
-    
-    .tile {
-      position: relative; background: var(--surface-2); border: 2px solid transparent; 
-      border-radius: 14px; padding: 18px 16px; cursor: pointer; text-align: left; 
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm);
-    }
+    .tile { position: relative; background: var(--surface-2); border: 2px solid transparent; border-radius: 14px; padding: 18px 16px; cursor: pointer; text-align: left; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); }
     .tile:hover { transform: translateY(-4px); box-shadow: var(--shadow-md), var(--glow); border-color: var(--line); }
     .tile:active { transform: translateY(0); border-color: var(--primary); }
     .tile.state-full { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
     .tile.state-partial { border-color: rgba(245, 158, 11, 0.3); background: var(--primary-dim); }
     .tile .tname { font-weight: 700; font-size: 15px; display: block; margin-bottom: 8px; color: var(--text); }
     .tile .tmeta { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-    
     .tile .dot { position: absolute; top: 14px; right: 14px; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
     .tile.state-full .dot { background: var(--ok); box-shadow: 0 0 10px rgba(16, 185, 129, 0.6); }
     .tile.state-partial .dot { background: var(--primary); box-shadow: 0 0 10px rgba(245, 158, 11, 0.6); }
-    
     .area-title { font-size: 22px; font-weight: 800; margin: 0 0 6px; color: var(--text); }
-    .area-tag { 
-      display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; 
-      letter-spacing: 0.1em; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; font-weight: 700;
-    }
+    .area-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; font-weight: 700; }
     .tag-direct { background: var(--primary-dim); color: var(--primary); }
     .tag-indirect { background: var(--accent-dim); color: var(--accent); }
-    
     .grid3 { display: flex; flex-direction: column; gap: 16px; }
     @media (min-width: 520px){ .grid3 { flex-direction: row; } .grid3 > .field { flex: 1; align-items: flex-start; } .grid3 > .field input { width: 100%; } }
-    
-    .actual-readout { 
-      margin-top: 20px; background: rgba(20, 184, 166, 0.12); border: 1px solid rgba(20, 184, 166, 0.4); 
-      border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; 
-    }
+    .actual-readout { margin-top: 20px; background: rgba(20, 184, 166, 0.12); border: 1px solid rgba(20, 184, 166, 0.4); border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
     .actual-readout .sub { color: var(--accent); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.4; text-align: left; }
-    .actual-readout .num { 
-      font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 800; 
-      color: var(--text); line-height: 1;
-    }
-    
-    .remark-prompt { 
-      margin-top: 16px; display: flex; align-items: center; gap: 12px; 
-      background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; 
-    }
+    .actual-readout .num { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; }
+    .remark-prompt { margin-top: 16px; display: flex; align-items: center; gap: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
     .remark-prompt input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; }
     .remark-prompt input[type=number] { width: 80px; }
     .remark-prompt .rtext { font-size: 14px; font-weight: 500; }
     textarea { width: 100%; resize: vertical; min-height: 60px; margin-top: 16px; }
-    
-    button { 
-      font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.02em;
-      border: none; border-radius: 12px; padding: 16px 24px; cursor: pointer; 
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+    button { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.02em; border: none; border-radius: 12px; padding: 16px 24px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     button:active { transform: scale(0.97); }
     .btn-primary { background: var(--primary); color: #000; width: 100%; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); }
     .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-    
     .btn-secondary { background: var(--accent-dim); color: var(--accent); width: 100%; }
     .btn-secondary:hover { background: rgba(20, 184, 166, 0.25); }
-    
     .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); width: 100%; }
     .btn-ghost:hover { background: var(--surface-2); border-color: var(--muted); }
-    
     .status-line { font-size: 13.5px; color: var(--muted); margin-top: 16px; min-height: 20px; display: flex; align-items: center; justify-content: center; font-weight: 500; text-align: center; }
     .status-line.ok { color: var(--ok); } .status-line.err { color: var(--danger); font-weight: 600; }
-    
-    /* EXCEL-STYLE DASHBOARD TABLES */
     .section-title { font-size: 18px; font-weight: 800; color: var(--primary); margin: 0 0 16px 0; border-bottom: 2px solid var(--line); padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-    
     .excel-wrapper { background: #ffffff; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 20px; box-shadow: inset 0 0 0 4px var(--surface-2); }
-    
     .excel-table { width: 100%; border-collapse: collapse; font-family: 'Inter', system-ui, sans-serif; font-size: 13px; color: #000; }
-    
     .excel-table th, .excel-table td { border: 1px solid #000000; padding: 4px 6px; white-space: nowrap; }
     .excel-table th { background-color: #fce444; color: #000; font-weight: bold; text-align: center; }
-    
     .excel-table td.num { text-align: center; }
-    
-    /* Shortage Highlight Style */
-    .shortage-flag {
-      background-color: var(--danger-dim) !important;
-      color: var(--danger-text) !important;
-      font-weight: 800 !important;
-    }
-    
+    .shortage-flag { background-color: var(--danger-dim) !important; color: var(--danger-text) !important; font-weight: 800 !important; }
     .excel-edit-cell { width: 100%; max-width: 70px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid transparent; border-radius: 2px; padding: 2px 3px; background: transparent; color: inherit; }
     .excel-edit-cell:hover { border-color: #cbd5e1; }
     .excel-edit-cell:focus { outline: none; border-color: #2563eb; background: rgba(37,99,235,0.06); }
     .excel-edit-cell-text { max-width: none; text-align: left; }
     .hide-ot .ot-cell { display: none; }
-    
     #masterDashTable th, #masterDashTable td, #masterDashTable * { font-style: normal !important; }
-    
     .bg-vl td { background-color: #E3F2FD !important; }      
     .bg-tkil td { background-color: #E8F5E9 !important; }    
     .bg-ske td { background-color: #FFF3E0 !important; }     
@@ -244,72 +117,29 @@
     .bg-lloyd td { background-color: #EDE7F6 !important; }   
     .bg-gmpl td { background-color: #F1F8E9 !important; }    
     .bg-nataraj td { background-color: #FCE4EC !important; } 
-    
     .excel-table .grand-total-row td { background-color: #fce444 !important; font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
     .excel-table .remarks-cell { white-space: nowrap; text-align: left; }
-    
-    .excel-table .tbt-cell, .excel-table .narrow-cell { 
-      white-space: normal; 
-      min-width: 70px; 
-      line-height: 1.2; 
-      padding: 4px 6px; 
-      text-align: center; 
-      word-break: normal; 
-      overflow-wrap: normal; 
-    }
-    
+    .excel-table .tbt-cell, .excel-table .narrow-cell { white-space: normal; min-width: 70px; line-height: 1.2; padding: 4px 6px; text-align: center; word-break: normal; overflow-wrap: normal; }
     .dash-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
     .dash-actions button { flex: 1; min-width: 140px; }
-
-    /* AGENCY CARD SPECIFIC STYLES */
-    .agency-card {
-      background: var(--surface-2); border: 1px solid var(--line);
-      border-radius: 12px; padding: 16px; margin-bottom: 16px;
-    }
-    .agency-card-header {
-      display: flex; justify-content: space-between; align-items: center; 
-      flex-wrap: wrap; gap: 10px; cursor: pointer;
-    }
-    .agency-contacts-container {
-      display: none;
-      border-top: 1px solid var(--line);
-      padding-top: 12px;
-      margin-top: 12px;
-    }
-    .agency-contacts-container.expanded {
-      display: block;
-    }
+    .agency-card { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .agency-card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; cursor: pointer; }
+    .agency-contacts-container { display: none; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+    .agency-contacts-container.expanded { display: block; }
     .agency-card-title { font-size: 16px; font-weight: 700; color: var(--text); }
-    .agency-contact-row {
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-      padding: 10px 14px; background: var(--bg); border: 1px solid var(--line);
-      border-radius: 10px; margin-bottom: 8px; transition: all 0.2s ease;
-    }
+    .agency-contact-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; transition: all 0.2s ease; }
     .agency-contact-row:hover { border-color: var(--muted); }
-    
     .agency-contact-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 150px; }
     .agency-contact-name { font-size: 15px; font-weight: 600; color: var(--text); }
     .agency-contact-phone { font-size: 13px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-
     .agency-actions { display: flex; align-items: center; gap: 6px; }
-    .icon-btn { 
-      background: transparent; color: var(--muted); border: none; font-size: 16px;
-      padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center;
-    }
+    .icon-btn { background: transparent; color: var(--muted); border: none; font-size: 16px; padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
     .icon-btn:hover { background: var(--surface); color: var(--text); }
     .icon-btn.edit:hover { color: var(--primary); }
     .icon-btn.delete:hover { color: var(--danger); background: rgba(239, 68, 68, 0.15); }
     .icon-btn.whatsapp { color: #10b981; } 
     .icon-btn.whatsapp:hover { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-
-    .toast { 
-      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); 
-      background: var(--primary); color: #000; padding: 14px 24px; border-radius: 30px; 
-      font-size: 14px; font-weight: 700; opacity: 0; pointer-events: none; 
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 50; 
-      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
-    }
+    .toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--primary); color: #000; padding: 14px 24px; border-radius: 30px; font-size: 14px; font-weight: 700; opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 50; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4); }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .loading-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-right: 8px; animation: pulse 1s infinite ease-in-out; }
     @keyframes pulse { 50% { opacity: 0.2; } }
@@ -349,24 +179,19 @@
     </div>
   </div>
 
-  <!-- MANUAL ADD/EDIT CONTACT MODAL -->
   <div id="manualContactModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(8px);">
     <div class="card" style="max-width:340px; width:90%; box-shadow:0 24px 48px rgba(0,0,0,0.6);">
       <h2 class="section-title" id="contactModalTitle" style="margin-top:0; border:none;">Add User</h2>
-      
       <input type="hidden" id="modalContactBundleKey">
       <input type="hidden" id="modalContactId">
-      
       <div class="field" style="align-items:flex-start; margin-bottom:16px;">
         <label>Name</label>
         <input type="text" id="modalContactName" placeholder="e.g. Rahul Supervisor" style="width:100%; box-sizing:border-box;">
       </div>
-      
       <div class="field" style="align-items:flex-start; margin-bottom:24px;">
         <label>WhatsApp Number</label>
         <input type="tel" id="modalContactPhone" placeholder="e.g. 9876543210" style="width:100%; box-sizing:border-box;">
       </div>
-      
       <div style="display:flex; gap:12px;">
         <button class="btn-ghost" id="contactModalCancelBtn" style="flex:1;">Cancel</button>
         <button class="btn-primary" id="contactModalSaveBtn" style="flex:1;">Save</button>
@@ -375,7 +200,6 @@
   </div>
 
   <main>
-    
     <div id="restrictedView" style="display:none;">
       <div class="card" style="text-align:center; padding:64px 20px;">
         <div style="font-size:48px; margin-bottom:16px;">🔒</div>
@@ -385,7 +209,6 @@
     </div>
 
     <div id="customDashboardView" style="display:none;">
-      
       <div class="top-nav-buttons">
         <button class="btn-primary" onclick="showPicker()">✏️ Data Entry</button>
         <button class="btn-secondary" onclick="showMasterDashboard()">📊 Master Report</button>
@@ -426,7 +249,6 @@
             <tbody id="dashBody"></tbody>
           </table>
         </div>
-        
         <div class="dash-actions">
           <button class="btn-ghost" onclick="downloadFullHDImage('customExportWrapper', 'Custom_Shift_Report')">⬇️ Download Image</button>
         </div>
@@ -435,7 +257,6 @@
       <div class="card">
         <h2 class="section-title" style="margin-top:0; border:none;">Agency Links</h2>
         <span class="sub" style="display:block; margin-bottom:20px;">Manage users manually for each section. Tap a row to expand/collapse. Click the WhatsApp icon next to a number to message the user.</span>
-        
         <div id="agencyLinksList"></div>
       </div>
     </div>
@@ -444,7 +265,6 @@
       <div style="margin-bottom: 16px;">
         <button class="back-btn" onclick="showCustomDashboard()" style="margin:0;">&#8592; Back to Home</button>
       </div>
-
       <div class="card">
         <h2 class="section-title" style="margin-top:0;">Full Master Data</h2>
         <div id="masterExportWrapper" class="excel-wrapper">
@@ -468,7 +288,6 @@
             <tbody id="masterDashBody"></tbody>
           </table>
         </div>
-
         <div class="dash-actions">
           <button class="btn-ghost" onclick="downloadFullHDImage('masterExportWrapper', 'Master_Shift_Data')">⬇️ Save Image</button>
           <button class="btn-secondary" id="editMasterBtn">✏️ Edit Report</button>
@@ -509,10 +328,8 @@
         <div id="entryBackBtnWrap">
           <button class="back-btn" onclick="showPicker()">&#8592; Back</button>
         </div>
-        
         <div id="areaTagWrap"></div>
         <p class="area-title" id="areaTitle"></p>
-
         <div class="grid3" style="margin-top: 24px;">
           <div class="field">
             <label for="planInput">Plan</label>
@@ -531,14 +348,11 @@
             <input type="number" id="tbtInput" min="0" inputmode="numeric" autocomplete="off">
           </div>
         </div>
-
         <div class="actual-readout">
           <span class="sub">Reported in Current<br/>Shift</span>
           <span class="num" id="reportedBig">0</span>
         </div>
-
         <div id="remarkPromptWrap"></div>
-
         <button class="btn-primary" style="margin-top:24px;" id="saveBtn">Save Entry</button>
         <button class="btn-secondary" style="margin-top:24px; display:none;" id="updateBtn">✏️ Update My Entry</button>
         <div class="status-line" id="areaStatus"></div>
@@ -553,24 +367,61 @@
         <h2 class="area-title" id="multiEntryTitle" style="color:var(--primary); margin-top:12px; font-size:26px;"></h2>
         <span class="sub" style="margin-bottom:8px; display:block;">Enter numbers for all sections below, then save once.</span>
       </div>
-      
       <div id="multiEntryForms"></div>
-      
       <div class="card" style="margin-top:24px;">
         <button class="btn-primary" id="multiSaveBtn">Save All Sections</button>
         <div class="status-line" id="multiAreaStatus"></div>
       </div>
     </div>
-
   </main>
 
   <div class="toast" id="toast"></div>
 
   <script>
+    // ⚠️ REPLACE THIS WITH YOUR NEW APPS SCRIPT DEPLOYMENT URL ⚠️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOlIvI_6Kkxx52dSZ244K-8QBV5CCxaRf0Y8lsTDl9A7M1lXgItKxfQXePGHtoXioN/exec";
 
-    var AREAS = [];
+    // Embedded Schema Guarantee: Allows UI to build and display TKIL JCB immediately
+    const DEFAULT_AREAS = [
+      { id: 'VL_ARS2', name: 'ARS2', fullName: 'VL ARS2', type: 'Direct', path: ['VL', 'VL_ARS2'], remarkPrompt: { kind: 'boolean', text: 'Including ARS3' } },
+      { id: 'VL_ARS3', name: 'ARS3', fullName: 'VL ARS3', type: 'Direct', path: ['VL', 'VL_ARS3'], remarkPrompt: null },
+      { id: 'TKIL_MECH_ARS2', name: 'ARS2 Shift Activity', fullName: 'TKIL MECH - ARS2', type: 'Indirect', path: ['TKIL', 'TKIL_MECH'], remarkPrompt: null },
+      { id: 'TKIL_MECH_ARS3', name: 'ARS3 Shift Activity', fullName: 'TKIL MECH - ARS3', type: 'Indirect', path: ['TKIL', 'TKIL_MECH'], remarkPrompt: null },
+      { id: 'TKIL_MECH_OTHERS', name: 'Others', fullName: 'TKIL MECH - Others', type: 'Indirect', path: ['TKIL', 'TKIL_MECH'], remarkPrompt: null },
+      { id: 'TKIL_ELE_ARS2', name: 'ARS2 Shift Activity', fullName: 'TKIL ELE - ARS2', type: 'Indirect', path: ['TKIL', 'TKIL_ELE'], remarkPrompt: null },
+      { id: 'TKIL_ELE_ARS3', name: 'ARS3 Shift Activity', fullName: 'TKIL ELE - ARS3', type: 'Indirect', path: ['TKIL', 'TKIL_ELE'], remarkPrompt: null },
+      { id: 'TKIL_ELE_OTHERS', name: 'Others', fullName: 'TKIL ELE - Others', type: 'Indirect', path: ['TKIL', 'TKIL_ELE'], remarkPrompt: null },
+      { id: 'TKIL_JCB', name: 'TKIL JCB', fullName: 'TKIL JCB', type: 'Indirect', path: ['TKIL'], remarkPrompt: null },
+      { id: 'LLOYD', name: 'LLOYD', fullName: 'LLOYD', type: 'Indirect', path: [], remarkPrompt: null },
+      { id: 'GMPL', name: 'GMPL', fullName: 'GMPL', type: 'Indirect', path: [], remarkPrompt: { kind: 'number', text: 'Supervisor Included' } },
+      { id: 'NATARAJ', name: 'Nataraj Eng', fullName: 'Nataraj Eng', type: 'Indirect', path: [], remarkPrompt: { kind: 'number', text: 'Supervisor Included' } },
+      { id: 'SKE_OA_ARS2', name: 'ARS2', fullName: 'SKE OA - ARS2', type: 'Indirect', path: ['SKE', 'SKE_OA'], remarkPrompt: { kind: 'number', text: 'Supervisor Included' } },
+      { id: 'SKE_OA_ARS3', name: 'ARS3', fullName: 'SKE OA - ARS3', type: 'Indirect', path: ['SKE', 'SKE_OA'], remarkPrompt: { kind: 'boolean', text: '1 Supervisor Included' } },
+      { id: 'SKE_OA_SCOOPBATH', name: 'Scoopbath', fullName: 'SKE OA - Scoopbath', type: 'Indirect', path: ['SKE', 'SKE_OA'], remarkPrompt: null },
+      { id: 'SKE_OA_RODREPAIR', name: 'Rod Repair', fullName: 'SKE OA - Rod Repair', type: 'Indirect', path: ['SKE', 'SKE_OA'], remarkPrompt: { kind: 'boolean', text: '1 Supervisor Included' } },
+      { id: 'SKE_OA_BUTTCLEAN', name: 'Butt Clean', fullName: 'SKE OA - Butt Clean', type: 'Indirect', path: ['SKE', 'SKE_OA'], remarkPrompt: { kind: 'boolean', text: '1 Supervisor Included' } },
+      { id: 'SKE_OA_BELTHK', name: 'Belt Housekeeping', fullName: 'SKE OA - Belt Housekeeping', type: 'Indirect', path: ['SKE', 'SKE_OA'], remarkPrompt: { kind: 'number', text: 'Supervisor Included' } },
+      { id: 'SKE_OA_LADIES', name: 'SKE FHK', fullName: 'SKE FHK', type: 'Indirect', path: ['SKE', 'SKE_OA'], remarkPrompt: null },
+      { id: 'SKE_OP_ARS2', name: 'ARS2', fullName: 'SKE Operator - ARS2', type: 'Indirect', path: ['SKE', 'SKE_OP'], remarkPrompt: null },
+      { id: 'SKE_OP_ARS3', name: 'ARS3', fullName: 'SKE Operator - ARS3', type: 'Indirect', path: ['SKE', 'SKE_OP'], remarkPrompt: null },
+      { id: 'SKE_OP_ATV', name: 'ATV', fullName: 'SKE Operator - ATV', type: 'Indirect', path: ['SKE', 'SKE_OP'], remarkPrompt: null },
+      { id: 'TARON_3T_ARS2', name: 'ARS2', fullName: 'TARON 3Ton - ARS2', type: 'Indirect', path: ['TARON', 'TARON_3T'], remarkPrompt: null },
+      { id: 'TARON_3T_ARS3', name: 'ARS3', fullName: 'TARON 3Ton - ARS3', type: 'Indirect', path: ['TARON', 'TARON_3T'], remarkPrompt: null },
+      { id: 'TARON_3T_WAREHOUSE', name: 'Warehouse', fullName: 'TARON 3Ton - Warehouse', type: 'Indirect', path: ['TARON', 'TARON_3T'], remarkPrompt: null },
+      { id: 'TARON_10T_ARS2', name: 'ARS2', fullName: 'TARON 10Ton - ARS2', type: 'Indirect', path: ['TARON', 'TARON_10T'], remarkPrompt: null },
+      { id: 'TARON_10T_ARS3', name: 'ARS3', fullName: 'TARON 10Ton - ARS3', type: 'Indirect', path: ['TARON', 'TARON_10T'], remarkPrompt: null },
+      { id: 'TARON_10T_WAREHOUSE', name: 'Warehouse', fullName: 'TARON 10Ton - Warehouse', type: 'Indirect', path: ['TARON', 'TARON_10T'], remarkPrompt: null },
+      { id: 'TARON_10T_SCOOPBATH', name: 'Scoopbath', fullName: 'TARON 10Ton - Scoopbath', type: 'Indirect', path: ['TARON', 'TARON_10T'], remarkPrompt: null },
+      { id: 'TENON_HK', name: 'Housekeeping', fullName: 'Tenon - Housekeeping', type: 'Indirect', path: ['TENON'], remarkPrompt: null },
+      { id: 'TENON_DULEVO', name: 'Dulevo', fullName: 'Tenon - Dulevo', type: 'Indirect', path: ['TENON'], remarkPrompt: null },
+      { id: 'UIL_JCB_RMT', name: 'RMT', fullName: 'UIL JCB - RMT', type: 'Indirect', path: ['UIL', 'UIL_JCB'], remarkPrompt: null },
+      { id: 'UIL_JCB_BATHPLANT', name: 'Bath Plant', fullName: 'UIL JCB - Bath Plant', type: 'Indirect', path: ['UIL', 'UIL_JCB'], remarkPrompt: null },
+      { id: 'UIL_HYWA', name: 'Hywa', fullName: 'UIL - Hywa', type: 'Indirect', path: ['UIL'], remarkPrompt: null }
+    ];
+
+    var AREAS = DEFAULT_AREAS;
     var AREAS_BY_ID = {};
+    DEFAULT_AREAS.forEach(a => { AREAS_BY_ID[a.id] = a; });
     var TREE = [];
     var shiftData = {};
     var currentPath = [];
@@ -585,13 +436,24 @@
     var IS_UPDATE_SAVE = false; 
     var AGENCY_CONTACTS = {};
 
+    const BUNDLES = {
+      'scoopbath':  { title: 'Scoopbath', areaIds: ['SKE_OA_SCOOPBATH', 'TARON_10T_SCOOPBATH', 'UIL_JCB_BATHPLANT', 'TKIL_JCB'] },
+      'rmt':        { title: 'RMT', areaIds: ['UIL_JCB_RMT', 'UIL_HYWA', 'TKIL_JCB'] },
+      'warehouse':  { title: 'Warehouse', areaIds: ['TARON_10T_WAREHOUSE', 'TARON_3T_WAREHOUSE', 'SKE_OP_ATV', 'TKIL_JCB'] },
+      'ske':        { title: 'SKE Supervisor', areaIds: ['SKE_OA_ARS2','SKE_OA_ARS3','SKE_OA_SCOOPBATH','SKE_OA_RODREPAIR','SKE_OA_BUTTCLEAN','SKE_OA_BELTHK','SKE_OA_LADIES','SKE_OP_ARS2','SKE_OP_ARS3','SKE_OP_ATV'] },
+      'nataraj':    { title: 'Nataraj Eng', areaIds: ['NATARAJ'] },
+      'mech':       { title: 'TKIL Mech', areaIds: ['TKIL_MECH_ARS2','TKIL_MECH_ARS3','TKIL_MECH_OTHERS'] },
+      'ele':        { title: 'TKIL Ele', areaIds: ['TKIL_ELE_ARS2','TKIL_ELE_ARS3','TKIL_ELE_OTHERS'] },
+      'ars3':       { title: 'ARS3 — All Sections', areaIds: ['VL_ARS3','SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
+      'gmpl':       { title: 'GMPL', areaIds: ['GMPL'] },
+      'taron_ars2': { title: 'TARON ARS2', areaIds: ['TARON_3T_ARS2','TARON_10T_ARS2'] }
+    };
+
     async function fetchAgencyContacts() {
       try {
         const res = await fetch(SCRIPT_URL + '?action=getContacts');
         AGENCY_CONTACTS = await res.json();
-      } catch (err) {
-        console.error('Could not load agency contacts', err);
-      }
+      } catch (err) {}
     }
 
     function bundleFillState(bundle){
@@ -628,36 +490,12 @@
     const ADMIN_KEY = "ars2incharge2026";
 
     function cardLabel(area) {
+      if (!area) return '';
       if (area.name && area.name.indexOf('Shift Activity') !== -1) {
         return area.fullName + ' (Shift Activity)';
       }
       return area.fullName;
     }
-
-    const BUNDLES = {
-      'scoopbath':  { 
-        title: 'Scoopbath',           
-        areaIds: ['SKE_OA_SCOOPBATH', 'TARON_10T_SCOOPBATH', 'UIL_JCB_BATHPLANT', 'TKIL_JCB'] 
-      },
-      'rmt':        { 
-        title: 'RMT',                 
-        areaIds: ['UIL_JCB_RMT', 'UIL_HYWA', 'TKIL_JCB'] 
-      },
-      'warehouse':  { 
-        title: 'Warehouse',           
-        areaIds: ['TARON_10T_WAREHOUSE', 'TARON_3T_WAREHOUSE', 'SKE_OP_ATV', 'TKIL_JCB'] 
-      },
-      'ske':        { 
-        title: 'SKE Supervisor',      
-        areaIds: ['SKE_OA_ARS2','SKE_OA_ARS3','SKE_OA_SCOOPBATH','SKE_OA_RODREPAIR','SKE_OA_BUTTCLEAN','SKE_OA_BELTHK','SKE_OA_LADIES','SKE_OP_ARS2','SKE_OP_ARS3','SKE_OP_ATV'] 
-      },
-      'nataraj':    { title: 'Nataraj Eng',         areaIds: ['NATARAJ'] },
-      'mech':       { title: 'TKIL Mech',           areaIds: ['TKIL_MECH_ARS2','TKIL_MECH_ARS3','TKIL_MECH_OTHERS'] },
-      'ele':        { title: 'TKIL Ele',            areaIds: ['TKIL_ELE_ARS2','TKIL_ELE_ARS3','TKIL_ELE_OTHERS'] },
-      'ars3':       { title: 'ARS3 — All Sections', areaIds: ['VL_ARS3','SKE_OA_ARS3','SKE_OP_ARS3','TARON_10T_ARS3','TARON_3T_ARS3','TKIL_MECH_ARS3','TKIL_ELE_ARS3'] },
-      'gmpl':       { title: 'GMPL',                areaIds: ['GMPL'] },
-      'taron_ars2': { title: 'TARON ARS2',          areaIds: ['TARON_3T_ARS2','TARON_10T_ARS2'] }
-    };
 
     function pad(n){ return String(n).padStart(2,'0'); }
     function autoDate(){
@@ -750,60 +588,57 @@
     }
 
     async function fetchInitData() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var linkKey = urlParams.get('link');
+      var adminKey = urlParams.get('key');
+
+      // Immediate Route Handling
+      if (linkKey && BUNDLES[linkKey]) {
+        openBundleEntry(linkKey);
+      } else if (adminKey === ADMIN_KEY) {
+        showCustomDashboard(); 
+      } else {
+        showRestrictedView();
+      }
+
       try {
         const res = await fetch(SCRIPT_URL + '?action=getInitData');
         const data = await res.json();
         
-        AREAS = data.areas.filter(a => a.id !== 'SSE');
-        TREE = data.tree.filter(t => (t.id || t.areaId) !== 'SSE');
-
-        var tkilGroup = TREE.find(n => n.id === 'TKIL');
-        if (tkilGroup) {
-          tkilGroup.children.forEach(c => {
-            if (c.id === 'TKIL_MECH' || c.id === 'TKIL_ELE') {
-              c.type = 'multi';
-              c.areaIds = c.children.map(leaf => leaf.areaId);
-              c.displayName = 'TKIL ' + c.name;
-            }
-          });
+        if (data.areas && data.areas.length) {
+          AREAS = data.areas.filter(a => a.id !== 'SSE');
+          AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
         }
-
-        var vlNode = TREE.find(n => n.id === 'VL');
-        if (vlNode) {
-          vlNode.type = 'multi';
-          vlNode.areaIds = vlNode.children.map(leaf => leaf.areaId);
-          vlNode.displayName = vlNode.name;
-        }
-
-        AREAS.forEach(function(a){ AREAS_BY_ID[a.id] = a; });
-
-        if (AREAS_BY_ID['SKE_OA_BUTTCLEAN'] && !AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt) {
-          AREAS_BY_ID['SKE_OA_BUTTCLEAN'].remarkPrompt = { kind: 'boolean', text: '1 Supervisor Included' };
-        }
-
-        if (AREAS_BY_ID['GMPL']) {
-          AREAS_BY_ID['GMPL'].remarkPrompt = { kind: 'number', text: 'Supervisor Included', required: true };
+        if (data.tree) {
+          TREE = data.tree.filter(t => (t.id || t.areaId) !== 'SSE');
+          var tkilGroup = TREE.find(n => n.id === 'TKIL');
+          if (tkilGroup) {
+            tkilGroup.children.forEach(c => {
+              if (c.id === 'TKIL_MECH' || c.id === 'TKIL_ELE') {
+                c.type = 'multi';
+                c.areaIds = c.children.map(leaf => leaf.areaId);
+                c.displayName = 'TKIL ' + c.name;
+              }
+            });
+          }
+          var vlNode = TREE.find(n => n.id === 'VL');
+          if (vlNode) {
+            vlNode.type = 'multi';
+            vlNode.areaIds = vlNode.children.map(leaf => leaf.areaId);
+            vlNode.displayName = vlNode.name;
+          }
         }
 
         await refreshShiftData();
         await fetchAgencyContacts();
 
-        var urlParams = new URLSearchParams(window.location.search);
-        var linkKey = urlParams.get('link');
-        var adminKey = urlParams.get('key');
-        if (linkKey && BUNDLES[linkKey]) {
-          openBundleEntry(linkKey);
-        } else if (adminKey === ADMIN_KEY) {
-          showCustomDashboard(); 
-        } else {
-          showRestrictedView();
-        }
+        if (CURRENT_VIEW === 'bundleTiles') renderBundleTiles();
+        if (CURRENT_VIEW === 'custom') { buildCustomTable(); renderAgencyLinks(); }
+        if (CURRENT_VIEW === 'master') buildMasterTable();
 
         startAutoSync();
-
       } catch (err) {
-        showToast("Error connecting to database.");
-        console.error(err);
+        console.warn("Operating with local schema fallback:", err);
       }
     }
 
@@ -812,7 +647,7 @@
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getShiftData&date=${currentDate()}&shift=${currentShift()}`);
         shiftData = await res.json();
-      } catch (err) { console.error(err); }
+      } catch (err) {}
     }
 
     async function syncData(silent) {
@@ -844,9 +679,7 @@
       }
       
       var resetBtn = document.getElementById('resetShiftBtn');
-      if (resetBtn) {
-        resetBtn.addEventListener('click', resetShiftData);
-      }
+      if (resetBtn) resetBtn.addEventListener('click', resetShiftData);
       
       var editMasterBtn = document.getElementById('editMasterBtn');
       if (editMasterBtn) {
@@ -873,11 +706,7 @@
 
     async function resetShiftData(){
       var dateStr = currentDate(), shiftStr = currentShift();
-      var confirmed = window.confirm(
-        'This will permanently clear ALL entered data for ' + dateStr + ' — Shift ' + shiftStr + '.\n\nThis cannot be undone. Continue?'
-      );
-      if (!confirmed) return;
-
+      if (!window.confirm('Clear ALL data for ' + dateStr + ' Shift ' + shiftStr + '?')) return;
       showToast('Clearing data\u2026');
       try {
         const res = await fetch(SCRIPT_URL, {
@@ -890,12 +719,10 @@
           shiftData = {};
           buildCustomTable();
           renderAgencyLinks();
-          showToast('Cleared all data for ' + dateStr + ' Shift ' + shiftStr);
-        } else {
-          showToast('\u26A0 Reset failed: ' + (result.error || 'unknown error'));
+          showToast('Cleared data');
         }
       } catch (err) {
-        showToast('\u26A0 Could not reach server. Check connection and retry.');
+        showToast('\u26A0 Could not reset data');
       }
     }
 
@@ -953,7 +780,6 @@
     function renderPicker(){
       currentLeaf = null;
       currentMultiNode = null;
-
       var crumbWrap = document.getElementById('breadcrumb');
       crumbWrap.innerHTML = '';
       var homeCrumb = document.createElement('span');
@@ -993,7 +819,7 @@
         if (node.type === 'leaf'){
           var area = AREAS_BY_ID[node.areaId];
           fill = shiftData[node.areaId] ? { state: 'full' } : { state: 'empty' };
-          label = area.name;
+          label = area ? area.name : node.areaId;
           meta = shiftData[node.areaId] ? ('Reported ' + shiftData[node.areaId].reported) : 'No entry yet';
         } else {
           fill = nodeFillState(node);
@@ -1016,11 +842,9 @@
       currentMultiNode = node;
       hideAllViews();
       document.getElementById('multiEntryView').style.display = 'block';
-      
       document.getElementById('pageTitle').textContent = (node.displayName || node.name) + " Data Entry";
       document.getElementById('pageSub').textContent = "Grouped multi-entry form";
       document.getElementById('multiEntryTitle').textContent = node.displayName || node.name;
-
       document.getElementById('multiBackBtnWrap').style.display = 'block';
       
       var container = document.getElementById('multiEntryForms');
@@ -1069,11 +893,11 @@
       saveBtn.style.display = isCardLocked ? 'none' : 'block';
       
       if (isCardLocked) {
-          statusEl.textContent = 'Already submitted and updated once for this shift. Contact your Shift In-charge for further changes.';
+          statusEl.textContent = 'Already submitted and updated once for this shift.';
           statusEl.className = 'status-line err';
       } else if (isMultiFilledAtAll && LINK_MODE) {
           saveBtn.textContent = '✏️ Update All Sections';
-          statusEl.textContent = 'Already submitted for this shift. You can update it once more if needed.';
+          statusEl.textContent = 'Already submitted. You can update once more if needed.';
           statusEl.className = 'status-line';
       } else {
           saveBtn.textContent = 'Save All Sections';
@@ -1085,7 +909,7 @@
     function openBundleEntry(key) {
       var bundle = BUNDLES[key];
       if (!bundle) {
-        showToast('Unknown link — showing dashboard instead.');
+        showToast('Unknown link');
         showCustomDashboard();
         return;
       }
@@ -1124,7 +948,7 @@
     function continueFromNameGate() {
       var name = document.getElementById('nameGateInput').value.trim();
       if (!name) {
-        showToast('Please enter your name to continue');
+        showToast('Please enter your name');
         return;
       }
       AGENCY_NAME = name;
@@ -1141,7 +965,7 @@
       hideAllViews();
       document.getElementById('bundleTileView').style.display = 'block';
       document.getElementById('pageTitle').textContent = bundle.title;
-      document.getElementById('pageSub').textContent = 'Select a section below to enter its numbers';
+      document.getElementById('pageSub').textContent = 'Select a section below to enter numbers';
       renderBundleTiles();
     }
 
@@ -1151,7 +975,7 @@
       grid.innerHTML = '';
       
       bundle.areaIds.forEach(function(id){
-        var area = AREAS_BY_ID[id];
+        var area = AREAS_BY_ID[id] || { name: id, fullName: id };
         var rec = shiftData[id];
         var filled = !rec;
         
@@ -1172,7 +996,6 @@
 
     function saveMultiArea() {
       var nodeName = currentMultiNode.displayName || currentMultiNode.name;
-
       for (var i = 0; i < currentMultiNode.areaIds.length; i++) {
         var checkId = currentMultiNode.areaIds[i];
         var planVal = document.getElementById('m_plan_' + checkId).value;
@@ -1197,63 +1020,44 @@
 
       var localUpdates = {};
       var payloads = [];
-      
       var isMultiFilledAtAll = currentMultiNode.areaIds.some(id => !shiftData[id]);
       var enteredByName = LINK_MODE ? (AGENCY_NAME || 'Agency') : 'you';
-      
-      if (LINK_MODE && isMultiFilledAtAll) {
-         enteredByName += ' (updated)';
-      }
-      
-      var commonRem = '';
+      if (LINK_MODE && isMultiFilledAtAll) enteredByName += ' (updated)';
 
       currentMultiNode.areaIds.forEach(function(id){
-        var area = AREAS_BY_ID[id];
+        var area = AREAS_BY_ID[id] || { fullName: id };
         var plan = document.getElementById('m_plan_' + id).value;
         var actual = document.getElementById('m_actual_' + id).value;
         var ot = isOTHidden() ? 0 : document.getElementById('m_ot_' + id).value;
         var tbtAttended = document.getElementById('m_tbt_' + id).value;
-
-        var finalRem = commonRem;
         var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
 
         localUpdates[id] = {
           plan: Number(plan || 0), actual: Number(actual || 0),
           inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
-          remarks: finalRem, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
+          remarks: '', updatedBy: enteredByName, timestamp: new Date().toLocaleString()
         };
 
         payloads.push({
           date: currentDate(), shift: currentShift(),
           areaId: id, areaName: area.fullName,
-          plan: plan, actual: actual, inOT: ot, tbtAttended: tbtAttended, remarks: finalRem
+          plan: plan, actual: actual, inOT: ot, tbtAttended: tbtAttended, remarks: ''
         });
       });
 
       Object.assign(shiftData, localUpdates);
       showSuccessPopup(nodeName + ' saved successfully!');
-      if (LINK_MODE) {
-        openMultiEntry(currentMultiNode); 
-      } else {
-        showPicker();
-      }
+      if (LINK_MODE) openMultiEntry(currentMultiNode); 
+      else showPicker();
 
-      var promises = payloads.map(function(payload){
-        return fetch(SCRIPT_URL, {
+      payloads.forEach(payload => {
+        fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'saveAreaRow', data: payload })
-        }).then(function(res){ return res.json(); }).then(function(data){
-          if (shiftData[payload.areaId]) {
-            shiftData[payload.areaId].reported = data.reported;
-          }
-        });
-      });
-
-      Promise.all(promises).then(function(){
-        if (CURRENT_VIEW === 'picker') renderPicker();
-      }).catch(function(err){
-        showToast('\u26A0 Could not save ' + nodeName + '. Check connection and retry.');
+        }).then(res => res.json()).then(data => {
+          if (shiftData[payload.areaId]) shiftData[payload.areaId].reported = data.reported;
+        }).catch(err => console.error(err));
       });
     }
 
@@ -1263,9 +1067,9 @@
       hideAllViews();
       document.getElementById('entryView').style.display = 'block';
       
-      var area = AREAS_BY_ID[areaId];
+      var area = AREAS_BY_ID[areaId] || { id: areaId, name: areaId, fullName: areaId, type: 'Indirect' };
       document.getElementById('pageTitle').textContent = cardLabel(area);
-      document.getElementById('pageSub').textContent = 'Enter your shift numbers below';
+      document.getElementById('pageSub').textContent = 'Enter shift numbers below';
       document.getElementById('areaTitle').textContent = cardLabel(area);
       document.getElementById('areaTagWrap').innerHTML =
         '<span class="area-tag ' + (area.type === 'Direct' ? 'tag-direct' : 'tag-indirect') + '">' + area.type.toUpperCase() + ' AGENCY</span>';
@@ -1285,7 +1089,7 @@
 
       var promptWrap = document.getElementById('remarkPromptWrap');
       promptWrap.innerHTML = '';
-      if (area.remarkPrompt){
+      if (area && area.remarkPrompt){
         var box = document.createElement('div');
         box.className = 'remark-prompt';
         if (area.remarkPrompt.kind === 'boolean'){
@@ -1306,8 +1110,6 @@
       var rec = shiftData[currentLeaf];
       var alreadyFilled = LINK_MODE && !rec;
       var alreadyUpdatedOnce = alreadyFilled && rec.updatedBy && rec.updatedBy.indexOf('(updated)') !== -1;
-      
-      var locked = alreadyFilled; 
 
       function applyLockState(isLocked) {
         ['planInput','actualInput','otInput','tbtInput'].forEach(function(id){
@@ -1317,7 +1119,7 @@
         if (flagEl) flagEl.disabled = isLocked;
       }
 
-      applyLockState(locked);
+      applyLockState(alreadyFilled);
       
       var saveBtn = document.getElementById('saveBtn');
       var updateBtn = document.getElementById('updateBtn');
@@ -1329,12 +1131,12 @@
       } else if (alreadyUpdatedOnce) {
         saveBtn.style.display = 'none';
         updateBtn.style.display = 'none';
-        statusEl.textContent = 'Already submitted and updated once for this shift. Contact your Shift In-charge for further changes.';
+        statusEl.textContent = 'Already submitted and updated once for this shift.';
         statusEl.className = 'status-line err';
       } else {
         saveBtn.style.display = 'none';
         updateBtn.style.display = 'block';
-        statusEl.textContent = 'Already submitted for this shift. You can update it once more if needed.';
+        statusEl.textContent = 'Already submitted for this shift. You can update once more.';
         statusEl.className = 'status-line';
       }
 
@@ -1343,7 +1145,7 @@
         updateBtn.style.display = 'none';
         saveBtn.style.display = 'block';
         IS_UPDATE_SAVE = true;
-        statusEl.textContent = 'Editing — this is your one allowed update.';
+        statusEl.textContent = 'Editing — allowed one update.';
         statusEl.className = 'status-line';
       };
     }
@@ -1366,7 +1168,7 @@
 
       var area = AREAS_BY_ID[currentLeaf];
       var flagEl = document.getElementById('remarkFlag');
-      if (flagEl && area.remarkPrompt) {
+      if (flagEl && area && area.remarkPrompt) {
         var remarksText = (rec && rec.remarks) ? rec.remarks : '';
         if (area.remarkPrompt.kind === 'boolean') {
           flagEl.checked = (remarksText === area.remarkPrompt.text);
@@ -1376,14 +1178,12 @@
         }
       }
 
-      status.textContent = rec ? ('Last saved by ' + rec.updatedBy + ' at ' + rec.timestamp) : 'No entry yet for this date/shift.';
+      status.textContent = rec ? ('Last saved by ' + rec.updatedBy + ' at ' + rec.timestamp) : 'No entry yet.';
       status.className = 'status-line';
     }
 
     function saveArea(){
-      var area = AREAS_BY_ID[currentLeaf];
-      var status = document.getElementById('areaStatus');
-
+      var area = AREAS_BY_ID[currentLeaf] || { id: currentLeaf, fullName: currentLeaf };
       var plan = document.getElementById('planInput').value;
       var actual = document.getElementById('actualInput').value;
       var ot = isOTHidden() ? 0 : document.getElementById('otInput').value;
@@ -1394,29 +1194,17 @@
         showToast('Plan & Actual are mandatory');
         return;
       }
-
       if (LINK_MODE && (tbtAttended === '' || Number(tbtAttended) < 0)) {
-        showToast('TBT Attended No. is mandatory (enter 0 or more)');
+        showToast('TBT Attended No. is mandatory');
         return;
       }
-
       if (tbtAttended !== '' && Number(tbtAttended) > reportedGuess) {
-        showToast('TBT Attended No. cannot be greater than Reported in Shift (' + reportedGuess + ')');
+        showToast('TBT Attended No. cannot exceed Reported');
         return;
-      }
-
-      if (LINK_MODE && area.remarkPrompt && area.remarkPrompt.kind === 'number' && area.remarkPrompt.required) {
-        var remarkFlagEl = document.getElementById('remarkFlag');
-        var remarkVal = remarkFlagEl ? remarkFlagEl.value : '';
-        if (remarkVal === '' || Number(remarkVal) < 0) {
-          showToast(area.remarkPrompt.text + ' is mandatory (enter 0 or more)');
-          return;
-        }
       }
 
       var autoText = '';
-      
-      if (area.remarkPrompt){
+      if (area && area.remarkPrompt){
         var flagEl = document.getElementById('remarkFlag');
         if (area.remarkPrompt.kind === 'boolean'){
           if (flagEl.checked) autoText = area.remarkPrompt.text;
@@ -1426,25 +1214,22 @@
         }
       }
       
-      var finalRemarks = autoText;
       var enteredByName = LINK_MODE ? (AGENCY_NAME || 'Agency') : 'you';
-      if (LINK_MODE && IS_UPDATE_SAVE) {
-        enteredByName = enteredByName + ' (updated)';
-      }
+      if (LINK_MODE && IS_UPDATE_SAVE) enteredByName += ' (updated)';
       IS_UPDATE_SAVE = false;
 
       var payload = {
         date: currentDate(), shift: currentShift(),
         areaId: area.id, areaName: area.fullName,
         plan: plan, actual: actual, inOT: ot, tbtAttended: tbtAttended,
-        remarks: finalRemarks, enteredBy: enteredByName
+        remarks: autoText, enteredBy: enteredByName
       };
 
       var savedAreaId = currentLeaf;
       shiftData[savedAreaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0),
         inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
-        remarks: finalRemarks, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
+        remarks: autoText, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
       };
       
       showSuccessPopup(area.fullName + ' saved successfully!\nReported: ' + reportedGuess);
@@ -1462,21 +1247,16 @@
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'saveAreaRow', data: payload })
-      }).then(function(res){ return res.json(); }).then(function(data){
-        if (shiftData[savedAreaId]) {
-          shiftData[savedAreaId].reported = data.reported;
-        }
+      }).then(res => res.json()).then(data => {
+        if (shiftData[savedAreaId]) shiftData[savedAreaId].reported = data.reported;
         if (CURRENT_VIEW === 'picker') renderPicker();
         if (CURRENT_VIEW === 'bundleTiles') renderBundleTiles();
-      }).catch(function(err){
-        showToast('\u26A0 Could not save ' + area.fullName + '. Check connection and retry.');
-      });
+      }).catch(err => console.error(err));
     }
 
     function updateDashboardHeaders() {
       const shift = currentShift();
       document.getElementById('thShiftTop').textContent = 'Shift-' + shift;
-      
       document.getElementById('thReported').innerHTML = 'Reported in<br>Shift-' + shift;
       document.getElementById('thShiftTopMaster').textContent = 'Shift-' + shift;
       document.getElementById('thReportedMaster').innerHTML = 'Reported in<br>Shift-' + shift;
@@ -1487,9 +1267,7 @@
       if (dashTableEl) dashTableEl.classList.toggle('hide-ot', hideOT);
       if (masterTableEl) masterTableEl.classList.toggle('hide-ot', hideOT);
 
-      document.querySelectorAll('.ot-cell').forEach(function(el){
-        el.style.display = hideOT ? 'none' : '';
-      });
+      document.querySelectorAll('.ot-cell').forEach(function(el){ el.style.display = hideOT ? 'none' : ''; });
       var thDate = document.getElementById('thDate');
       var thDateMaster = document.getElementById('thDateMaster');
       if (thDate) thDate.setAttribute('colspan', hideOT ? '5' : '6');
@@ -1500,10 +1278,8 @@
       const dateStr = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
       let hours = now.getHours();
       const ampm = hours >= 12 ? 'pm' : 'am';
-      hours = hours % 12;
-      hours = hours ? hours : 12;
+      hours = hours % 12 || 12;
       const mins = now.getMinutes().toString().padStart(2, '0');
-      
       const dtStr = dateStr + ' ' + hours + ':' + mins + ' ' + ampm;
       document.getElementById('thDate').textContent = dtStr;
       document.getElementById('thDateMaster').textContent = dtStr;
@@ -1626,7 +1402,7 @@
 
       clearTimeout(inlineEditSaveTimers[areaId]);
       inlineEditSaveTimers[areaId] = setTimeout(function(){
-        var area = AREAS_BY_ID[areaId];
+        var area = AREAS_BY_ID[areaId] || { fullName: areaId };
         fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1637,11 +1413,9 @@
             tbtAttended: tbtAttended,
             remarks: shiftData[areaId].remarks, enteredBy: 'you'
           }})
-        }).then(function(res){ return res.json(); }).then(function(data){
+        }).then(res => res.json()).then(data => {
           if (shiftData[areaId]) shiftData[areaId].reported = data.reported;
-        }).catch(function(err){
-          showToast('\u26A0 Could not save — check connection');
-        });
+        }).catch(err => console.error(err));
       }, 700);
     }
 
@@ -1737,7 +1511,6 @@
 
       var dTot = sumMetrics(AREA_DIRECT_IDS);
       var iTot = sumMetrics(AREA_INDIRECT_IDS);
-      
       var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual, tbtAttended: dTot.tbtAttended + iTot.tbtAttended };
       
       appendRow('TOTAL:-', gTot, 'grand-total-row', true, {rowId: 'footerRowTotal'});
@@ -1761,9 +1534,7 @@
       }
 
       function addMasterLeafRow(areaId, indent, blockClass){
-        var area = AREAS_BY_ID[areaId];
-        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0, tbtAttended: 0 };
-        
+        var area = AREAS_BY_ID[areaId] || { name: areaId };
         var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'' };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
@@ -1799,7 +1570,6 @@
         
         var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0), t = Number(rec.tbtAttended || 0);
         mTotals.plan += p; mTotals.actual += a; mTotals.inOT += o; mTotals.reported += r; mTotals.tbtAttended += t;
-        
         if (area.type === 'Direct'){
           mDirectTotals.plan += p; mDirectTotals.actual += a; mDirectTotals.inOT += o; mDirectTotals.reported += r; mDirectTotals.tbtAttended += t;
         }
@@ -1857,7 +1627,6 @@
             masterBody.appendChild(tr);
             
             var childTotals = walkMaster(node.children, depth + 1, blockClass);
-
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
@@ -1884,8 +1653,8 @@
       }
       
       var singleIds = ['LLOYD', 'GMPL', 'NATARAJ'];
-      var mainTree = TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) === -1; });
-      var bottomTree = TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) !== -1; });
+      var mainTree = TREE.length ? TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) === -1; }) : [];
+      var bottomTree = TREE.length ? TREE.filter(function(n) { return singleIds.indexOf(n.id || n.areaId) !== -1; }) : [];
 
       function getBlockColor(id) {
         if (id === 'VL') return 'bg-vl';
@@ -1900,13 +1669,8 @@
         return 'bg-default';
       }
 
-      mainTree.forEach(function(node){
-        walkMaster([node], 0, getBlockColor(node.id || node.areaId));
-      });
-      
-      bottomTree.forEach(function(node){
-        walkMaster([node], 0, getBlockColor(node.id || node.areaId));
-      });
+      mainTree.forEach(node => walkMaster([node], 0, getBlockColor(node.id || node.areaId)));
+      bottomTree.forEach(node => walkMaster([node], 0, getBlockColor(node.id || node.areaId)));
 
       var mIndirectTotals = {
         plan: mTotals.plan - mDirectTotals.plan, actual: mTotals.actual - mDirectTotals.actual,
@@ -1915,7 +1679,6 @@
       };
       
       var footerRowIds = ['footerRowMasterTotal', 'footerRowMasterDirect', 'footerRowMasterIndirect'];
-
       [['TOTAL:-', mTotals], ['DIRECT:-', mDirectTotals], ['INDIRECT:-', mIndirectTotals]].forEach(function(pair, idx){
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
@@ -1941,11 +1704,7 @@
 
     function downloadFullHDImage(wrapperId, filenamePrefix) {
       var wrapper = document.getElementById(wrapperId);
-      if (!wrapper) { showToast('Could not find content to export'); return; }
-      if (typeof html2canvas === 'undefined') {
-        showToast('Image tool failed to load — check your connection and try again');
-        return;
-      }
+      if (!wrapper) return;
       showToast('Generating image\u2026');
 
       var originalOverflow = wrapper.style.overflow;
@@ -1969,89 +1728,25 @@
 
         var filename = filenamePrefix + '_' + currentShift() + '_' + currentDate() + '.png';
         var dataUrl = canvas.toDataURL('image/png');
-        var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
-
-        if (isIOS) {
-          var win = window.open();
-          if (win) {
-            win.document.write(
-              '<html><head><title>' + filename + '</title></head>' +
-              '<body style="margin:0; background:#000;">' +
-              '<img src="' + dataUrl + '" style="width:100%; display:block;">' +
-              '<p style="font-family:sans-serif; text-align:center; padding:12px; color:#fff;">Long-press the image and choose "Save Image" to download.</p>' +
-              '</body></html>'
-            );
-            showToast('Image ready — long-press to save');
-          } else {
-            showToast('Please allow pop-ups to save the image');
-          }
-        } else {
-          var link = document.createElement('a');
-          link.download = filename;
-          link.href = dataUrl;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          showToast('Image downloaded');
-        }
+        var link = document.createElement('a');
+        link.download = filename;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Image downloaded');
       }).catch(function(err){
         wrapper.style.overflow = originalOverflow;
         wrapper.style.width = originalWidth;
         wrapper.style.boxShadow = originalBoxShadow;
-        showToast('Error generating image — please try again');
-        console.error(err);
+        showToast('Error generating image');
       });
     }
 
-    /* --- MANUAL AGENCY CONTACT LOGIC --- */
     var activeModalBundle = null;
     var activeModalContactId = null;
 
     async function handleAddContact(bundleKey) {
-      if (window.navigator && window.navigator.contacts && window.ContactsManager) {
-        try {
-          const props = ['name', 'tel'];
-          const contacts = await navigator.contacts.select(props, { multiple: true });
-          
-          if (contacts && contacts.length > 0) {
-            if (!AGENCY_CONTACTS[bundleKey]) AGENCY_CONTACTS[bundleKey] = [];
-            var savePromises = [];
-            var addedByName = (LINK_MODE ? AGENCY_NAME : 'admin') || 'unknown';
-
-            contacts.forEach(function(c) {
-              var cName = (c.name && c.name.length > 0) ? c.name[0] : 'Unknown';
-              var cPhoneRaw = (c.tel && c.tel.length > 0) ? c.tel[0] : '';
-              var formattedPhone = whatsappNumber(cPhoneRaw);
-              
-              if (formattedPhone) {
-                var contactId = 'c_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-                AGENCY_CONTACTS[bundleKey].push({ id: contactId, name: cName, phone: formattedPhone });
-                savePromises.push(
-                  fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'saveContact', data: {
-                      bundleKey: bundleKey, id: contactId, name: cName, phone: formattedPhone, addedBy: addedByName
-                    }})
-                  })
-                );
-              }
-            });
-            renderAgencyLinks();
-            showToast('Contacts added successfully');
-            Promise.all(savePromises).catch(function(){
-              showToast('\u26A0 Some contacts may not have saved — check connection');
-            });
-          }
-          return;
-        } catch (err) {
-          if (err.name === 'AbortError' || err.name === 'NotAllowedError') {
-             return; 
-          }
-          console.warn('Contact picker fallback triggered:', err);
-        }
-      }
-      
       openManualContactModal(bundleKey);
     }
 
@@ -2095,8 +1790,7 @@
       var rawPhone = document.getElementById('modalContactPhone').value.trim();
       var formattedPhone = whatsappNumber(rawPhone);
       
-      if (!name) { showToast('Name is required'); return; }
-      if (!formattedPhone) { showToast('Valid phone number is required'); return; }
+      if (!name || !formattedPhone) { showToast('Name & valid phone required'); return; }
 
       var bundleKey = activeModalBundle;
       var contactId = activeModalContactId || ('c_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
@@ -2104,27 +1798,20 @@
       if (!AGENCY_CONTACTS[bundleKey]) AGENCY_CONTACTS[bundleKey] = [];
       var idx = AGENCY_CONTACTS[bundleKey].findIndex(c => c.id === contactId);
       var newContact = { id: contactId, name: name, phone: formattedPhone };
-      if (idx !== -1) {
-        AGENCY_CONTACTS[bundleKey][idx] = newContact;
-      } else {
-        AGENCY_CONTACTS[bundleKey].push(newContact);
-      }
+      if (idx !== -1) AGENCY_CONTACTS[bundleKey][idx] = newContact;
+      else AGENCY_CONTACTS[bundleKey].push(newContact);
 
       renderAgencyLinks();
       closeManualContactModal();
 
-      try {
-        await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveContact', data: {
-            bundleKey: bundleKey, id: contactId, name: name, phone: formattedPhone,
-            addedBy: (LINK_MODE ? AGENCY_NAME : 'admin') || 'unknown'
-          }})
-        });
-      } catch (err) {
-        showToast('\u26A0 Could not save contact — check connection and retry');
-      }
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'saveContact', data: {
+          bundleKey: bundleKey, id: contactId, name: name, phone: formattedPhone,
+          addedBy: (LINK_MODE ? AGENCY_NAME : 'admin') || 'unknown'
+        }})
+      }).catch(err => console.error(err));
     }
 
     async function deleteAgencyContact(bundleKey, contactId) {
@@ -2133,19 +1820,14 @@
         AGENCY_CONTACTS[bundleKey] = AGENCY_CONTACTS[bundleKey].filter(c => c.id !== contactId);
         renderAgencyLinks();
       }
-      try {
-        await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'deleteContact', data: { id: contactId } })
-        });
-      } catch (err) {
-        showToast('\u26A0 Could not delete contact — check connection and retry');
-      }
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'deleteContact', data: { id: contactId } })
+      }).catch(err => console.error(err));
     }
 
     function renderAgencyLinks() {
-      var base = window.location.href.split('?')[0];
       var list = document.getElementById('agencyLinksList');
       if (!list) return;
 
@@ -2157,7 +1839,6 @@
 
       var keys = Object.keys(BUNDLES);
       var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
-
       list.innerHTML = '';
 
       keys.forEach(function(key){
@@ -2169,22 +1850,17 @@
           : '<span style="font-size:11px; font-weight:700; color:var(--primary);">PENDING (' + state.filled + '/' + state.total + ')</span>';
         
         var contacts = AGENCY_CONTACTS[key] || [];
-
         var contactsHtml = contacts.length
           ? contacts.map(function(c){
               var escName = c.name.replace(/"/g,'&quot;');
-              
-              var shareActionIcon = `<button class="icon-btn whatsapp" data-action="${isIOS ? 'share' : 'whatsapp'}" data-phone="${c.phone}" data-name="${escName}" title="${isIOS ? 'Share Link' : 'Message User directly'}" style="padding:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></button>`;
+              var shareActionIcon = `<button class="icon-btn whatsapp" data-action="${isIOS ? 'share' : 'whatsapp'}" data-phone="${c.phone}" data-name="${escName}" title="Message User" style="padding:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></button>`;
 
               return `
                 <div class="agency-contact-row" data-contact-id="${c.id}" data-bundle-key="${key}">
                   <div class="agency-contact-info">
                     <div>
                       <div class="agency-contact-name">${escName}</div>
-                      <div class="agency-contact-phone" style="display:flex; align-items:center; gap:6px;">
-                         +${c.phone}
-                         ${shareActionIcon}
-                      </div>
+                      <div class="agency-contact-phone" style="display:flex; align-items:center; gap:6px;">+${c.phone} ${shareActionIcon}</div>
                     </div>
                   </div>
                   <div class="agency-actions">
@@ -2225,11 +1901,7 @@
           var container = hdr.nextElementSibling;
           var chevron = hdr.querySelector('.chevron');
           container.classList.toggle('expanded');
-          if (container.classList.contains('expanded')) {
-            chevron.style.transform = 'rotate(180deg)';
-          } else {
-            chevron.style.transform = 'rotate(0deg)';
-          }
+          chevron.style.transform = container.classList.contains('expanded') ? 'rotate(180deg)' : 'rotate(0deg)';
         });
       });
 
@@ -2248,11 +1920,9 @@
           var bKey = row.getAttribute('data-bundle-key');
           var cId = btn.getAttribute('data-id'); 
 
-          if (action === 'delete') {
-            deleteAgencyContact(bKey, cId);
-          } else if (action === 'edit') {
-            openManualContactModal(bKey, cId);
-          } else if (action === 'whatsapp') {
+          if (action === 'delete') deleteAgencyContact(bKey, cId);
+          else if (action === 'edit') openManualContactModal(bKey, cId);
+          else if (action === 'whatsapp') {
             var cPhone = btn.getAttribute('data-phone');
             var cName = btn.getAttribute('data-name');
             notifyContactWhatsApp(bKey, cPhone, cName);
@@ -2261,18 +1931,12 @@
             var bundle = BUNDLES[bKey];
             var base = window.location.href.split('?')[0];
             var link = base + '?link=' + bKey;
-            var msg = 'Hi ' + (cName2 || 'Team') + ', please fill your resources for ' + bundle.title +
-              ' (' + currentDate() + ', Shift ' + currentShift() + ').';
-            
+            var msg = 'Hi ' + (cName2 || 'Team') + ', please fill resources for ' + bundle.title + ' (' + currentDate() + ', Shift ' + currentShift() + ').';
             if (navigator.share) {
-              navigator.share({
-                title: 'Shift Entry Link',
-                text: msg,
-                url: link
-              }).catch(function(err) { console.log('Share failed', err); });
+              navigator.share({ title: 'Shift Entry Link', text: msg, url: link }).catch(err => {});
             } else {
               navigator.clipboard.writeText(msg + ' Link: ' + link);
-              showToast('Link copied to clipboard!');
+              showToast('Link copied!');
             }
           }
         });
