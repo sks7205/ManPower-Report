@@ -608,13 +608,10 @@
     }
 
     function mtdAttendanceDisplay(data) {
-      if (data.mtdAttPct !== undefined) {
+      if (data.mtdAttPct !== undefined && data.mtdAttPct !== null && data.mtdAttPct !== '') {
         return data.mtdAttPct + '%';
       }
-      var rep = Number(data.reported || 0);
-      var tbt = Number(data.tbtAttended || 0);
-      if (rep === 0) return '0%';
-      return Math.round((tbt / rep) * 100) + '%';
+      return '0%';
     }
 
     function whatsappNumber(raw){
@@ -1221,9 +1218,7 @@
         localUpdates[id] = {
           plan: Number(plan || 0), actual: Number(actual || 0),
           inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
-          mtdReported: existing.mtdReported || 0,
-          mtdTbtAttended: existing.mtdTbtAttended || 0,
-          mtdAttPct: existing.mtdAttPct,
+          mtdAttPct: existing.mtdAttPct !== undefined ? existing.mtdAttPct : 0,
           remarks: finalRem, updatedBy: enteredByName, timestamp: new Date().toLocaleString(),
           isFilled: true
         };
@@ -1448,9 +1443,7 @@
       shiftData[savedAreaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0),
         inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
-        mtdReported: existing.mtdReported || 0,
-        mtdTbtAttended: existing.mtdTbtAttended || 0,
-        mtdAttPct: existing.mtdAttPct,
+        mtdAttPct: existing.mtdAttPct !== undefined ? existing.mtdAttPct : 0,
         remarks: finalRemarks, updatedBy: enteredByName, timestamp: new Date().toLocaleString(),
         isFilled: true
       };
@@ -1538,25 +1531,34 @@
 
     function isOTHidden(){ return currentShift() === 'A'; }
 
+    /* FRONTEND GLOBAL METRICS HELPERS (Progressive Average MTD) */
     function getMetricsGlobal(id) {
-      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0, mtdAttPct: undefined };
+      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPct: 0 };
       return {
-        plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
-        inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
+        plan: Number(entry.plan || 0), 
+        actual: Number(entry.actual || 0),
+        inOT: Number(entry.inOT || 0), 
+        reported: Number(entry.reported || 0),
         tbtAttended: Number(entry.tbtAttended || 0),
-        mtdReported: Number(entry.mtdReported || 0),
-        mtdTbtAttended: Number(entry.mtdTbtAttended || 0),
-        mtdAttPct: entry.mtdAttPct
+        mtdAttPct: entry.mtdAttPct !== undefined && entry.mtdAttPct !== null ? Number(entry.mtdAttPct) : 0
       };
     }
+
     function sumMetricsGlobal(arr) {
-      var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
+      var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPctSum: 0, mtdCount: 0 };
       arr.forEach(function(id){
         var m = getMetricsGlobal(id);
-        res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
+        res.plan += m.plan; 
+        res.actual += m.actual; 
+        res.inOT += m.inOT; 
+        res.reported += m.reported;
         res.tbtAttended += m.tbtAttended;
-        res.mtdReported += m.mtdReported; res.mtdTbtAttended += m.mtdTbtAttended;
+        if (m.mtdAttPct !== undefined && m.mtdAttPct !== null && !isNaN(m.mtdAttPct)) {
+          res.mtdAttPctSum += m.mtdAttPct;
+          res.mtdCount += 1;
+        }
       });
+      res.mtdAttPct = res.mtdCount > 0 ? Math.round(res.mtdAttPctSum / res.mtdCount) : 0;
       return res;
     }
 
@@ -1578,7 +1580,7 @@
           cells[5].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
         }
         if (cells.length >= 7) {
-          cells[6].textContent = data.mtdReported ? Math.round((data.mtdTbtAttended / data.mtdReported) * 100) + '%' : '0%';
+          cells[6].textContent = data.mtdAttPct !== undefined ? data.mtdAttPct + '%' : '0%';
         }
       }
       fill('footerRowMasterTotal', mTotals);
@@ -1624,9 +1626,7 @@
       shiftData[areaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0), inOT: Number(ot || 0), reported: reported,
         tbtAttended: Number(tbtAttended || 0),
-        mtdReported: existing.mtdReported || 0,
-        mtdTbtAttended: existing.mtdTbtAttended || 0,
-        mtdAttPct: existing.mtdAttPct,
+        mtdAttPct: existing.mtdAttPct !== undefined ? existing.mtdAttPct : 0,
         remarks: remarks || '', updatedBy: existing.updatedBy || 'you',
         timestamp: existing.timestamp || new Date().toLocaleString(),
         isFilled: true
@@ -1663,32 +1663,38 @@
       body.innerHTML = '';
       
       function getMetrics(id) {
-        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdReported:0, mtdTbtAttended:0, mtdAttPct: undefined };
+        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdAttPct: 0 };
         return {
-          plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
-          inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
+          plan: Number(entry.plan || 0), 
+          actual: Number(entry.actual || 0),
+          inOT: Number(entry.inOT || 0), 
+          reported: Number(entry.reported || 0),
           tbtAttended: Number(entry.tbtAttended || 0),
-          mtdReported: Number(entry.mtdReported || 0),
-          mtdTbtAttended: Number(entry.mtdTbtAttended || 0),
           remarks: entry.remarks || '',
-          mtdAttPct: entry.mtdAttPct
+          mtdAttPct: entry.mtdAttPct !== undefined && entry.mtdAttPct !== null ? Number(entry.mtdAttPct) : 0
         };
       }
 
       function sumMetrics(arr) {
-        var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0, remarks:[] };
+        var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPctSum: 0, mtdCount: 0, remarks:[] };
         arr.forEach(function(id) {
           var m = getMetrics(id);
-          res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
+          res.plan += m.plan; 
+          res.actual += m.actual; 
+          res.inOT += m.inOT; 
+          res.reported += m.reported;
           res.tbtAttended += m.tbtAttended;
-          res.mtdReported += m.mtdReported; res.mtdTbtAttended += m.mtdTbtAttended;
+          if (m.mtdAttPct !== undefined && m.mtdAttPct !== null && !isNaN(m.mtdAttPct)) {
+            res.mtdAttPctSum += m.mtdAttPct;
+            res.mtdCount += 1;
+          }
           if (m.remarks) {
             var parts = m.remarks.split('; ');
             parts.forEach(function(p){ if(res.remarks.indexOf(p) === -1) res.remarks.push(p); });
           }
         });
         res.remarks = res.remarks.filter(Boolean).join('; ');
-        res.mtdAttPct = res.mtdReported > 0 ? Math.round((res.mtdTbtAttended / res.mtdReported) * 100) : 0;
+        res.mtdAttPct = res.mtdCount > 0 ? Math.round(res.mtdAttPctSum / res.mtdCount) : 0;
         return res;
       }
 
@@ -1756,15 +1762,14 @@
       var dTot = sumMetrics(AREA_DIRECT_IDS);
       var iTot = sumMetrics(AREA_INDIRECT_IDS);
       
+      var grandMtdPct = (dTot.mtdCount + iTot.mtdCount) > 0 ? Math.round((dTot.mtdAttPctSum + iTot.mtdAttPctSum) / (dTot.mtdCount + iTot.mtdCount)) : 0;
       var gTot = { 
         plan: dTot.plan + iTot.plan, 
         reported: dTot.reported + iTot.reported, 
         inOT: dTot.inOT + iTot.inOT, 
         actual: dTot.actual + iTot.actual, 
         tbtAttended: dTot.tbtAttended + iTot.tbtAttended,
-        mtdReported: dTot.mtdReported + iTot.mtdReported,
-        mtdTbtAttended: dTot.mtdTbtAttended + iTot.mtdTbtAttended,
-        mtdAttPct: (dTot.mtdReported + iTot.mtdReported) > 0 ? Math.round(((dTot.mtdTbtAttended + iTot.mtdTbtAttended) / (dTot.mtdReported + iTot.mtdReported)) * 100) : 0
+        mtdAttPct: grandMtdPct
       };
       
       appendRow('TOTAL:-', gTot, 'grand-total-row', true, {rowId: 'footerRowTotal'});
@@ -1780,8 +1785,8 @@
       var masterBody = document.getElementById('masterDashBody');
       masterBody.innerHTML = '';
       
-      var mTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
-      var mDirectTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
+      var mTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPctSum:0, mtdCount:0 };
+      var mDirectTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPctSum:0, mtdCount:0 };
 
       function escAttr(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1789,9 +1794,9 @@
 
       function addMasterLeafRow(areaId, indent, blockClass){
         var area = AREAS_BY_ID[areaId];
-        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0, tbtAttended: 0, mtdReported: 0, mtdTbtAttended: 0 };
+        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0, tbtAttended: 0, mtdAttPct: 0 };
         
-        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdReported:0, mtdTbtAttended:0, mtdAttPct: undefined };
+        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdAttPct: 0 };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
         var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
@@ -1826,21 +1831,22 @@
         masterBody.appendChild(tr);
         
         var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0), t = Number(rec.tbtAttended || 0);
-        var mr = Number(rec.mtdReported || 0), mt = Number(rec.mtdTbtAttended || 0);
+        var mtdPct = Number(rec.mtdAttPct || 0);
+        
         mTotals.plan += p; mTotals.actual += a; mTotals.inOT += o; mTotals.reported += r; mTotals.tbtAttended += t;
-        mTotals.mtdReported = (mTotals.mtdReported || 0) + mr;
-        mTotals.mtdTbtAttended = (mTotals.mtdTbtAttended || 0) + mt;
+        mTotals.mtdAttPctSum += mtdPct;
+        mTotals.mtdCount += 1;
         
         if (area.type === 'Direct'){
           mDirectTotals.plan += p; mDirectTotals.actual += a; mDirectTotals.inOT += o; mDirectTotals.reported += r; mDirectTotals.tbtAttended += t;
-          mDirectTotals.mtdReported = (mDirectTotals.mtdReported || 0) + mr;
-          mDirectTotals.mtdTbtAttended = (mDirectTotals.mtdTbtAttended || 0) + mt;
+          mDirectTotals.mtdAttPctSum += mtdPct;
+          mDirectTotals.mtdCount += 1;
         }
-        return { plan: p, actual: a, inOT: o, reported: r, tbtAttended: t, mtdReported: mr, mtdTbtAttended: mt };
+        return { plan: p, actual: a, inOT: o, reported: r, tbtAttended: t, mtdAttPct: mtdPct };
       }
 
       function walkMaster(nodes, depth, blockClass){
-        var groupTotal = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
+        var groupTotal = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPctSum:0, mtdCount:0 };
         if (!nodes) return groupTotal; 
         
         nodes.forEach(function(node){
@@ -1849,28 +1855,28 @@
             groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
             groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
             groupTotal.tbtAttended += leafVals.tbtAttended;
-            groupTotal.mtdReported = (groupTotal.mtdReported || 0) + leafVals.mtdReported;
-            groupTotal.mtdTbtAttended = (groupTotal.mtdTbtAttended || 0) + leafVals.mtdTbtAttended;
+            groupTotal.mtdAttPctSum += leafVals.mtdAttPct;
+            groupTotal.mtdCount += 1;
           } else if (node.type === 'multi') {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
             tr.innerHTML = '<td colspan="9" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
-            var childTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
+            var childTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPctSum:0, mtdCount:0 };
             node.areaIds.forEach(function(id){
                var leafVals = addMasterLeafRow(id, depth + 1, blockClass);
                childTotals.plan += leafVals.plan; childTotals.actual += leafVals.actual;
                childTotals.inOT += leafVals.inOT; childTotals.reported += leafVals.reported;
                childTotals.tbtAttended += leafVals.tbtAttended;
-               childTotals.mtdReported += leafVals.mtdReported;
-               childTotals.mtdTbtAttended += leafVals.mtdTbtAttended;
+               childTotals.mtdAttPctSum += leafVals.mtdAttPct;
+               childTotals.mtdCount += 1;
             });
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
-            var childMtdPct = childTotals.mtdReported ? Math.round((childTotals.mtdTbtAttended / childTotals.mtdReported) * 100) + '%' : '0%';
+            var childMtdPct = childTotals.mtdCount > 0 ? Math.round(childTotals.mtdAttPctSum / childTotals.mtdCount) + '%' : '0%';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1886,8 +1892,8 @@
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
             groupTotal.tbtAttended += childTotals.tbtAttended;
-            groupTotal.mtdReported = (groupTotal.mtdReported || 0) + childTotals.mtdReported;
-            groupTotal.mtdTbtAttended = (groupTotal.mtdTbtAttended || 0) + childTotals.mtdTbtAttended;
+            groupTotal.mtdAttPctSum += childTotals.mtdAttPctSum;
+            groupTotal.mtdCount += childTotals.mtdCount;
           } else {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
@@ -1899,7 +1905,7 @@
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
-            var childMtdPct = childTotals.mtdReported ? Math.round((childTotals.mtdTbtAttended / childTotals.mtdReported) * 100) + '%' : '0%';
+            var childMtdPct = childTotals.mtdCount > 0 ? Math.round(childTotals.mtdAttPctSum / childTotals.mtdCount) + '%' : '0%';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1915,8 +1921,8 @@
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
             groupTotal.tbtAttended += childTotals.tbtAttended;
-            groupTotal.mtdReported = (groupTotal.mtdReported || 0) + childTotals.mtdReported;
-            groupTotal.mtdTbtAttended = (groupTotal.mtdTbtAttended || 0) + childTotals.mtdTbtAttended;
+            groupTotal.mtdAttPctSum += childTotals.mtdAttPctSum;
+            groupTotal.mtdCount += childTotals.mtdCount;
           }
         });
         return groupTotal;
@@ -1949,21 +1955,29 @@
         walkMaster([node], 0, getBlockColor(node.id || node.areaId));
       });
 
+      var indirectCount = Math.max(1, mTotals.mtdCount - mDirectTotals.mtdCount);
+      var indirectMtdSum = mTotals.mtdAttPctSum - mDirectTotals.mtdAttPctSum;
+      var indirectMtdPct = Math.round(indirectMtdSum / indirectCount);
+
       var mIndirectTotals = {
-        plan: mTotals.plan - mDirectTotals.plan, actual: mTotals.actual - mDirectTotals.actual,
-        inOT: mTotals.inOT - mDirectTotals.inOT, reported: mTotals.reported - mDirectTotals.reported,
+        plan: mTotals.plan - mDirectTotals.plan, 
+        actual: mTotals.actual - mDirectTotals.actual,
+        inOT: mTotals.inOT - mDirectTotals.inOT, 
+        reported: mTotals.reported - mDirectTotals.reported,
         tbtAttended: mTotals.tbtAttended - mDirectTotals.tbtAttended,
-        mtdReported: mTotals.mtdReported - mDirectTotals.mtdReported,
-        mtdTbtAttended: mTotals.mtdTbtAttended - mDirectTotals.mtdTbtAttended
+        mtdAttPct: indirectMtdPct
       };
       
+      mTotals.mtdAttPct = mTotals.mtdCount > 0 ? Math.round(mTotals.mtdAttPctSum / mTotals.mtdCount) : 0;
+      mDirectTotals.mtdAttPct = mDirectTotals.mtdCount > 0 ? Math.round(mDirectTotals.mtdAttPctSum / mDirectTotals.mtdCount) : 0;
+
       var footerRowIds = ['footerRowMasterTotal', 'footerRowMasterDirect', 'footerRowMasterIndirect'];
       [['TOTAL:-', mTotals], ['DIRECT:-', mDirectTotals], ['INDIRECT:-', mIndirectTotals]].forEach(function(pair, idx){
         var tr = document.createElement('tr');
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
         var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
-        var mtdPct = pair[1].mtdReported ? Math.round((pair[1].mtdTbtAttended / pair[1].mtdReported) * 100) + '%' : '0%';
+        var mtdPct = pair[1].mtdAttPct !== undefined ? pair[1].mtdAttPct + '%' : '0%';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
