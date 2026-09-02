@@ -972,7 +972,6 @@
       var grid = document.getElementById('tileGrid');
       grid.innerHTML = '';
       children.forEach(function(node){
-        var tile = document.createElement('div');
         var fill, label, meta;
         if (node.type === 'leaf'){
           var area = AREAS_BY_ID[node.areaId];
@@ -1514,25 +1513,31 @@
 
     function isOTHidden(){ return currentShift() === 'A'; }
 
+    /* FRONTEND PATCHED GLOBAL METRICS HELPERS */
     function getMetricsGlobal(id) {
-      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPct: undefined };
+      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0, mtdAttPct: undefined };
       return {
         plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
         inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
         tbtAttended: Number(entry.tbtAttended || 0),
+        mtdReported: Number(entry.mtdReported || 0),
+        mtdTbtAttended: Number(entry.mtdTbtAttended || 0),
         mtdAttPct: entry.mtdAttPct
       };
     }
+
     function sumMetricsGlobal(arr) {
-      var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
+      var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
       arr.forEach(function(id){
         var m = getMetricsGlobal(id);
         res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
         res.tbtAttended += m.tbtAttended;
+        res.mtdReported += m.mtdReported; res.mtdTbtAttended += m.mtdTbtAttended;
       });
       return res;
     }
 
+    /* FRONTEND PATCHED recalcMasterFooter */
     function recalcMasterFooter() {
       var mTotals = sumMetricsGlobal(AREA_DIRECT_IDS.concat(AREA_INDIRECT_IDS));
       var mDirectTotals = sumMetricsGlobal(AREA_DIRECT_IDS);
@@ -1551,7 +1556,7 @@
           cells[5].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
         }
         if (cells.length >= 7) {
-          cells[6].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '0%';
+          cells[6].textContent = data.mtdReported ? Math.round((data.mtdTbtAttended / data.mtdReported) * 100) + '%' : '0%';
         }
       }
       fill('footerRowMasterTotal', mTotals);
@@ -1597,6 +1602,9 @@
       shiftData[areaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0), inOT: Number(ot || 0), reported: reported,
         tbtAttended: Number(tbtAttended || 0),
+        mtdReported: existing.mtdReported || 0,
+        mtdTbtAttended: existing.mtdTbtAttended || 0,
+        mtdAttPct: existing.mtdAttPct,
         remarks: remarks || '', updatedBy: existing.updatedBy || 'you',
         timestamp: existing.timestamp || new Date().toLocaleString()
       };
@@ -1627,6 +1635,7 @@
       }, 700);
     }
 
+    /* FRONTEND PATCHED buildCustomTable */
     function buildCustomTable(){
       updateDashboardHeaders();
       updateProgressBar();
@@ -1634,28 +1643,32 @@
       body.innerHTML = '';
       
       function getMetrics(id) {
-        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdAttPct: undefined };
+        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdReported:0, mtdTbtAttended:0, mtdAttPct: undefined };
         return {
           plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
           inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
           tbtAttended: Number(entry.tbtAttended || 0),
+          mtdReported: Number(entry.mtdReported || 0),
+          mtdTbtAttended: Number(entry.mtdTbtAttended || 0),
           remarks: entry.remarks || '',
           mtdAttPct: entry.mtdAttPct
         };
       }
 
       function sumMetrics(arr) {
-        var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:[] };
+        var res = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0, remarks:[] };
         arr.forEach(function(id) {
           var m = getMetrics(id);
           res.plan += m.plan; res.actual += m.actual; res.inOT += m.inOT; res.reported += m.reported;
           res.tbtAttended += m.tbtAttended;
+          res.mtdReported += m.mtdReported; res.mtdTbtAttended += m.mtdTbtAttended;
           if (m.remarks) {
             var parts = m.remarks.split('; ');
             parts.forEach(function(p){ if(res.remarks.indexOf(p) === -1) res.remarks.push(p); });
           }
         });
         res.remarks = res.remarks.filter(Boolean).join('; ');
+        res.mtdAttPct = res.mtdReported > 0 ? Math.round((res.mtdTbtAttended / res.mtdReported) * 100) : 0;
         return res;
       }
 
@@ -1723,13 +1736,23 @@
       var dTot = sumMetrics(AREA_DIRECT_IDS);
       var iTot = sumMetrics(AREA_INDIRECT_IDS);
       
-      var gTot = { plan: dTot.plan + iTot.plan, reported: dTot.reported + iTot.reported, inOT: dTot.inOT + iTot.inOT, actual: dTot.actual + iTot.actual, tbtAttended: dTot.tbtAttended + iTot.tbtAttended };
+      var gTot = { 
+        plan: dTot.plan + iTot.plan, 
+        reported: dTot.reported + iTot.reported, 
+        inOT: dTot.inOT + iTot.inOT, 
+        actual: dTot.actual + iTot.actual, 
+        tbtAttended: dTot.tbtAttended + iTot.tbtAttended,
+        mtdReported: dTot.mtdReported + iTot.mtdReported,
+        mtdTbtAttended: dTot.mtdTbtAttended + iTot.mtdTbtAttended,
+        mtdAttPct: (dTot.mtdReported + iTot.mtdReported) > 0 ? Math.round(((dTot.mtdTbtAttended + iTot.mtdTbtAttended) / (dTot.mtdReported + iTot.mtdReported)) * 100) : 0
+      };
       
       appendRow('TOTAL:-', gTot, 'grand-total-row', true, {rowId: 'footerRowTotal'});
       appendRow('DIRECT:-', dTot, 'grand-total-row', true, {rowId: 'footerRowDirect'});
       appendRow('INDIRECT:-', iTot, 'grand-total-row', true, {rowId: 'footerRowIndirect'});
     }
 
+    /* FRONTEND PATCHED buildMasterTable */
     function buildMasterTable(){
       updateDashboardHeaders();
       var status = document.getElementById('dashStatusMaster');
@@ -1738,8 +1761,8 @@
       var masterBody = document.getElementById('masterDashBody');
       masterBody.innerHTML = '';
       
-      var mTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
-      var mDirectTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
+      var mTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
+      var mDirectTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
 
       function escAttr(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1747,9 +1770,9 @@
 
       function addMasterLeafRow(areaId, indent, blockClass){
         var area = AREAS_BY_ID[areaId];
-        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0, tbtAttended: 0 };
+        if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0, tbtAttended: 0, mtdReported: 0, mtdTbtAttended: 0 };
         
-        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdAttPct: undefined };
+        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdReported:0, mtdTbtAttended:0, mtdAttPct: undefined };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
         var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
@@ -1784,16 +1807,21 @@
         masterBody.appendChild(tr);
         
         var p = Number(rec.plan || 0), a = Number(rec.actual || 0), o = Number(rec.inOT || 0), r = Number(rec.reported || 0), t = Number(rec.tbtAttended || 0);
+        var mr = Number(rec.mtdReported || 0), mt = Number(rec.mtdTbtAttended || 0);
         mTotals.plan += p; mTotals.actual += a; mTotals.inOT += o; mTotals.reported += r; mTotals.tbtAttended += t;
+        mTotals.mtdReported = (mTotals.mtdReported || 0) + mr;
+        mTotals.mtdTbtAttended = (mTotals.mtdTbtAttended || 0) + mt;
         
         if (area.type === 'Direct'){
           mDirectTotals.plan += p; mDirectTotals.actual += a; mDirectTotals.inOT += o; mDirectTotals.reported += r; mDirectTotals.tbtAttended += t;
+          mDirectTotals.mtdReported = (mDirectTotals.mtdReported || 0) + mr;
+          mDirectTotals.mtdTbtAttended = (mDirectTotals.mtdTbtAttended || 0) + mt;
         }
-        return { plan: p, actual: a, inOT: o, reported: r, tbtAttended: t };
+        return { plan: p, actual: a, inOT: o, reported: r, tbtAttended: t, mtdReported: mr, mtdTbtAttended: mt };
       }
 
       function walkMaster(nodes, depth, blockClass){
-        var groupTotal = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
+        var groupTotal = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
         if (!nodes) return groupTotal;
         
         nodes.forEach(function(node){
@@ -1802,24 +1830,28 @@
             groupTotal.plan += leafVals.plan; groupTotal.actual += leafVals.actual;
             groupTotal.inOT += leafVals.inOT; groupTotal.reported += leafVals.reported;
             groupTotal.tbtAttended += leafVals.tbtAttended;
+            groupTotal.mtdReported = (groupTotal.mtdReported || 0) + leafVals.mtdReported;
+            groupTotal.mtdTbtAttended = (groupTotal.mtdTbtAttended || 0) + leafVals.mtdTbtAttended;
           } else if (node.type === 'multi') {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
             tr.innerHTML = '<td colspan="9" style="font-weight:bold;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + node.name + '</td>';
             masterBody.appendChild(tr);
             
-            var childTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0 };
+            var childTotals = { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdReported:0, mtdTbtAttended:0 };
             node.areaIds.forEach(function(id){
                var leafVals = addMasterLeafRow(id, depth + 1, blockClass);
                childTotals.plan += leafVals.plan; childTotals.actual += leafVals.actual;
                childTotals.inOT += leafVals.inOT; childTotals.reported += leafVals.reported;
                childTotals.tbtAttended += leafVals.tbtAttended;
+               childTotals.mtdReported += leafVals.mtdReported;
+               childTotals.mtdTbtAttended += leafVals.mtdTbtAttended;
             });
 
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
-            var childMtdPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '0%';
+            var childMtdPct = childTotals.mtdReported ? Math.round((childTotals.mtdTbtAttended / childTotals.mtdReported) * 100) + '%' : '0%';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1835,6 +1867,8 @@
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
             groupTotal.tbtAttended += childTotals.tbtAttended;
+            groupTotal.mtdReported = (groupTotal.mtdReported || 0) + childTotals.mtdReported;
+            groupTotal.mtdTbtAttended = (groupTotal.mtdTbtAttended || 0) + childTotals.mtdTbtAttended;
           } else {
             var tr = document.createElement('tr');
             if (blockClass) tr.className = blockClass;
@@ -1846,7 +1880,7 @@
             var subTr = document.createElement('tr');
             if (blockClass) subTr.className = blockClass;
             var childPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '';
-            var childMtdPct = childTotals.reported ? Math.round((childTotals.tbtAttended / childTotals.reported) * 100) + '%' : '0%';
+            var childMtdPct = childTotals.mtdReported ? Math.round((childTotals.mtdTbtAttended / childTotals.mtdReported) * 100) + '%' : '0%';
             subTr.innerHTML =
               '<td style="font-weight:bold; text-transform:uppercase;">' + (depth > 0 ? '&nbsp;&nbsp;' : '') + 'TOTAL ' + node.name.toUpperCase() + '</td>' +
               '<td class="num" style="font-weight:bold;">' + childTotals.plan + '</td>' +
@@ -1862,6 +1896,8 @@
             groupTotal.plan += childTotals.plan; groupTotal.actual += childTotals.actual;
             groupTotal.inOT += childTotals.inOT; groupTotal.reported += childTotals.reported;
             groupTotal.tbtAttended += childTotals.tbtAttended;
+            groupTotal.mtdReported = (groupTotal.mtdReported || 0) + childTotals.mtdReported;
+            groupTotal.mtdTbtAttended = (groupTotal.mtdTbtAttended || 0) + childTotals.mtdTbtAttended;
           }
         });
         return groupTotal;
@@ -1895,7 +1931,9 @@
       var mIndirectTotals = {
         plan: mTotals.plan - mDirectTotals.plan, actual: mTotals.actual - mDirectTotals.actual,
         inOT: mTotals.inOT - mDirectTotals.inOT, reported: mTotals.reported - mDirectTotals.reported,
-        tbtAttended: mTotals.tbtAttended - mDirectTotals.tbtAttended
+        tbtAttended: mTotals.tbtAttended - mDirectTotals.tbtAttended,
+        mtdReported: mTotals.mtdReported - mDirectTotals.mtdReported,
+        mtdTbtAttended: mTotals.mtdTbtAttended - mDirectTotals.mtdTbtAttended
       };
       
       var footerRowIds = ['footerRowMasterTotal', 'footerRowMasterDirect', 'footerRowMasterIndirect'];
@@ -1904,7 +1942,7 @@
         tr.className = 'grand-total-row';
         tr.id = footerRowIds[idx];
         var pct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '';
-        var mtdPct = pair[1].reported ? Math.round((pair[1].tbtAttended / pair[1].reported) * 100) + '%' : '0%';
+        var mtdPct = pair[1].mtdReported ? Math.round((pair[1].mtdTbtAttended / pair[1].mtdReported) * 100) + '%' : '0%';
         tr.innerHTML =
           '<td>' + pair[0] + '</td>' +
           '<td class="num">' + pair[1].plan + '</td>' +
