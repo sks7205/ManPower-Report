@@ -586,7 +586,6 @@
     }
 
     function tbtCompliancePct(data) {
-      if (data.tbtCompliancePct !== undefined) return data.tbtCompliancePct + '%';
       if (!data.reported) return '';
       var att = Number(data.tbtAttended || 0);
       var rep = Number(data.reported || 1);
@@ -1201,12 +1200,10 @@
 
         var finalRem = commonRem;
         var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
-        var tbtGuess = reportedGuess > 0 ? Math.round((Number(tbtAttended || 0) / reportedGuess) * 100) : 0;
 
         localUpdates[id] = {
           plan: Number(plan || 0), actual: Number(actual || 0),
           inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
-          tbtCompliancePct: tbtGuess,
           remarks: finalRem, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
         };
 
@@ -1233,7 +1230,6 @@
         }).then(function(res){ return res.json(); }).then(function(data){
           if (shiftData[payload.areaId]) {
             shiftData[payload.areaId].reported = data.reported;
-            shiftData[payload.areaId].tbtCompliancePct = data.tbtCompliancePct;
           }
         });
       });
@@ -1377,7 +1373,6 @@
       var ot = isOTHidden() ? 0 : document.getElementById('otInput').value;
       var tbtAttended = document.getElementById('tbtInput').value;
       var reportedGuess = Math.max(0, Number(actual || 0) - Number(ot || 0));
-      var tbtGuess = reportedGuess > 0 ? Math.round((Number(tbtAttended || 0) / reportedGuess) * 100) : 0;
 
       if (LINK_MODE && (plan !== '' && actual === '') || (plan === '' && actual !== '')) {
         showToast('Plan & Actual are mandatory');
@@ -1433,7 +1428,6 @@
       shiftData[savedAreaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0),
         inOT: Number(ot || 0), tbtAttended: Number(tbtAttended || 0), reported: reportedGuess,
-        tbtCompliancePct: tbtGuess,
         remarks: finalRemarks, updatedBy: enteredByName, timestamp: new Date().toLocaleString()
       };
       
@@ -1455,7 +1449,6 @@
       }).then(function(res){ return res.json(); }).then(function(data){
         if (shiftData[savedAreaId]) {
           shiftData[savedAreaId].reported = data.reported;
-          shiftData[savedAreaId].tbtCompliancePct = data.tbtCompliancePct;
         }
         if (CURRENT_VIEW === 'picker') renderPicker();
         if (CURRENT_VIEW === 'bundleTiles') renderBundleTiles();
@@ -1522,12 +1515,11 @@
     function isOTHidden(){ return currentShift() === 'A'; }
 
     function getMetricsGlobal(id) {
-      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, tbtCompliancePct: undefined, mtdAttPct: undefined };
+      var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, mtdAttPct: undefined };
       return {
         plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
         inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
         tbtAttended: Number(entry.tbtAttended || 0),
-        tbtCompliancePct: entry.tbtCompliancePct,
         mtdAttPct: entry.mtdAttPct
       };
     }
@@ -1582,7 +1574,6 @@
       var tbtAttended = tbtEl ? tbtEl.value : (shiftData[areaId] ? shiftData[areaId].tbtAttended : 0);
       var reported = Math.max(0, Number(actual || 0) - Number(ot || 0));
       var unplanned = Math.max(0, Number(plan || 0) - Number(actual || 0));
-      var tbtPct = reported > 0 ? Math.round((Number(tbtAttended || 0) / reported) * 100) : 0;
 
       var rowEl = actualEl.closest('tr');
       if (planEl) planEl.setAttribute('value', plan);
@@ -1599,14 +1590,13 @@
 
       var tbtPctCell = rowEl ? rowEl.querySelector('.inline-tbt-pct') : null;
       if (tbtPctCell) {
-        tbtPctCell.textContent = reported > 0 ? (tbtPct + '%') : '';
+        tbtPctCell.textContent = reported > 0 ? Math.round((Number(tbtAttended || 0) / reported) * 100) + '%' : '';
       }
 
       var existing = shiftData[areaId] || {};
       shiftData[areaId] = {
         plan: Number(plan || 0), actual: Number(actual || 0), inOT: Number(ot || 0), reported: reported,
         tbtAttended: Number(tbtAttended || 0),
-        tbtCompliancePct: tbtPct,
         remarks: remarks || '', updatedBy: existing.updatedBy || 'you',
         timestamp: existing.timestamp || new Date().toLocaleString()
       };
@@ -1630,7 +1620,6 @@
         }).then(function(res){ return res.json(); }).then(function(data){
           if (shiftData[areaId]) {
             shiftData[areaId].reported = data.reported;
-            shiftData[areaId].tbtCompliancePct = data.tbtCompliancePct;
           }
         }).catch(function(err){
           showToast('\u26A0 Could not save — check connection');
@@ -1645,12 +1634,11 @@
       body.innerHTML = '';
       
       function getMetrics(id) {
-        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, tbtCompliancePct: undefined, remarks:'', mtdAttPct: undefined };
+        var entry = shiftData[id] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdAttPct: undefined };
         return {
           plan: Number(entry.plan || 0), actual: Number(entry.actual || 0),
           inOT: Number(entry.inOT || 0), reported: Number(entry.reported || 0),
           tbtAttended: Number(entry.tbtAttended || 0),
-          tbtCompliancePct: entry.tbtCompliancePct,
           remarks: entry.remarks || '',
           mtdAttPct: entry.mtdAttPct
         };
@@ -1761,12 +1749,10 @@
         var area = AREAS_BY_ID[areaId];
         if (!area) return { plan: 0, actual: 0, inOT: 0, reported: 0, tbtAttended: 0 };
         
-        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, tbtCompliancePct: undefined, remarks:'', mtdAttPct: undefined };
+        var rec = shiftData[areaId] || { plan:0, actual:0, inOT:0, reported:0, tbtAttended:0, remarks:'', mtdAttPct: undefined };
         var tr = document.createElement('tr');
         if (blockClass) tr.className = blockClass;
-        var tbtPct = rec.tbtCompliancePct !== undefined 
-          ? (rec.tbtCompliancePct + '%') 
-          : ((Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '');
+        var tbtPct = (Number(rec.reported || 0)) ? Math.round((Number(rec.tbtAttended || 0) / Number(rec.reported || 0)) * 100) + '%' : '';
         var unplanned = Math.max(0, Number(rec.plan || 0) - Number(rec.actual || 0));
 
         if (MASTER_EDIT_MODE) {
