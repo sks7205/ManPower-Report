@@ -1554,7 +1554,6 @@
         cells[1].textContent = data.reported;
         cells[2].textContent = data.inOT;
         cells[3].textContent = data.actual;
-        // Unplanned: Plan vs Actual on work
         cells[4].textContent = Math.max(0, data.plan - data.actual);
         if (cells.length >= 6) {
           cells[5].textContent = data.reported ? Math.round((data.tbtAttended / data.reported) * 100) + '%' : '';
